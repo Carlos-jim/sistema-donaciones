@@ -1,3 +1,4 @@
+// Updated DashboardPage.tsx with responsive layout, Tabs section unchanged
 "use client"
 
 import { useState } from "react"
@@ -16,51 +17,38 @@ export default function DashboardPage() {
   return (
     <div className="flex min-h-screen flex-col">
       <header className="border-b">
-        <div className="container flex h-16 items-center justify-between">
+        <div className="container mx-auto px-4 flex h-16 items-center justify-between">
           <div className="flex items-center gap-2">
             <Heart className="h-6 w-6 text-teal-600" />
             <span className="text-xl font-bold">MediShare</span>
           </div>
           <nav className="hidden md:flex gap-6">
-            <Link href="/dashboard" className="text-sm font-medium text-teal-600">
-              Dashboard
-            </Link>
-            <Link href="/dashboard/requests" className="text-sm font-medium">
-              Mis Solicitudes
-            </Link>
-            <Link href="/dashboard/donations" className="text-sm font-medium">
-              Mis Donaciones
-            </Link>
-            <Link href="/dashboard/profile" className="text-sm font-medium">
-              Perfil
-            </Link>
+            <Link href="/dashboard" className="text-sm font-medium text-teal-600">Dashboard</Link>
+            <Link href="/dashboard/requests" className="text-sm font-medium">Mis Solicitudes</Link>
+            <Link href="/dashboard/donations" className="text-sm font-medium">Mis Donaciones</Link>
+            <Link href="/dashboard/profile" className="text-sm font-medium">Perfil</Link>
           </nav>
           <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon">
-              <Bell className="h-5 w-5" />
-            </Button>
-            <Button variant="ghost" size="icon">
-              <User className="h-5 w-5" />
-            </Button>
-            <Button variant="ghost" size="icon">
-              <LogOut className="h-5 w-5" />
-            </Button>
+            <Button variant="ghost" size="icon"><Bell className="h-5 w-5" /></Button>
+            <Button variant="ghost" size="icon"><User className="h-5 w-5" /></Button>
+            <Button variant="ghost" size="icon"><LogOut className="h-5 w-5" /></Button>
           </div>
         </div>
       </header>
-      <main className="flex-1 container py-6">
+
+      <main className="flex-1 container mx-auto px-4 py-6">
         <div className="flex flex-col gap-6">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <h1 className="text-3xl font-bold">Dashboard</h1>
-            <div className="flex gap-2">
+            <div className="flex flex-col sm:flex-row gap-2">
               <Link href="/dashboard/request-medication">
-                <Button className="bg-teal-600 hover:bg-teal-700">
+                <Button className="bg-teal-600 hover:bg-teal-700 w-full sm:w-auto">
                   <Search className="mr-2 h-4 w-4" />
                   Solicitar Medicamento
                 </Button>
               </Link>
               <Link href="/dashboard/donate-medication">
-                <Button variant="outline">
+                <Button variant="outline" className="w-full sm:w-auto">
                   <PlusCircle className="mr-2 h-4 w-4" />
                   Donar Medicamento
                 </Button>
@@ -170,7 +158,7 @@ export default function DashboardPage() {
             </TabsContent>
           </Tabs>
 
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-6 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
             <Card>
               <CardHeader>
                 <CardTitle>Estadísticas</CardTitle>
@@ -178,22 +166,10 @@ export default function DashboardPage() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium">Total de Solicitudes</span>
-                    <span className="text-lg font-bold">124</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium">Total de Donaciones</span>
-                    <span className="text-lg font-bold">87</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium">Solicitudes Atendidas</span>
-                    <span className="text-lg font-bold">65</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium">Tasa de Éxito</span>
-                    <span className="text-lg font-bold">52%</span>
-                  </div>
+                  <div className="flex items-center justify-between"><span className="text-sm font-medium">Total de Solicitudes</span><span className="text-lg font-bold">124</span></div>
+                  <div className="flex items-center justify-between"><span className="text-sm font-medium">Total de Donaciones</span><span className="text-lg font-bold">87</span></div>
+                  <div className="flex items-center justify-between"><span className="text-sm font-medium">Solicitudes Atendidas</span><span className="text-lg font-bold">65</span></div>
+                  <div className="flex items-center justify-between"><span className="text-sm font-medium">Tasa de Éxito</span><span className="text-lg font-bold">52%</span></div>
                 </div>
               </CardContent>
             </Card>
@@ -205,26 +181,11 @@ export default function DashboardPage() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium">Paracetamol</span>
-                    <span className="text-sm font-bold">32 solicitudes</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium">Insulina</span>
-                    <span className="text-sm font-bold">28 solicitudes</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium">Amoxicilina</span>
-                    <span className="text-sm font-bold">21 solicitudes</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium">Ibuprofeno</span>
-                    <span className="text-sm font-bold">19 solicitudes</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium">Loratadina</span>
-                    <span className="text-sm font-bold">15 solicitudes</span>
-                  </div>
+                  <div className="flex items-center justify-between"><span className="text-sm font-medium">Paracetamol</span><span className="text-sm font-bold">32 solicitudes</span></div>
+                  <div className="flex items-center justify-between"><span className="text-sm font-medium">Insulina</span><span className="text-sm font-bold">28 solicitudes</span></div>
+                  <div className="flex items-center justify-between"><span className="text-sm font-medium">Amoxicilina</span><span className="text-sm font-bold">21 solicitudes</span></div>
+                  <div className="flex items-center justify-between"><span className="text-sm font-medium">Ibuprofeno</span><span className="text-sm font-bold">19 solicitudes</span></div>
+                  <div className="flex items-center justify-between"><span className="text-sm font-medium">Loratadina</span><span className="text-sm font-bold">15 solicitudes</span></div>
                 </div>
               </CardContent>
             </Card>
@@ -236,45 +197,27 @@ export default function DashboardPage() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  <div className="border-l-4 border-teal-600 pl-4">
-                    <p className="text-sm">Carlos donó Paracetamol a María</p>
-                    <p className="text-xs text-gray-500">Hace 2 horas</p>
-                  </div>
-                  <div className="border-l-4 border-teal-600 pl-4">
-                    <p className="text-sm">Nueva solicitud: Insulina Lantus</p>
-                    <p className="text-xs text-gray-500">Hace 5 horas</p>
-                  </div>
-                  <div className="border-l-4 border-teal-600 pl-4">
-                    <p className="text-sm">Laura ofreció donar Omeprazol</p>
-                    <p className="text-xs text-gray-500">Hace 1 día</p>
-                  </div>
-                  <div className="border-l-4 border-teal-600 pl-4">
-                    <p className="text-sm">Roberto atendió solicitud de Ana</p>
-                    <p className="text-xs text-gray-500">Hace 2 días</p>
-                  </div>
+                  <div className="border-l-4 border-teal-600 pl-4"><p className="text-sm">Carlos donó Paracetamol a María</p><p className="text-xs text-gray-500">Hace 2 horas</p></div>
+                  <div className="border-l-4 border-teal-600 pl-4"><p className="text-sm">Nueva solicitud: Insulina Lantus</p><p className="text-xs text-gray-500">Hace 5 horas</p></div>
+                  <div className="border-l-4 border-teal-600 pl-4"><p className="text-sm">Laura ofreció donar Omeprazol</p><p className="text-xs text-gray-500">Hace 1 día</p></div>
+                  <div className="border-l-4 border-teal-600 pl-4"><p className="text-sm">Roberto atendió solicitud de Ana</p><p className="text-xs text-gray-500">Hace 2 días</p></div>
                 </div>
               </CardContent>
             </Card>
           </div>
         </div>
       </main>
+
       <footer className="border-t py-6">
-        <div className="container flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+        <div className="container mx-auto px-4 flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
           <p className="text-sm text-gray-500">© 2025 MediShare. Todos los derechos reservados.</p>
           <div className="flex gap-4">
-            <Link href="#" className="text-sm text-gray-500 hover:underline">
-              Términos
-            </Link>
-            <Link href="#" className="text-sm text-gray-500 hover:underline">
-              Privacidad
-            </Link>
-            <Link href="#" className="text-sm text-gray-500 hover:underline">
-              Ayuda
-            </Link>
+            <Link href="#" className="text-sm text-gray-500 hover:underline">Términos</Link>
+            <Link href="#" className="text-sm text-gray-500 hover:underline">Privacidad</Link>
+            <Link href="#" className="text-sm text-gray-500 hover:underline">Ayuda</Link>
           </div>
         </div>
       </footer>
     </div>
   )
 }
-
