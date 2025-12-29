@@ -195,7 +195,7 @@ export default function DashboardPage() {
                 <CardTitle>Actividad Reciente</CardTitle>
                 <CardDescription>Últimas actualizaciones</CardDescription>
               </CardHeader>
-              <CardContent>
+                      <CardContent>
                 <div className="space-y-4">
                   <div className="border-l-4 border-teal-600 pl-4"><p className="text-sm">Carlos donó Paracetamol a María</p><p className="text-xs text-gray-500">Hace 2 horas</p></div>
                   <div className="border-l-4 border-teal-600 pl-4"><p className="text-sm">Nueva solicitud: Insulina Lantus</p><p className="text-xs text-gray-500">Hace 5 horas</p></div>

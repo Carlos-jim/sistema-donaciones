@@ -1,0 +1,223 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ==========================================
+// ENUMS
+// ==========================================
+
+enum RolAdministrador {
+  SUPER_ADMIN
+  ADMIN
+  MODERADOR
+}
+
+enum TipoUsuario {
+  COMUN
+  ENTE_SALUD
+}
+
+enum EstadoSolicitud {
+  PENDIENTE
+  APROBADA
+  RECHAZADA
+  COMPLETADA
+}
+
+enum EstadoDonacion {
+  DISPONIBLE
+  RESERVADA
+  ENTREGADA
+  EXPIRADA
+}
+
+// ==========================================
+// MODELOS PRINCIPALES
+// ==========================================
+
+/// Administrador del sistema que aprueba entes de salud y solicitudes
+model Administrador {
+  id        String             @id @default(cuid())
+  nombre    String
+  email     String             @unique
+  password  String
+  rol       RolAdministrador   @default(ADMIN)
+  createdAt DateTime           @default(now())
+  updatedAt DateTime           @updatedAt
+
+  // Relaciones: aprueba entes de salud y solicitudes
+  entesSaludAprobados  EnteSalud[]
+  solicitudesAprobadas Solicitud[]
+
+  @@map("administradores")
+}
+
+/// Entidad de salud que realiza donaciones
+model EnteSalud {
+  id        String   @id @default(cuid())
+  nombre    String
+  direccion String
+  telefono  String?
+  email     String   @unique
+  password  String
+  aprobado  Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // FK: Administrador que aprueba este ente
+  aprobadoPorId String?
+  aprobadoPor   Administrador? @relation(fields: [aprobadoPorId], references: [id])
+
+  // Relación: realiza donaciones
+  donaciones Donacion[]
+
+  @@map("entes_salud")
+}
+
+/// Usuario común que realiza donaciones y solicitudes
+model UsuarioComun {
+  id        String   @id @default(cuid())
+  nombre    String
+  email     String   @unique
+  password  String
+  telefono  String?
+  direccion String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relaciones: realiza donaciones y solicitudes
+  donaciones  Donacion[]
+  solicitudes Solicitud[]
+
+  @@map("usuarios_comunes")
+}
+
+/// Donación realizada por un ente de salud o usuario común
+model Donacion {
+  id          String         @id @default(cuid())
+  descripcion String?
+  estado      EstadoDonacion @default(DISPONIBLE)
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  // FK: Ente de salud que realiza la donación (opcional)
+  enteSaludId String?
+  enteSalud   EnteSalud? @relation(fields: [enteSaludId], references: [id])
+
+  // FK: Usuario común que realiza la donación (opcional)
+  usuarioComunId String?
+  usuarioComun   UsuarioComun? @relation(fields: [usuarioComunId], references: [id])
+
+  // Relación: contiene medicamentos
+  medicamentos DonacionMedicamento[]
+
+  @@map("donaciones")
+}
+
+/// Solicitud realizada por un usuario común
+model Solicitud {
+  id        String          @id @default(cuid())
+  motivo    String?
+  estado    EstadoSolicitud @default(PENDIENTE)
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+
+  // FK: Usuario común que realiza la solicitud
+  usuarioComunId String
+  usuarioComun   UsuarioComun @relation(fields: [usuarioComunId], references: [id])
+
+  // FK: Administrador que aprueba/rechaza la solicitud
+  aprobadoPorId String?
+  aprobadoPor   Administrador? @relation(fields: [aprobadoPorId], references: [id])
+
+  // FK: Farmacia donde se realiza la solicitud
+  farmaciaId String?
+  farmacia   Farmacia? @relation(fields: [farmaciaId], references: [id])
+
+  // Relación: contiene medicamentos
+  medicamentos SolicitudMedicamento[]
+
+  @@map("solicitudes")
+}
+
+/// Medicamento disponible en el sistema
+model Medicamento {
+  id              String   @id @default(cuid())
+  nombre          String
+  descripcion     String?
+  principioActivo String?
+  presentacion    String? // Ej: tabletas, jarabe, inyectable
+  concentracion   String? // Ej: 500mg, 10ml
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Relaciones: contenido en donaciones y solicitudes
+  donaciones  DonacionMedicamento[]
+  solicitudes SolicitudMedicamento[]
+
+  @@map("medicamentos")
+}
+
+/// Farmacia donde se realizan las solicitudes
+model Farmacia {
+  id        String   @id @default(cuid())
+  nombre    String
+  direccion String
+  telefono  String?
+  horario   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relación: solicitudes realizadas en esta farmacia
+  solicitudes Solicitud[]
+
+  @@map("farmacias")
+}
+
+// ==========================================
+// TABLAS DE RELACIÓN (MANY-TO-MANY)
+// ==========================================
+
+/// Tabla pivote: relación entre donaciones y medicamentos (contiene)
+model DonacionMedicamento {
+  id              String    @id @default(cuid())
+  cantidad        Int       @default(1)
+  fechaExpiracion DateTime?
+  lote            String?
+  createdAt       DateTime  @default(now())
+
+  // FKs
+  donacionId String
+  donacion   Donacion @relation(fields: [donacionId], references: [id], onDelete: Cascade)
+
+  medicamentoId String
+  medicamento   Medicamento @relation(fields: [medicamentoId], references: [id], onDelete: Cascade)
+
+  @@unique([donacionId, medicamentoId])
+  @@map("donacion_medicamentos")
+}
+
+/// Tabla pivote: relación entre solicitudes y medicamentos (contiene)
+model SolicitudMedicamento {
+  id        String   @id @default(cuid())
+  cantidad  Int      @default(1)
+  prioridad Int      @default(1) // 1 = baja, 2 = media, 3 = alta
+  createdAt DateTime @default(now())
+
+  // FKs
+  solicitudId String
+  solicitud   Solicitud @relation(fields: [solicitudId], references: [id], onDelete: Cascade)
+
+  medicamentoId String
+  medicamento   Medicamento @relation(fields: [medicamentoId], references: [id], onDelete: Cascade)
+
+  @@unique([solicitudId, medicamentoId])
+  @@map("solicitud_medicamentos")
+}
