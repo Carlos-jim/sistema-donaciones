@@ -4,16 +4,21 @@ import type React from "react";
 
 import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Heart } from "lucide-react";
+import { useToast } from "@/components/ui/use-toast";
 
 export default function LoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const callbackUrl = searchParams.get("callbackUrl") || "/dashboard";
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -38,8 +43,13 @@ export default function LoginPage() {
         return;
       }
 
-      // Redirigir al dashboard
-      router.push("/dashboard");
+      toast({
+        title: "¡Bienvenido!",
+        description: "Has iniciado sesión exitosamente.",
+      });
+
+      // Redirigir al callbackUrl o al dashboard
+      router.push(callbackUrl);
     } catch {
       setError("Error de conexión. Intenta de nuevo.");
     } finally {

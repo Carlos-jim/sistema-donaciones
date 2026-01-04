@@ -123,11 +123,14 @@ model Donacion {
 
 /// Solicitud realizada por un usuario común
 model Solicitud {
-  id        String          @id @default(cuid())
-  motivo    String?
-  estado    EstadoSolicitud @default(PENDIENTE)
-  createdAt DateTime        @default(now())
-  updatedAt DateTime        @updatedAt
+  id                   String          @id @default(cuid())
+  motivo               String?
+  estado               EstadoSolicitud @default(PENDIENTE)
+  latitude             Float?
+  longitude            Float?
+  requiresPrescription Boolean         @default(false)
+  createdAt            DateTime        @default(now())
+  updatedAt            DateTime        @updatedAt
 
   // FK: Usuario común que realiza la solicitud
   usuarioComunId String

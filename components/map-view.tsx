@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import {
   APIProvider,
   Map,
@@ -73,6 +73,11 @@ export function MapView() {
       );
     }
   }, []);
+
+  // Get user location automatically when component mounts
+  useEffect(() => {
+    handleLocateUser();
+  }, [handleLocateUser]);
 
   const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
 
