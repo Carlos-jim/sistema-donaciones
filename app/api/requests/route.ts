@@ -4,7 +4,14 @@ import prisma from "@/lib/prisma";
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { motivo, medicamentos, ubicacion, requiereReceta } = body;
+    const {
+      motivo,
+      medicamentos,
+      ubicacion,
+      requiereReceta,
+      tiempoEspera,
+      recipePhotoUrl,
+    } = body;
 
     // TODO: Get the actual user ID from the session
     // For now, we'll create a placeholder user or use an existing one
@@ -28,6 +35,8 @@ export async function POST(request: Request) {
         latitude: ubicacion?.lat || null,
         longitude: ubicacion?.lng || null,
         requiresPrescription: requiereReceta || false,
+        recipePhotoUrl: recipePhotoUrl || null,
+        tiempoEspera: tiempoEspera || "BAJO", // Default to BAJO
         usuarioComunId: usuario.id,
       },
     });

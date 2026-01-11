@@ -1,7 +1,8 @@
 "use client";
 
 import type React from "react";
-import { useState } from "react";
+import { useState, useRef } from "react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
@@ -24,6 +25,8 @@ import {
 } from "@/components/ui/select";
 import { MapView } from "@/components/map-view";
 import { useToast } from "@/components/ui/use-toast";
+import { Upload, X, AlertTriangle } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface MedicationRequestFormData {
   medication: string;
@@ -33,6 +36,9 @@ interface MedicationRequestFormData {
   description: string;
   latitude: number | null;
   longitude: number | null;
+  waitTime: string;
+  recipePhotoUrl: string | null;
+  recipePhotoFile: File | null;
 }
 
 interface MedicationRequestFormProps {
@@ -47,6 +53,8 @@ export function MedicationRequestForm({
   const router = useRouter();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [formData, setFormData] = useState<MedicationRequestFormData>({
     medication: "",
     quantity: 1,
@@ -55,13 +63,112 @@ export function MedicationRequestForm({
     description: "",
     latitude: null,
     longitude: null,
+    waitTime: "MEDIO",
+    recipePhotoUrl: null,
+    recipePhotoFile: null,
   });
+
+  const [isDragging, setIsDragging] = useState(false);
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    processFile(file);
+  };
+
+  const processFile = (file: File) => {
+    // Validate file type
+    const validTypes = ["image/jpeg", "image/png", "image/webp", "image/jpg"];
+    if (!validTypes.includes(file.type)) {
+      toast({
+        title: "Formato no válido",
+        description: "Por favor sube una imagen JPG, PNG o WebP",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    const maxSize = 5 * 1024 * 1024;
+    if (file.size > maxSize) {
+      toast({
+        title: "Archivo muy grande",
+        description: "El archivo debe ser menor a 5MB",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Create preview URL
+    const previewUrl = URL.createObjectURL(file);
+    setFormData({
+      ...formData,
+      recipePhotoFile: file,
+      recipePhotoUrl: previewUrl,
+    });
+  };
+
+  const handleDragOver = (e: React.DragEvent<HTMLButtonElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent<HTMLButtonElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e: React.DragEvent<HTMLButtonElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+
+    const file = e.dataTransfer.files?.[0];
+    if (file) {
+      processFile(file);
+    }
+  };
+
+  const handleRemovePhoto = () => {
+    if (formData.recipePhotoUrl) {
+      URL.revokeObjectURL(formData.recipePhotoUrl);
+    }
+    setFormData({ ...formData, recipePhotoFile: null, recipePhotoUrl: null });
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsLoading(true);
 
     try {
+      let uploadedPhotoUrl: string | null = null;
+
+      // Upload photo if exists
+      if (formData.recipePhotoFile) {
+        setIsUploading(true);
+        const uploadFormData = new FormData();
+        uploadFormData.append("file", formData.recipePhotoFile);
+
+        const uploadResponse = await fetch("/api/upload", {
+          method: "POST",
+          body: uploadFormData,
+        });
+
+        if (!uploadResponse.ok) {
+          const uploadError = await uploadResponse.json();
+          throw new Error(uploadError.error || "Error al subir la foto");
+        }
+
+        const uploadResult = await uploadResponse.json();
+        uploadedPhotoUrl = uploadResult.url;
+        setIsUploading(false);
+      }
+
       console.log("Sending request...");
       const response = await fetch("/api/requests", {
         method: "POST",
@@ -82,6 +189,8 @@ export function MedicationRequestForm({
             lng: formData.longitude,
           },
           requiereReceta: formData.requiresPrescription,
+          tiempoEspera: formData.waitTime,
+          recipePhotoUrl: uploadedPhotoUrl,
         }),
       });
 
@@ -114,6 +223,7 @@ export function MedicationRequestForm({
         variant: "destructive",
       });
       setIsLoading(false);
+      setIsUploading(false);
     }
   };
 
@@ -185,6 +295,25 @@ export function MedicationRequestForm({
           </div>
 
           <div className="space-y-2">
+            <Label htmlFor="waitTime">Prioridad</Label>
+            <Select
+              value={formData.waitTime}
+              onValueChange={(value) =>
+                setFormData({ ...formData, waitTime: value })
+              }
+            >
+              <SelectTrigger id="waitTime">
+                <SelectValue placeholder="Selecciona prioridad" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ALTO">Alta (Urgente - 1/2 días)</SelectItem>
+                <SelectItem value="MEDIO">Media (3/4 días)</SelectItem>
+                <SelectItem value="BAJO">Baja (1 semana)</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
             <Label htmlFor="prescription">¿Requiere Receta Médica?</Label>
             <Select
               value={formData.requiresPrescription ? "yes" : "no"}
@@ -204,6 +333,86 @@ export function MedicationRequestForm({
               </SelectContent>
             </Select>
           </div>
+
+          {formData.requiresPrescription && (
+            <div className="space-y-2">
+              <Label htmlFor="recipePhoto">Foto del Récipe Médico</Label>
+              <p className="text-sm text-gray-500">
+                Sube una foto clara de tu receta médica (JPG, PNG o WebP, máx.
+                5MB)
+              </p>
+              <div className="flex flex-col gap-4">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  id="recipePhoto"
+                  accept="image/jpeg,image/png,image/webp"
+                  onChange={handleFileChange}
+                  className="hidden"
+                />
+                {!formData.recipePhotoUrl ? (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className={`w-full h-32 border-dashed border-2 transition-all duration-200 ${
+                      isDragging
+                        ? "border-teal-500 bg-teal-50 scale-[1.02]"
+                        : "hover:border-teal-500 hover:bg-teal-50"
+                    }`}
+                    onClick={() => fileInputRef.current?.click()}
+                    onDragOver={handleDragOver}
+                    onDragLeave={handleDragLeave}
+                    onDrop={handleDrop}
+                  >
+                    <div className="flex flex-col items-center gap-2 text-gray-500">
+                      <Upload
+                        className={`h-8 w-8 transition-transform ${
+                          isDragging ? "scale-110 text-teal-600" : ""
+                        }`}
+                      />
+                      <span
+                        className={
+                          isDragging ? "text-teal-600 font-medium" : ""
+                        }
+                      >
+                        {isDragging
+                          ? "Suelta la imagen aquí"
+                          : "Arrastra o haz clic para subir foto"}
+                      </span>
+                    </div>
+                  </Button>
+                ) : (
+                  <div className="relative rounded-lg overflow-hidden border">
+                    <Image
+                      src={formData.recipePhotoUrl}
+                      alt="Vista previa del récipe"
+                      width={400}
+                      height={300}
+                      className="w-full h-48 object-cover"
+                    />
+                    <Button
+                      type="button"
+                      variant="destructive"
+                      size="icon"
+                      className="absolute top-2 right-2"
+                      onClick={handleRemovePhoto}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                )}
+              </div>
+
+              {/* Warning message about physical recipe */}
+              <Alert className="border-amber-500 bg-amber-50">
+                <AlertTriangle className="h-4 w-4 text-amber-600" />
+                <AlertDescription className="text-amber-800 font-medium">
+                  Recuerda: Debes presentar el récipe físico en buen estado al
+                  momento del retiro.
+                </AlertDescription>
+              </Alert>
+            </div>
+          )}
 
           <div className="space-y-2">
             <Label htmlFor="description">Descripción</Label>
@@ -236,9 +445,13 @@ export function MedicationRequestForm({
           <Button
             type="submit"
             className="bg-teal-600 hover:bg-teal-700"
-            disabled={isLoading}
+            disabled={isLoading || isUploading}
           >
-            {isLoading ? "Enviando solicitud..." : "Enviar Solicitud"}
+            {isUploading
+              ? "Subiendo foto..."
+              : isLoading
+              ? "Enviando solicitud..."
+              : "Enviar Solicitud"}
           </Button>
         </CardFooter>
       </form>

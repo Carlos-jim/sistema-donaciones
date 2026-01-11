@@ -104,6 +104,8 @@ model Donacion {
   id          String         @id @default(cuid())
   descripcion String?
   estado      EstadoDonacion @default(DISPONIBLE)
+  latitude    Float?
+  longitude   Float?
   createdAt   DateTime       @default(now())
   updatedAt   DateTime       @updatedAt
 
@@ -121,14 +123,22 @@ model Donacion {
   @@map("donaciones")
 }
 
+enum TiempoEspera {
+  BAJO
+  MEDIO
+  ALTO
+}
+
 /// Solicitud realizada por un usuario común
 model Solicitud {
   id                   String          @id @default(cuid())
   motivo               String?
   estado               EstadoSolicitud @default(PENDIENTE)
+  tiempoEspera         TiempoEspera    @default(BAJO)
   latitude             Float?
   longitude            Float?
   requiresPrescription Boolean         @default(false)
+  recipePhotoUrl       String?
   createdAt            DateTime        @default(now())
   updatedAt            DateTime        @updatedAt
 

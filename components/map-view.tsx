@@ -54,7 +54,11 @@ const SAMPLE_LOCATIONS: MapLocation[] = [
   },
 ];
 
-export function MapView() {
+interface MapViewProps {
+  onPositionChange?: (pos: { lat: number; lng: number }) => void;
+}
+
+export function MapView({ onPositionChange }: MapViewProps) {
   const [center, setCenter] = useState(DEFAULT_CENTER);
 
   // Handlers separated from render logic (Single Responsibility)
@@ -102,7 +106,10 @@ export function MapView() {
           className="h-full w-full"
           onCameraChanged={(ev: {
             detail: { center: { lat: number; lng: number } };
-          }) => setCenter(ev.detail.center)}
+          }) => {
+            setCenter(ev.detail.center);
+            onPositionChange?.(ev.detail.center);
+          }}
         >
           {SAMPLE_LOCATIONS.map((loc) => (
             <AdvancedMarker

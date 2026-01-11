@@ -31,18 +31,61 @@ export default function DonateMedicationPage() {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
 
+  const [location, setLocation] = useState<
+    { lat: number; lng: number } | undefined
+  >(undefined);
+
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsLoading(true);
 
-    // TODO: Implement actual API call
-    setTimeout(() => {
+    const formData = new FormData(e.currentTarget);
+    const data = {
+      medication: formData.get("medication"),
+      quantity: Number(formData.get("quantity")),
+      unit: formData.get("unit"),
+      expiration: formData.get("expiration"),
+      condition: formData.get("condition"),
+      prescription: formData.get("prescription"), // "yes" or "no"
+      description: formData.get("description"),
+      availability: formData.get("availability"),
+      location: location,
+    };
+
+    try {
+      const response = await fetch("/api/donations", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(data),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || "Error al registrar la donación");
+      }
+
       toast({
         title: "¡Donación registrada!",
         description: "Tu medicamento ha sido registrado exitosamente.",
+        variant: "default",
       });
+
+      // Optional: Redirect or reset form
+      // router.push("/dashboard");
+      // e.currentTarget.reset(); // Reset form
+      setTimeout(() => router.push("/dashboard"), 1500);
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
       setIsLoading(false);
-    }, 1500);
+    }
   };
 
   return (
@@ -60,6 +103,7 @@ export default function DonateMedicationPage() {
               <Label htmlFor="medication">Nombre del Medicamento</Label>
               <Input
                 id="medication"
+                name="medication"
                 placeholder="Ej. Paracetamol 500mg"
                 required
               />
@@ -70,12 +114,13 @@ export default function DonateMedicationPage() {
               <div className="flex items-center gap-2">
                 <Input
                   id="quantity"
+                  name="quantity"
                   type="number"
                   min="1"
                   placeholder="Ej. 10"
                   required
                 />
-                <Select defaultValue="tablets">
+                <Select name="unit" defaultValue="tablets">
                   <SelectTrigger className="w-[180px]">
                     <SelectValue placeholder="Unidad" />
                   </SelectTrigger>
@@ -92,7 +137,7 @@ export default function DonateMedicationPage() {
             <div className="space-y-2">
               <Label htmlFor="expiration">Fecha de Vencimiento</Label>
               <div className="flex items-center gap-2">
-                <Input id="expiration" type="date" required />
+                <Input id="expiration" name="expiration" type="date" required />
                 <Button variant="outline" size="icon" type="button">
                   <Calendar className="h-4 w-4" />
                 </Button>
@@ -101,7 +146,7 @@ export default function DonateMedicationPage() {
 
             <div className="space-y-2">
               <Label htmlFor="condition">Estado del Medicamento</Label>
-              <Select defaultValue="sealed">
+              <Select name="condition" defaultValue="sealed">
                 <SelectTrigger id="condition">
                   <SelectValue placeholder="Selecciona el estado" />
                 </SelectTrigger>
@@ -117,7 +162,7 @@ export default function DonateMedicationPage() {
 
             <div className="space-y-2">
               <Label htmlFor="prescription">¿Requiere Receta Médica?</Label>
-              <Select defaultValue="no">
+              <Select name="prescription" defaultValue="no">
                 <SelectTrigger id="prescription">
                   <SelectValue placeholder="Selecciona una opción" />
                 </SelectTrigger>
@@ -132,6 +177,7 @@ export default function DonateMedicationPage() {
               <Label htmlFor="description">Descripción</Label>
               <Textarea
                 id="description"
+                name="description"
                 placeholder="Describe el medicamento, su uso y cualquier otra información relevante"
                 rows={4}
               />
@@ -144,13 +190,13 @@ export default function DonateMedicationPage() {
                 general.
               </p>
               <div className="h-[300px] rounded-md overflow-hidden border">
-                <MapView />
+                <MapView onPositionChange={setLocation} />
               </div>
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="availability">Disponibilidad para Entrega</Label>
-              <Select defaultValue="flexible">
+              <Select name="availability" defaultValue="flexible">
                 <SelectTrigger id="availability">
                   <SelectValue placeholder="Selecciona tu disponibilidad" />
                 </SelectTrigger>

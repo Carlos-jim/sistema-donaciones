@@ -11,7 +11,6 @@ const navItems = [
   { href: "/dashboard", label: "Dashboard" },
   { href: "/dashboard/requests", label: "Mis Solicitudes" },
   { href: "/dashboard/donations", label: "Mis Donaciones" },
-  { href: "/dashboard/profile", label: "Perfil" },
 ];
 
 export function DashboardHeader() {
@@ -98,13 +97,15 @@ export function DashboardHeader() {
           >
             <Bell className="h-5 w-5" />
           </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="hover:bg-teal-50 transition-colors duration-300"
-          >
-            <User className="h-5 w-5" />
-          </Button>
+          <Link href="/dashboard/profile">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="hover:bg-teal-50 transition-colors duration-300"
+            >
+              <User className="h-5 w-5" />
+            </Button>
+          </Link>
           <Button
             variant="ghost"
             size="icon"
