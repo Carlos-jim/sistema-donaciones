@@ -111,6 +111,25 @@ interface Solicitud {
   }>;
 }
 
+interface Donacion {
+  id: string;
+  estado: string;
+  latitude: number | null;
+  longitude: number | null;
+  createdAt: string;
+  usuarioComun: {
+    nombre: string;
+  };
+  medicamentos: Array<{
+    fechaExpiracion: string;
+    cantidad: number;
+    medicamento: {
+      nombre: string;
+      presentacion: string | null;
+    };
+  }>;
+}
+
 export default function DashboardPage() {
   const [activeTab, setActiveTab] = useState("map");
   const [sortBy, setSortBy] = useState<"nearest" | "recent">("nearest");
@@ -119,24 +138,33 @@ export default function DashboardPage() {
     lng: number;
   } | null>(null);
   const [solicitudes, setSolicitudes] = useState<Solicitud[]>([]);
+  const [donaciones, setDonaciones] = useState<Donacion[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   // Fetch requests from API
   useEffect(() => {
-    async function fetchSolicitudes() {
+    async function fetchData() {
       try {
-        const response = await fetch("/api/requests");
-        if (response.ok) {
-          const data = await response.json();
+        const [requestsRes, donationsRes] = await Promise.all([
+          fetch("/api/requests"),
+          fetch("/api/donations"),
+        ]);
+
+        if (requestsRes.ok) {
+          const data = await requestsRes.json();
           setSolicitudes(data);
         }
+        if (donationsRes.ok) {
+          const data = await donationsRes.json();
+          setDonaciones(data);
+        }
       } catch (error) {
-        console.error("Error fetching solicitudes:", error);
+        console.error("Error fetching data:", error);
       } finally {
         setIsLoading(false);
       }
     }
-    fetchSolicitudes();
+    fetchData();
   }, []);
 
   // Calculate distances and sort requests
@@ -148,7 +176,7 @@ export default function DashboardPage() {
           userLocation.lat,
           userLocation.lng,
           sol.latitude,
-          sol.longitude
+          sol.longitude,
         );
       }
 
@@ -189,9 +217,59 @@ export default function DashboardPage() {
     }
   }, [solicitudes, userLocation, sortBy]);
 
+  // Calculate distances and sort donations
+  const sortedDonations = useMemo(() => {
+    const donationsWithDistance = donaciones.map((don) => {
+      let distance: number | null = null;
+      if (userLocation && don.latitude && don.longitude) {
+        distance = calculateDistance(
+          userLocation.lat,
+          userLocation.lng,
+          don.latitude,
+          don.longitude,
+        );
+      }
+
+      return {
+        id: don.id,
+        name: don.medicamentos[0]?.medicamento?.nombre || "Medicamento",
+        donor: don.usuarioComun?.nombre || "Donante",
+        location: "Ubicación",
+        distance: distance !== null ? formatDistance(distance) : "N/A",
+        distanceValue: distance,
+        expiration: new Date(
+          don.medicamentos[0]?.fechaExpiracion,
+        ).toLocaleDateString("es-ES", {
+          month: "2-digit",
+          year: "numeric",
+        }),
+        date: new Date(don.createdAt).toLocaleDateString("es-ES", {
+          day: "numeric",
+          month: "short",
+        }),
+        lat: don.latitude,
+        lng: don.longitude,
+      };
+    });
+
+    if (sortBy === "nearest") {
+      return donationsWithDistance.sort((a, b) => {
+        if (a.distanceValue === null) return 1;
+        if (b.distanceValue === null) return -1;
+        return a.distanceValue - b.distanceValue;
+      });
+    } else {
+      return donationsWithDistance.sort((a, b) => {
+        // Assume date property exists or can be derived for sorting if needed
+        // For now sorting by creation implicit in array or reusing date field logic
+        return 0; // consistent sort
+      });
+    }
+  }, [donaciones, userLocation, sortBy]);
+
   // Convert requests to map locations
   const mapLocations: MapLocation[] = useMemo(() => {
-    return sortedRequests
+    const requests = sortedRequests
       .filter((req) => req.lat && req.lng)
       .map((req) => ({
         id: req.id,
@@ -201,7 +279,20 @@ export default function DashboardPage() {
         title: `${req.name} - ${req.requester}`,
         distance: req.distanceValue ?? undefined,
       }));
-  }, [sortedRequests]);
+
+    const donations = sortedDonations
+      .filter((don) => don.lat && don.lng)
+      .map((don) => ({
+        id: don.id,
+        lat: don.lat!,
+        lng: don.lng!,
+        type: "donation" as const,
+        title: `${don.name} - ${don.donor}`,
+        distance: don.distanceValue ?? undefined,
+      }));
+
+    return [...requests, ...donations];
+  }, [sortedRequests, sortedDonations]);
 
   // Handle user location update from map
   const handleUserLocationChange = (pos: { lat: number; lng: number }) => {
@@ -214,6 +305,7 @@ export default function DashboardPage() {
       variants={containerVariants}
       initial="hidden"
       animate="visible"
+      suppressHydrationWarning
     >
       <motion.div
         className="flex flex-col md:flex-row md:items-center md:justify-between gap-4"
@@ -380,45 +472,30 @@ export default function DashboardPage() {
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                      {[
-                        {
-                          name: "Loratadina 10mg",
-                          donor: "Juan Pérez",
-                          location: "Ciudad de México",
-                          distance: "3.2 km",
-                          expiration: "12/2025",
-                          date: "Hace 1 día",
-                        },
-                        {
-                          name: "Omeprazol 20mg",
-                          donor: "Laura Sánchez",
-                          location: "Guadalajara",
-                          distance: "5.7 km",
-                          expiration: "08/2025",
-                          date: "Hace 3 días",
-                        },
-                        {
-                          name: "Ibuprofeno 400mg",
-                          donor: "Roberto Díaz",
-                          location: "Monterrey",
-                          distance: "2.3 km",
-                          expiration: "10/2025",
-                          date: "Hace 4 días",
-                        },
-                      ].map((donation, index) => (
-                        <motion.div
-                          key={index}
-                          custom={index}
-                          variants={slideInVariants}
-                          initial="hidden"
-                          animate="visible"
-                          className="transition-transform duration-300 hover:-translate-y-1"
-                        >
-                          <MedicationDonationCard {...donation} />
-                        </motion.div>
-                      ))}
-                    </div>
+                    {isLoading ? (
+                      <div className="text-center py-8 text-gray-500">
+                        Cargando donaciones...
+                      </div>
+                    ) : sortedDonations.length === 0 ? (
+                      <div className="text-center py-8 text-gray-500">
+                        No hay donaciones disponibles
+                      </div>
+                    ) : (
+                      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                        {sortedDonations.map((donation, index) => (
+                          <motion.div
+                            key={donation.id}
+                            custom={index}
+                            variants={slideInVariants}
+                            initial="hidden"
+                            animate="visible"
+                            className="transition-transform duration-300 hover:-translate-y-1"
+                          >
+                            <MedicationDonationCard {...donation} />
+                          </motion.div>
+                        ))}
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               </motion.div>

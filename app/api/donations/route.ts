@@ -142,3 +142,37 @@ Requiere Receta: ${prescription === "yes" ? "Sí" : "No"}
     );
   }
 }
+
+export async function GET() {
+  try {
+    const donaciones = await prisma.donacion.findMany({
+      where: {
+        estado: "DISPONIBLE",
+      },
+      include: {
+        usuarioComun: {
+          select: {
+            nombre: true,
+            email: true,
+          },
+        },
+        medicamentos: {
+          include: {
+            medicamento: true,
+          },
+        },
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+    });
+
+    return NextResponse.json(donaciones);
+  } catch (error) {
+    console.error("Error fetching donaciones:", error);
+    return NextResponse.json(
+      { error: "Error al obtener las donaciones" },
+      { status: 500 },
+    );
+  }
+}

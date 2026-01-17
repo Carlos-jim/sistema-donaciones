@@ -145,7 +145,23 @@ export default function DonateMedicationPage() {
 
       if (!response.ok) {
         console.error("Error del servidor:", result);
-        throw new Error(result.error || "Error al registrar la donación");
+
+        // Construct a user-friendly error message from validation details
+        let errorMessage = result.error || "Error al registrar la donación";
+
+        if (result.details) {
+          const details = Object.entries(result.details)
+            .map(
+              ([field, messages]) =>
+                `${field}: ${(messages as string[]).join(", ")}`,
+            )
+            .join("\n");
+          if (details) {
+            errorMessage += `\n${details}`;
+          }
+        }
+
+        throw new Error(errorMessage);
       }
 
       toast({
