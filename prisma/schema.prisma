@@ -103,6 +103,7 @@ model UsuarioComun {
 model Donacion {
   id          String         @id @default(cuid())
   descripcion String?
+  donationPhotoUrl String?
   estado      EstadoDonacion @default(DISPONIBLE)
   latitude    Float?
   longitude   Float?

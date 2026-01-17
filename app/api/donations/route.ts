@@ -14,6 +14,7 @@ const donationSchema = z.object({
   prescription: z.string(), // "yes" | "no"
   description: z.string().optional(),
   availability: z.string(),
+  donationPhotoUrl: z.string().optional(),
   location: z
     .object({
       lat: z.number(),
@@ -29,12 +30,16 @@ export async function POST(request: Request) {
     // Validate input
     const result = donationSchema.safeParse(body);
     if (!result.success) {
+      console.log(
+        "Validation error:",
+        JSON.stringify(result.error.formErrors.fieldErrors, null, 2),
+      );
       return NextResponse.json(
         {
           error: "Datos inválidos",
           details: result.error.formErrors.fieldErrors,
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -48,6 +53,7 @@ export async function POST(request: Request) {
       description,
       availability,
       location,
+      donationPhotoUrl,
     } = result.data;
 
     // TODO: Get real user authentication
@@ -83,6 +89,7 @@ Requiere Receta: ${prescription === "yes" ? "Sí" : "No"}
       const newDonacion = await tx.donacion.create({
         data: {
           descripcion: fullDescription,
+          donationPhotoUrl: donationPhotoUrl || null,
           estado: "DISPONIBLE",
           latitude: location?.lat || null,
           longitude: location?.lng || null,
@@ -125,13 +132,13 @@ Requiere Receta: ${prescription === "yes" ? "Sí" : "No"}
         message: "Donación registrada exitosamente",
         id: donacion.id,
       },
-      { status: 201 }
+      { status: 201 },
     );
   } catch (error) {
     console.error("Error processing donation:", error);
     return NextResponse.json(
       { error: "Error interno del servidor al procesar la donación" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
