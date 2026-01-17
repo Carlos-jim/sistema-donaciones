@@ -295,7 +295,7 @@ function MapViewInner({
   // Custom icons
   const userIcon = L.divIcon({
     className: "custom-marker",
-    html: `<div style="background-color: #2563eb; width: 24px; height: 24px; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 8px rgba(0,0,0,0.3);"></div>`,
+    html: `<div style="background-color: #7c3aed; width: 24px; height: 24px; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 8px rgba(0,0,0,0.3);"></div>`,
     iconSize: [24, 24],
     iconAnchor: [12, 12],
   });
@@ -338,6 +338,16 @@ function MapViewInner({
   // Component to handle map events
   function MapEventHandler() {
     const map = useMapEvents({
+      click: (e: any) => {
+        // If the map is in "User Location" mode (onUserLocationChange provided),
+        // let the click move the user marker.
+        if (onUserLocationChange) {
+          const { lat, lng } = e.latlng;
+          const newPos: [number, number] = [lat, lng];
+          setUserLocation(newPos);
+          onUserLocationChange({ lat, lng });
+        }
+      },
       moveend: () => {
         // If we want the center to also be a selection method (optional)
         // For now, let's prioritize explicit clicks for "marking", or fallback to center if no markup.
@@ -348,11 +358,8 @@ function MapViewInner({
         onPositionChange?.({ lat: center.lat, lng: center.lng });
       },
     });
-
     // Store map reference and add zoom control
     useEffect(() => {
-      mapRef.current = map;
-
       // Add zoom control manually
       const zoomControl = L.control.zoom({ position: "bottomright" });
       zoomControl.addTo(map);
@@ -515,18 +522,13 @@ function MapViewInner({
       <div className="absolute bottom-4 left-4 flex flex-col gap-2 z-[1000]">
         {showUserMarker && userLocation && (
           <div className="flex items-center gap-2 rounded-md bg-white p-2 shadow-sm">
-            <div className="h-3 w-3 rounded-full bg-blue-600"></div>
+            <div
+              className="h-3 w-3 rounded-full"
+              style={{ backgroundColor: "#7c3aed" }}
+            ></div>
             <span className="text-xs">Tu ubicación</span>
           </div>
         )}
-        <div className="flex items-center gap-2 rounded-md bg-white p-2 shadow-sm">
-          <div className="h-3 w-3 rounded-full bg-teal-600"></div>
-          <span className="text-xs">Donaciones</span>
-        </div>
-        <div className="flex items-center gap-2 rounded-md bg-white p-2 shadow-sm">
-          <div className="h-3 w-3 rounded-full bg-red-600"></div>
-          <span className="text-xs">Solicitudes</span>
-        </div>
         <div className="flex items-center gap-2 rounded-md bg-white p-2 shadow-sm">
           <div className="h-3 w-3 rounded-full bg-[#16a34a]"></div>
           <span className="text-xs">Farmacia más cercana</span>

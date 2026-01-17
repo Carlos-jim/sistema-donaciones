@@ -8,6 +8,7 @@ const registerSchema = z.object({
   email: z.string().email("Correo electrónico inválido"),
   password: z.string().min(8, "La contraseña debe tener al menos 8 caracteres"),
   telefono: z.string().optional(),
+  cedula: z.string().optional(),
   direccion: z.any().optional(),
 });
 
