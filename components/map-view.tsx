@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect, useRef } from "react";
+import { useState, useCallback, useEffect, useRef, useMemo } from "react";
 import dynamic from "next/dynamic";
 import { Button } from "@/components/ui/button";
 import { Search, Locate } from "lucide-react";
@@ -243,8 +243,8 @@ function MapViewInner({
         },
         {
           enableHighAccuracy: true,
-          timeout: 10000,
-          maximumAge: 60000,
+          timeout: 15000,
+          maximumAge: 0, // Force fresh calculation
         },
       );
     }
@@ -321,6 +321,13 @@ function MapViewInner({
     iconAnchor: [12, 12],
   });
 
+  const nearestPharmacyIcon = L.divIcon({
+    className: "custom-marker",
+    html: `<div style="background-color: #16a34a; width: 28px; height: 28px; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 8px rgba(0,0,0,0.4); display: flex; align-items: center; justify-content: center; color: white; z-index: 1000;"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m10.5 20.5 10-10a4.95 4.95 0 1 0-7-7l-10 10a4.95 4.95 0 1 0 7 7Z"/><path d="m8.5 8.5 7 7"/></svg></div>`,
+    iconSize: [28, 28],
+    iconAnchor: [14, 14],
+  });
+
   const selectionIcon = L.divIcon({
     className: "custom-marker",
     html: `<div style="background-color: #f59e0b; width: 24px; height: 24px; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 8px rgba(0,0,0,0.3); position: relative;"><div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 8px; height: 8px; background-color: white; border-radius: 50%;"></div></div>`,
@@ -331,11 +338,6 @@ function MapViewInner({
   // Component to handle map events
   function MapEventHandler() {
     const map = useMapEvents({
-      click: (e: any) => {
-        const { lat, lng } = e.latlng;
-        setSelection({ lat, lng });
-        onPositionChange?.({ lat, lng });
-      },
       moveend: () => {
         // If we want the center to also be a selection method (optional)
         // For now, let's prioritize explicit clicks for "marking", or fallback to center if no markup.
@@ -384,43 +386,79 @@ function MapViewInner({
 
         {/* User location marker */}
         {showUserMarker && userLocation && (
-          <Marker position={userLocation} icon={userIcon}>
+          <Marker
+            position={userLocation}
+            icon={userIcon}
+            draggable={true}
+            eventHandlers={{
+              dragend: (e: any) => {
+                const marker = e.target;
+                const position = marker.getLatLng();
+                const newPos: [number, number] = [position.lat, position.lng];
+                setUserLocation(newPos);
+                onUserLocationChange?.({
+                  lat: position.lat,
+                  lng: position.lng,
+                });
+              },
+            }}
+          >
             <Popup>
-              <div className="font-medium">Tu ubicación</div>
+              <div className="font-medium">
+                Tu ubicación (Arrástrame para corregir)
+              </div>
             </Popup>
           </Marker>
         )}
 
         {/* Location markers */}
-        {displayLocations.map((loc) => (
-          <Marker
-            key={loc.id}
-            position={[loc.lat, loc.lng]}
-            icon={
-              loc.type === "donation"
-                ? donationIcon
-                : loc.type === "request"
-                  ? requestIcon
-                  : pharmacyIcon
-            }
-          >
-            <Popup>
-              <div className="font-medium">{loc.title}</div>
-              <div className="text-xs text-gray-500">
-                {loc.type === "donation"
-                  ? "Donación"
+        {displayLocations.map((loc) => {
+          // Check if this is the nearest pharmacy
+          let isNearestPharmacy = false;
+          if (loc.type === "pharmacy" && sortedPharmacies.length > 0) {
+            isNearestPharmacy = sortedPharmacies[0].id === loc.id;
+          }
+
+          return (
+            <Marker
+              key={loc.id}
+              position={[loc.lat, loc.lng]}
+              icon={
+                loc.type === "donation"
+                  ? donationIcon
                   : loc.type === "request"
-                    ? "Solicitud"
-                    : "Farmacia"}
-              </div>
-              {loc.distance && (
-                <div className="text-xs text-teal-600 font-medium mt-1">
-                  {loc.distance.toFixed(1)} km
+                    ? requestIcon
+                    : isNearestPharmacy
+                      ? nearestPharmacyIcon
+                      : pharmacyIcon
+              }
+              zIndexOffset={isNearestPharmacy ? 1000 : 0} // Bring nearest to front
+            >
+              <Popup>
+                <div className="font-medium">
+                  {loc.title}
+                  {isNearestPharmacy && (
+                    <span className="block text-xs font-bold text-green-600 mt-1">
+                      ¡Más cercana!
+                    </span>
+                  )}
                 </div>
-              )}
-            </Popup>
-          </Marker>
-        ))}
+                <div className="text-xs text-gray-500">
+                  {loc.type === "donation"
+                    ? "Donación"
+                    : loc.type === "request"
+                      ? "Solicitud"
+                      : "Farmacia"}
+                </div>
+                {loc.distance && (
+                  <div className="text-xs text-teal-600 font-medium mt-1">
+                    {loc.distance.toFixed(1)} km
+                  </div>
+                )}
+              </Popup>
+            </Marker>
+          );
+        })}
         {/* Selection marker */}
         {selection && (
           <Marker position={selection} icon={selectionIcon}>
@@ -490,8 +528,12 @@ function MapViewInner({
           <span className="text-xs">Solicitudes</span>
         </div>
         <div className="flex items-center gap-2 rounded-md bg-white p-2 shadow-sm">
+          <div className="h-3 w-3 rounded-full bg-[#16a34a]"></div>
+          <span className="text-xs">Farmacia más cercana</span>
+        </div>
+        <div className="flex items-center gap-2 rounded-md bg-white p-2 shadow-sm">
           <div className="h-3 w-3 rounded-sm bg-[#0054a6]"></div>
-          <span className="text-xs">Farmacias</span>
+          <span className="text-xs">Otras Farmacias</span>
         </div>
       </div>
     </div>
