@@ -8,7 +8,7 @@ const registerSchema = z.object({
   email: z.string().email("Correo electrónico inválido"),
   password: z.string().min(8, "La contraseña debe tener al menos 8 caracteres"),
   telefono: z.string().optional(),
-  direccion: z.string().optional(),
+  direccion: z.any().optional(),
 });
 
 export async function POST(request: NextRequest) {
@@ -23,7 +23,7 @@ export async function POST(request: NextRequest) {
           success: false,
           error: validation.error.errors[0].message,
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -33,7 +33,7 @@ export async function POST(request: NextRequest) {
     if (!result.success) {
       return NextResponse.json(
         { success: false, error: result.error },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -43,7 +43,7 @@ export async function POST(request: NextRequest) {
         success: true,
         user: result.user,
       },
-      { status: 201 }
+      { status: 201 },
     );
 
     // Establecer cookie segura con el token
@@ -60,7 +60,7 @@ export async function POST(request: NextRequest) {
     console.error("Error en registro:", error);
     return NextResponse.json(
       { success: false, error: "Error interno del servidor" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

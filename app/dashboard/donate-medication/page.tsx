@@ -596,13 +596,45 @@ export default function DonateMedicationPage() {
                     </div>
                     <div className="h-[280px] rounded-2xl overflow-hidden border-2 border-gray-200 shadow-inner">
                       <MapView
-                        onUserLocationChange={(pos) =>
-                          setFormData({
-                            ...formData,
+                        onUserLocationChange={async (pos) => {
+                          // Update local state
+                          setFormData((prev) => ({
+                            ...prev,
                             latitude: pos.lat,
                             longitude: pos.lng,
-                          })
-                        }
+                          }));
+
+                          // Reverse geocode to get address
+                          let address = "";
+                          try {
+                            const response = await fetch(
+                              `https://nominatim.openstreetmap.org/reverse?format=json&lat=${pos.lat}&lon=${pos.lng}`,
+                            );
+                            const data = await response.json();
+                            address = data.display_name || "";
+                          } catch (error) {
+                            console.error("Error getting address:", error);
+                          }
+
+                          // Update in DB
+                          try {
+                            await fetch("/api/user/location", {
+                              method: "PUT",
+                              headers: {
+                                "Content-Type": "application/json",
+                              },
+                              body: JSON.stringify({ ...pos, address }),
+                            });
+                            toast({
+                              title: "Ubicación guardada",
+                              description:
+                                "Se ha actualizado tu ubicación predeterminada.",
+                              duration: 2000,
+                            });
+                          } catch (error) {
+                            console.error("Error updating location:", error);
+                          }
+                        }}
                       />
                     </div>
 

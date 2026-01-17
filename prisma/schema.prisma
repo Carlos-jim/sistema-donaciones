@@ -88,7 +88,7 @@ model UsuarioComun {
   email     String   @unique
   password  String
   telefono  String?
-  direccion String?
+  direccion Json?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
