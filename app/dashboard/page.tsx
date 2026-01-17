@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence, type Variants } from "framer-motion";
 import { Button } from "@/components/ui/button";
@@ -12,10 +12,18 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { MapPin, PlusCircle, Search } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { MapPin, PlusCircle, Search, ArrowUpDown } from "lucide-react";
 import { MedicationRequestCard } from "@/components/medication-request-card";
 import { MedicationDonationCard } from "@/components/medication-donation-card";
-import { MapView } from "@/components/map-view";
+import { MapView, type MapLocation } from "@/components/map-view";
+import { calculateDistance, formatDistance } from "@/lib/distance";
 
 // Easing curve for smooth animations
 const smoothEase = [0.25, 0.46, 0.45, 0.94] as [number, number, number, number];
@@ -85,8 +93,120 @@ const tabContentVariants: Variants = {
   },
 };
 
+interface Solicitud {
+  id: string;
+  motivo: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  tiempoEspera: string;
+  createdAt: string;
+  usuarioComun: {
+    nombre: string;
+  };
+  medicamentos: Array<{
+    medicamento: {
+      nombre: string;
+    };
+    cantidad: number;
+  }>;
+}
+
 export default function DashboardPage() {
   const [activeTab, setActiveTab] = useState("map");
+  const [sortBy, setSortBy] = useState<"nearest" | "recent">("nearest");
+  const [userLocation, setUserLocation] = useState<{
+    lat: number;
+    lng: number;
+  } | null>(null);
+  const [solicitudes, setSolicitudes] = useState<Solicitud[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Fetch requests from API
+  useEffect(() => {
+    async function fetchSolicitudes() {
+      try {
+        const response = await fetch("/api/requests");
+        if (response.ok) {
+          const data = await response.json();
+          setSolicitudes(data);
+        }
+      } catch (error) {
+        console.error("Error fetching solicitudes:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    fetchSolicitudes();
+  }, []);
+
+  // Calculate distances and sort requests
+  const sortedRequests = useMemo(() => {
+    const requestsWithDistance = solicitudes.map((sol) => {
+      let distance: number | null = null;
+      if (userLocation && sol.latitude && sol.longitude) {
+        distance = calculateDistance(
+          userLocation.lat,
+          userLocation.lng,
+          sol.latitude,
+          sol.longitude
+        );
+      }
+
+      const urgencyMap: Record<string, string> = {
+        ALTO: "Alta",
+        MEDIO: "Media",
+        BAJO: "Baja",
+      };
+
+      return {
+        id: sol.id,
+        name: sol.medicamentos[0]?.medicamento?.nombre || "Medicamento",
+        requester: sol.usuarioComun?.nombre || "Usuario",
+        location: "Ubicación",
+        distance: distance !== null ? formatDistance(distance) : "N/A",
+        distanceValue: distance,
+        urgency: urgencyMap[sol.tiempoEspera] || "Media",
+        date: new Date(sol.createdAt).toLocaleDateString("es-ES", {
+          day: "numeric",
+          month: "short",
+        }),
+        lat: sol.latitude,
+        lng: sol.longitude,
+      };
+    });
+
+    // Sort by distance or date
+    if (sortBy === "nearest") {
+      return requestsWithDistance.sort((a, b) => {
+        if (a.distanceValue === null) return 1;
+        if (b.distanceValue === null) return -1;
+        return a.distanceValue - b.distanceValue;
+      });
+    } else {
+      return requestsWithDistance.sort((a, b) => {
+        return new Date(b.date).getTime() - new Date(a.date).getTime();
+      });
+    }
+  }, [solicitudes, userLocation, sortBy]);
+
+  // Convert requests to map locations
+  const mapLocations: MapLocation[] = useMemo(() => {
+    return sortedRequests
+      .filter((req) => req.lat && req.lng)
+      .map((req) => ({
+        id: req.id,
+        lat: req.lat!,
+        lng: req.lng!,
+        type: "request" as const,
+        title: `${req.name} - ${req.requester}`,
+        distance: req.distanceValue ?? undefined,
+      }));
+  }, [sortedRequests]);
+
+  // Handle user location update from map
+  const handleUserLocationChange = (pos: { lat: number; lng: number }) => {
+    setUserLocation(pos);
+  };
 
   return (
     <motion.div
@@ -166,7 +286,10 @@ export default function DashboardPage() {
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="p-0">
-                    <MapView />
+                    <MapView
+                      locations={mapLocations}
+                      onUserLocationChange={handleUserLocationChange}
+                    />
                   </CardContent>
                 </Card>
               </motion.div>
@@ -181,51 +304,62 @@ export default function DashboardPage() {
               >
                 <Card className="border-0 shadow-xl shadow-gray-200/50">
                   <CardHeader className="bg-gradient-to-r from-gray-50 to-white">
-                    <CardTitle>Solicitudes Activas</CardTitle>
-                    <CardDescription>
-                      Solicitudes de medicamentos que necesitan ser atendidas.
-                    </CardDescription>
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                      <div>
+                        <CardTitle>Solicitudes Activas</CardTitle>
+                        <CardDescription>
+                          Solicitudes de medicamentos que necesitan ser
+                          atendidas.
+                        </CardDescription>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <ArrowUpDown className="h-4 w-4 text-gray-500" />
+                        <Select
+                          value={sortBy}
+                          onValueChange={(value: "nearest" | "recent") =>
+                            setSortBy(value)
+                          }
+                        >
+                          <SelectTrigger className="w-[180px]">
+                            <SelectValue placeholder="Ordenar por" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="nearest">
+                              Más cercanos
+                            </SelectItem>
+                            <SelectItem value="recent">
+                              Más recientes
+                            </SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
                   </CardHeader>
                   <CardContent>
-                    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                      {[
-                        {
-                          name: "Paracetamol 500mg",
-                          requester: "María González",
-                          location: "Ciudad de México",
-                          distance: "2.5 km",
-                          urgency: "Alta",
-                          date: "Hace 2 horas",
-                        },
-                        {
-                          name: "Insulina Lantus",
-                          requester: "Carlos Rodríguez",
-                          location: "Guadalajara",
-                          distance: "4.1 km",
-                          urgency: "Media",
-                          date: "Hace 5 horas",
-                        },
-                        {
-                          name: "Amoxicilina 250mg",
-                          requester: "Ana Martínez",
-                          location: "Monterrey",
-                          distance: "1.8 km",
-                          urgency: "Baja",
-                          date: "Hace 1 día",
-                        },
-                      ].map((request, index) => (
-                        <motion.div
-                          key={index}
-                          custom={index}
-                          variants={slideInVariants}
-                          initial="hidden"
-                          animate="visible"
-                          className="transition-transform duration-300 hover:-translate-y-1"
-                        >
-                          <MedicationRequestCard {...request} />
-                        </motion.div>
-                      ))}
-                    </div>
+                    {isLoading ? (
+                      <div className="text-center py-8 text-gray-500">
+                        Cargando solicitudes...
+                      </div>
+                    ) : sortedRequests.length === 0 ? (
+                      <div className="text-center py-8 text-gray-500">
+                        No hay solicitudes activas
+                      </div>
+                    ) : (
+                      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                        {sortedRequests.map((request, index) => (
+                          <motion.div
+                            key={request.id}
+                            custom={index}
+                            variants={slideInVariants}
+                            initial="hidden"
+                            animate="visible"
+                            className="transition-transform duration-300 hover:-translate-y-1"
+                          >
+                            <MedicationRequestCard {...request} />
+                          </motion.div>
+                        ))}
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               </motion.div>

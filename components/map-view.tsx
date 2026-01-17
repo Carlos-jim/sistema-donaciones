@@ -11,18 +11,19 @@ import { Button } from "@/components/ui/button";
 import { Search, Locate } from "lucide-react";
 
 // Types for map data to ensure type safety (Liskov Substitution/Interface Segregation)
-interface MapLocation {
+export interface MapLocation {
   id: string;
   lat: number;
   lng: number;
   type: "donation" | "request";
   title: string;
+  distance?: number;
 }
 
 const DEFAULT_CENTER = { lat: 19.4326, lng: -99.1332 }; // Mexico City
 const DEFAULT_ZOOM = 12;
 
-// Sample data - In a real scenario this would be injected via props (Dependency Inversion)
+// Sample data - used when no locations are provided
 const SAMPLE_LOCATIONS: MapLocation[] = [
   {
     id: "1",
@@ -55,28 +56,45 @@ const SAMPLE_LOCATIONS: MapLocation[] = [
 ];
 
 interface MapViewProps {
+  locations?: MapLocation[];
   onPositionChange?: (pos: { lat: number; lng: number }) => void;
+  onUserLocationChange?: (pos: { lat: number; lng: number }) => void;
+  showUserMarker?: boolean;
 }
 
-export function MapView({ onPositionChange }: MapViewProps) {
+export function MapView({
+  locations,
+  onPositionChange,
+  onUserLocationChange,
+  showUserMarker = true,
+}: MapViewProps) {
   const [center, setCenter] = useState(DEFAULT_CENTER);
+  const [userLocation, setUserLocation] = useState<{
+    lat: number;
+    lng: number;
+  } | null>(null);
+
+  const displayLocations = locations || SAMPLE_LOCATIONS;
 
   // Handlers separated from render logic (Single Responsibility)
   const handleLocateUser = useCallback(() => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
-          setCenter({
+          const newLocation = {
             lat: position.coords.latitude,
             lng: position.coords.longitude,
-          });
+          };
+          setCenter(newLocation);
+          setUserLocation(newLocation);
+          onUserLocationChange?.(newLocation);
         },
         () => {
           console.error("Error getting location");
         }
       );
     }
-  }, []);
+  }, [onUserLocationChange]);
 
   // Get user location automatically when component mounts
   useEffect(() => {
@@ -111,7 +129,19 @@ export function MapView({ onPositionChange }: MapViewProps) {
             onPositionChange?.(ev.detail.center);
           }}
         >
-          {SAMPLE_LOCATIONS.map((loc) => (
+          {/* User location marker */}
+          {showUserMarker && userLocation && (
+            <AdvancedMarker position={userLocation} title="Tu ubicación">
+              <Pin
+                background={"#2563eb"} // blue-600
+                borderColor={"#ffffff"}
+                glyphColor={"#ffffff"}
+              />
+            </AdvancedMarker>
+          )}
+
+          {/* Location markers */}
+          {displayLocations.map((loc) => (
             <AdvancedMarker
               key={loc.id}
               position={{ lat: loc.lat, lng: loc.lng }}
@@ -149,6 +179,12 @@ export function MapView({ onPositionChange }: MapViewProps) {
 
       {/* Legend Overlay */}
       <div className="absolute bottom-4 left-4 flex flex-col gap-2">
+        {showUserMarker && userLocation && (
+          <div className="flex items-center gap-2 rounded-md bg-white p-2 shadow-sm">
+            <div className="h-3 w-3 rounded-full bg-blue-600"></div>
+            <span className="text-xs">Tu ubicación</span>
+          </div>
+        )}
         <div className="flex items-center gap-2 rounded-md bg-white p-2 shadow-sm">
           <div className="h-3 w-3 rounded-full bg-teal-600"></div>
           <span className="text-xs">Donaciones</span>

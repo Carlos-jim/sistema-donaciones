@@ -154,7 +154,7 @@ export function MedicationRequestForm({
         const uploadFormData = new FormData();
         uploadFormData.append("file", formData.recipePhotoFile);
 
-        const uploadResponse = await fetch("/api/upload", {
+        const uploadResponse = await fetch("/api/upload/recipe", {
           method: "POST",
           body: uploadFormData,
         });
@@ -450,8 +450,8 @@ export function MedicationRequestForm({
             {isUploading
               ? "Subiendo foto..."
               : isLoading
-              ? "Enviando solicitud..."
-              : "Enviar Solicitud"}
+                ? "Enviando solicitud..."
+                : "Enviar Solicitud"}
           </Button>
         </CardFooter>
       </form>
