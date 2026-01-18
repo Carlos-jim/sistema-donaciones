@@ -1,10 +1,24 @@
 import { NextResponse } from "next/server";
+import { cookies } from "next/headers";
+import { tokenService } from "@/lib/auth";
 import prisma from "@/lib/prisma";
 
 export async function PUT(request: Request) {
   try {
+    const cookieStore = await cookies();
+    const token = cookieStore.get("auth-token")?.value;
+
+    if (!token) {
+      return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+    }
+
+    const payload = await tokenService.verify(token);
+    if (!payload?.email) {
+      return NextResponse.json({ error: "Token inválido" }, { status: 401 });
+    }
+
     const body = await request.json();
-    const { lat, lng } = body;
+    const { lat, lng, address } = body;
 
     if (lat === undefined || lng === undefined) {
       return NextResponse.json(
@@ -13,9 +27,9 @@ export async function PUT(request: Request) {
       );
     }
 
-    // TODO: Get real user authentication
-    // Mimicking existing behavior from other routes
-    const usuario = await prisma.usuarioComun.findFirst();
+    const usuario = await prisma.usuarioComun.findUnique({
+      where: { email: payload.email },
+    });
 
     if (!usuario) {
       return NextResponse.json(
@@ -24,11 +38,10 @@ export async function PUT(request: Request) {
       );
     }
 
-    // Prepare address object
-    // Note: In a real app we might want to reverse geocode here or expect address string
     const locationData = {
       lat,
       lng,
+      address,
       updatedAt: new Date().toISOString(),
     };
 

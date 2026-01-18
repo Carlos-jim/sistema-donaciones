@@ -66,6 +66,34 @@ export async function POST(request: Request) {
           prioridad: 1,
         },
       });
+
+      // Find matching donations (available)
+      const matchingDonations = await prisma.donacionMedicamento.findMany({
+        where: {
+          medicamentoId: medicamento.id,
+          donacion: {
+            estado: "DISPONIBLE",
+          },
+        },
+        include: {
+          donacion: true,
+        },
+      });
+
+      // Notify donors
+      for (const match of matchingDonations) {
+        if (match.donacion.usuarioComunId) {
+          await prisma.notificacion.create({
+            data: {
+              userId: match.donacion.usuarioComunId,
+              type: "MATCH_REQUEST",
+              title: "¡Alguien necesita tu donación!",
+              message: `Se ha solicitado ${med.nombre}, un medicamento que tienes disponible.`,
+              link: `/dashboard/requests/${solicitud.id}`,
+            },
+          });
+        }
+      }
     }
 
     return NextResponse.json(
@@ -74,13 +102,13 @@ export async function POST(request: Request) {
         message: "Solicitud creada exitosamente",
         solicitudId: solicitud.id,
       },
-      { status: 201 }
+      { status: 201 },
     );
   } catch (error) {
     console.error("Error creating solicitud:", error);
     return NextResponse.json(
       { error: "Error al crear la solicitud" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -111,7 +139,7 @@ export async function GET() {
     console.error("Error fetching solicitudes:", error);
     return NextResponse.json(
       { error: "Error al obtener las solicitudes" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

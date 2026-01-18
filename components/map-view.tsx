@@ -5,6 +5,17 @@ import dynamic from "next/dynamic";
 import { Button } from "@/components/ui/button";
 import { Search, Locate } from "lucide-react";
 
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+
 // Types for map data
 export interface MapLocation {
   id: string;
@@ -15,7 +26,7 @@ export interface MapLocation {
   distance?: number;
 }
 
-const DEFAULT_CENTER = { lat: 19.4326, lng: -99.1332 }; // Mexico City
+const DEFAULT_CENTER = { lat: 10.99, lng: -63.9 }; // Nueva Esparta
 const DEFAULT_ZOOM = 12;
 
 // Sample data - used when no locations are provided
@@ -125,8 +136,11 @@ const PHARMACY_LOCATIONS: MapLocation[] = [
 interface MapViewProps {
   locations?: MapLocation[];
   onPositionChange?: (pos: { lat: number; lng: number }) => void;
-  onUserLocationChange?: (pos: { lat: number; lng: number }) => void;
+  onUserLocationChange?: (latlng: { lat: number; lng: number }) => void;
   showUserMarker?: boolean;
+  confirmLocationChange?: boolean;
+  initialUserLocation?: { lat: number; lng: number } | null;
+  isLocationLocked?: boolean;
 }
 
 // The actual map component (loaded dynamically to avoid SSR issues)
@@ -135,30 +149,85 @@ function MapViewInner({
   onPositionChange,
   onUserLocationChange,
   showUserMarker = true,
+  confirmLocationChange = false,
+  initialUserLocation = null,
+  isLocationLocked = false,
 }: MapViewProps) {
   const [center, setCenter] = useState<[number, number]>([
-    DEFAULT_CENTER.lat,
-    DEFAULT_CENTER.lng,
+    initialUserLocation ? initialUserLocation.lat : DEFAULT_CENTER.lat,
+    initialUserLocation ? initialUserLocation.lng : DEFAULT_CENTER.lng,
   ]);
   const [userLocation, setUserLocation] = useState<[number, number] | null>(
-    null,
+    initialUserLocation
+      ? [initialUserLocation.lat, initialUserLocation.lng]
+      : null,
   );
   const [isClient, setIsClient] = useState(false);
   const mapRef = useRef<any>(null);
-  // selection state for immediate visual feedback
   const [selection, setSelection] = useState<{
     lat: number;
     lng: number;
   } | null>(null);
 
-  // Calculate distance helper
+  const [isConfirmDialogOpen, setIsConfirmDialogOpen] = useState(false);
+  const [pendingLocation, setPendingLocation] = useState<
+    [number, number] | null
+  >(null);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
+  const handleLocationUpdateAttempt = (lat: number, lng: number) => {
+    const newPos: [number, number] = [lat, lng];
+
+    if (confirmLocationChange && userLocation && !isLocationLocked) {
+      setPendingLocation(newPos);
+      setIsConfirmDialogOpen(true);
+    } else {
+      applyLocationUpdate(newPos);
+    }
+  };
+
+  const applyLocationUpdate = (pos: [number, number]) => {
+    // Only move the user marker if location is NOT locked
+    if (!isLocationLocked) {
+      setUserLocation(pos);
+    } else {
+      // If locked, we just update the selection visualization
+      setSelection({ lat: pos[0], lng: pos[1] });
+    }
+
+    // Always notify parent of the selected location (for the form)
+    onUserLocationChange?.({
+      lat: pos[0],
+      lng: pos[1],
+    });
+    setPendingLocation(null);
+    setIsConfirmDialogOpen(false);
+  };
+
+  const handleConfirmUpdate = () => {
+    if (pendingLocation) {
+      applyLocationUpdate(pendingLocation);
+    }
+  };
+
+  const handleCancelUpdate = () => {
+    setPendingLocation(null);
+    setIsConfirmDialogOpen(false);
+    if (userLocation) {
+      setUserLocation([...userLocation]);
+    }
+  };
+
   const calculateDistance = (
     lat1: number,
     lon1: number,
     lat2: number,
     lon2: number,
   ) => {
-    const R = 6371; // Radius of the earth in km
+    const R = 6371;
     const dLat = (lat2 - lat1) * (Math.PI / 180);
     const dLon = (lon2 - lon1) * (Math.PI / 180);
     const a =
@@ -171,7 +240,6 @@ function MapViewInner({
     return R * c;
   };
 
-  // Sort pharmacies by distance
   const sortedPharmacies = [...PHARMACY_LOCATIONS].sort((a, b) => {
     if (!userLocation) return 0;
     const distA = calculateDistance(
@@ -196,23 +264,19 @@ function MapViewInner({
     const pharmacy = PHARMACY_LOCATIONS.find((p) => p.id === pharmacyId);
     if (pharmacy && mapRef.current) {
       try {
-        mapRef.current.setView([pharmacy.lat, pharmacy.lng], 15);
+        mapRef.current.flyTo([pharmacy.lat, pharmacy.lng], 18, {
+          duration: 1.5,
+        });
         setSelection({ lat: pharmacy.lat, lng: pharmacy.lng });
+
+        // Update the effective location to be the pharmacy
+        // We allow this even if locked, as it's a specific selection action
+        handleLocationUpdateAttempt(pharmacy.lat, pharmacy.lng);
       } catch (error) {
         console.warn("Map not ready:", error);
       }
     }
   };
-
-  // Combine dynamic locations with static pharmacy locations
-  const displayLocations = [
-    ...(locations || SAMPLE_LOCATIONS),
-    ...PHARMACY_LOCATIONS,
-  ];
-
-  useEffect(() => {
-    setIsClient(true);
-  }, []);
 
   const handleLocateUser = useCallback(() => {
     if (navigator.geolocation) {
@@ -223,13 +287,10 @@ function MapViewInner({
             position.coords.longitude,
           ];
           setCenter(newLocation);
-          setUserLocation(newLocation);
-          onUserLocationChange?.({
-            lat: newLocation[0],
-            lng: newLocation[1],
-          });
-          // Pan map to user location
-          // Pan map to user location
+          if (!isLocationLocked) {
+            handleLocationUpdateAttempt(newLocation[0], newLocation[1]);
+          }
+
           if (mapRef.current) {
             try {
               mapRef.current.setView(newLocation, DEFAULT_ZOOM);
@@ -238,19 +299,21 @@ function MapViewInner({
             }
           }
         },
-        () => {
-          // Silently fail - user can manually click locate button or drag map
-        },
+        () => {},
         {
           enableHighAccuracy: true,
           timeout: 15000,
-          maximumAge: 0, // Force fresh calculation
+          maximumAge: 0,
         },
       );
     }
-  }, [onUserLocationChange]);
+  }, [
+    onUserLocationChange,
+    confirmLocationChange,
+    userLocation,
+    isLocationLocked,
+  ]);
 
-  // Get user location automatically when component mounts
   const hasInitalized = useRef(false);
   useEffect(() => {
     if (!hasInitalized.current) {
@@ -267,7 +330,6 @@ function MapViewInner({
     );
   }
 
-  // Dynamic imports for Leaflet (only on client)
   const L = require("leaflet");
   const {
     MapContainer,
@@ -278,10 +340,8 @@ function MapViewInner({
     ZoomControl,
   } = require("react-leaflet");
 
-  // Import Leaflet CSS
   require("leaflet/dist/leaflet.css");
 
-  // Fix default marker icon issue with webpack
   delete (L.Icon.Default.prototype as Record<string, unknown>)._getIconUrl;
   L.Icon.Default.mergeOptions({
     iconRetinaUrl:
@@ -292,7 +352,6 @@ function MapViewInner({
       "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png",
   });
 
-  // Custom icons
   const userIcon = L.divIcon({
     className: "custom-marker",
     html: `<div style="background-color: #7c3aed; width: 24px; height: 24px; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 8px rgba(0,0,0,0.3);"></div>`,
@@ -335,35 +394,21 @@ function MapViewInner({
     iconAnchor: [12, 12],
   });
 
-  // Component to handle map events
   function MapEventHandler() {
     const map = useMapEvents({
       click: (e: any) => {
-        // If the map is in "User Location" mode (onUserLocationChange provided),
-        // let the click move the user marker.
+        if (isLocationLocked) return;
         if (onUserLocationChange) {
           const { lat, lng } = e.latlng;
-          const newPos: [number, number] = [lat, lng];
-          setUserLocation(newPos);
-          onUserLocationChange({ lat, lng });
+          handleLocationUpdateAttempt(lat, lng);
         }
       },
-      moveend: () => {
-        // If we want the center to also be a selection method (optional)
-        // For now, let's prioritize explicit clicks for "marking", or fallback to center if no markup.
-        // Actually, let's keep moveend updating the parent, but maybe not drawing a marker unless clicked?
-        // Better UX: Dragging the map updates the "center" usually.
-        // If the user wants to mark, they click.
-        const center = map.getCenter();
-        onPositionChange?.({ lat: center.lat, lng: center.lng });
-      },
     });
-    // Store map reference and add zoom control
+
     useEffect(() => {
-      // Add zoom control manually
       const zoomControl = L.control.zoom({ position: "bottomright" });
       zoomControl.addTo(map);
-
+      mapRef.current = map;
       return () => {
         zoomControl.remove();
       };
@@ -371,6 +416,11 @@ function MapViewInner({
 
     return null;
   }
+
+  const displayLocations = [
+    ...(locations || SAMPLE_LOCATIONS),
+    ...PHARMACY_LOCATIONS,
+  ];
 
   return (
     <div className="relative h-[500px] w-full overflow-hidden rounded-md">
@@ -391,36 +441,31 @@ function MapViewInner({
 
         <MapEventHandler />
 
-        {/* User location marker */}
         {showUserMarker && userLocation && (
           <Marker
             position={userLocation}
             icon={userIcon}
-            draggable={true}
+            draggable={!isLocationLocked}
             eventHandlers={{
               dragend: (e: any) => {
+                if (isLocationLocked) return;
                 const marker = e.target;
                 const position = marker.getLatLng();
-                const newPos: [number, number] = [position.lat, position.lng];
-                setUserLocation(newPos);
-                onUserLocationChange?.({
-                  lat: position.lat,
-                  lng: position.lng,
-                });
+                handleLocationUpdateAttempt(position.lat, position.lng);
               },
             }}
           >
             <Popup>
               <div className="font-medium">
-                Tu ubicación (Arrástrame para corregir)
+                {isLocationLocked
+                  ? "Tu ubicación (Fija)"
+                  : "Tu ubicación (Arrástrame para corregir)"}
               </div>
             </Popup>
           </Marker>
         )}
 
-        {/* Location markers */}
         {displayLocations.map((loc) => {
-          // Check if this is the nearest pharmacy
           let isNearestPharmacy = false;
           if (loc.type === "pharmacy" && sortedPharmacies.length > 0) {
             isNearestPharmacy = sortedPharmacies[0].id === loc.id;
@@ -439,7 +484,17 @@ function MapViewInner({
                       ? nearestPharmacyIcon
                       : pharmacyIcon
               }
-              zIndexOffset={isNearestPharmacy ? 1000 : 0} // Bring nearest to front
+              eventHandlers={{
+                click: () => {
+                  if (loc.type === "pharmacy") {
+                    setSelection({ lat: loc.lat, lng: loc.lng });
+                    // Explicitly update location when clicking a pharmacy
+                    // This works even if isLocationLocked is true, as per handleLocationUpdateAttempt logic
+                    handleLocationUpdateAttempt(loc.lat, loc.lng);
+                  }
+                },
+              }}
+              zIndexOffset={isNearestPharmacy ? 1000 : 0}
             >
               <Popup>
                 <div className="font-medium">
@@ -466,7 +521,7 @@ function MapViewInner({
             </Marker>
           );
         })}
-        {/* Selection marker */}
+
         {selection && (
           <Marker position={selection} icon={selectionIcon}>
             <Popup>
@@ -478,7 +533,6 @@ function MapViewInner({
         )}
       </MapContainer>
 
-      {/* Controls Overlay */}
       <div className="absolute left-4 right-4 top-4 flex gap-2 z-[1000]">
         <div className="relative flex-1">
           <select
@@ -518,7 +572,6 @@ function MapViewInner({
         </Button>
       </div>
 
-      {/* Legend Overlay */}
       <div className="absolute bottom-4 left-4 flex flex-col gap-2 z-[1000]">
         {showUserMarker && userLocation && (
           <div className="flex items-center gap-2 rounded-md bg-white p-2 shadow-sm">
@@ -538,6 +591,31 @@ function MapViewInner({
           <span className="text-xs">Otras Farmacias</span>
         </div>
       </div>
+
+      <AlertDialog
+        open={isConfirmDialogOpen}
+        onOpenChange={setIsConfirmDialogOpen}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Cambiar ubicación?</AlertDialogTitle>
+            <AlertDialogDescription>
+              ¿Estás seguro de que deseas modificar tu ubicación registrada?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={handleCancelUpdate}>
+              Cancelar
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmUpdate}
+              className="bg-teal-600 hover:bg-teal-700"
+            >
+              Confirmar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

@@ -94,10 +94,27 @@ model UsuarioComun {
   updatedAt DateTime @updatedAt
 
   // Relaciones: realiza donaciones y solicitudes
+  // Relaciones: realiza donaciones y solicitudes
   donaciones  Donacion[]
   solicitudes Solicitud[]
+  notificaciones Notificacion[]
 
   @@map("usuarios_comunes")
+}
+
+/// Notificaciones para el usuario
+model Notificacion {
+  id        String   @id @default(cuid())
+  userId    String
+  usuario   UsuarioComun @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      String   // "MATCH_DONATION" | "MATCH_REQUEST" | "SYSTEM"
+  title     String
+  message   String
+  read      Boolean  @default(false)
+  link      String?
+  createdAt DateTime @default(now())
+
+  @@map("notificaciones")
 }
 
 /// Donación realizada por un ente de salud o usuario común

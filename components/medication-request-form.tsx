@@ -46,6 +46,7 @@ interface MedicationRequestFormData {
 interface MedicationRequestFormProps {
   onSuccess?: () => void;
   onCancel?: () => void;
+  initialLocation?: any;
 }
 
 // Step indicator component
@@ -95,6 +96,7 @@ function StepIndicator({
 export function MedicationRequestForm({
   onSuccess,
   onCancel,
+  initialLocation,
 }: MedicationRequestFormProps) {
   const router = useRouter();
   const { toast } = useToast();
@@ -108,14 +110,15 @@ export function MedicationRequestForm({
     unit: "tablets",
     requiresPrescription: false,
     description: "",
-    latitude: null,
-    longitude: null,
+    latitude: initialLocation?.lat || null,
+    longitude: initialLocation?.lng || null,
     waitTime: "MEDIO",
     recipePhotoUrl: null,
     recipePhotoFile: null,
   });
 
   const [isDragging, setIsDragging] = useState(false);
+  const [isStep3Ready, setIsStep3Ready] = useState(false);
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -297,7 +300,13 @@ export function MedicationRequestForm({
   const canProceedToStep3 = formData.description.trim() !== "" || true; // Description is optional
 
   const nextStep = () => {
-    if (currentStep < 3) setCurrentStep(currentStep + 1);
+    if (currentStep < 3) {
+      setCurrentStep(currentStep + 1);
+      if (currentStep + 1 === 3) {
+        setIsStep3Ready(false);
+        setTimeout(() => setIsStep3Ready(true), 800);
+      }
+    }
   };
 
   const prevStep = () => {
@@ -667,8 +676,20 @@ export function MedicationRequestForm({
                     será visible públicamente.
                   </p>
                 </div>
-                <div className="h-[280px] rounded-2xl overflow-hidden border-2 border-gray-200 shadow-inner">
-                  <MapView />
+                <div className="space-y-4">
+                  <div className="h-[280px] rounded-2xl overflow-hidden border-2 border-gray-200 shadow-inner relative">
+                    <MapView
+                      initialUserLocation={initialLocation}
+                      isLocationLocked={!!initialLocation}
+                      onUserLocationChange={(pos) => {
+                        setFormData({
+                          ...formData,
+                          latitude: pos.lat,
+                          longitude: pos.lng,
+                        });
+                      }}
+                    />
+                  </div>
                 </div>
 
                 {/* Summary card */}
@@ -751,8 +772,13 @@ export function MedicationRequestForm({
             ) : (
               <Button
                 type="submit"
-                disabled={isLoading || isUploading}
-                className="bg-gradient-to-r from-teal-600 to-cyan-500 hover:from-teal-700 hover:to-cyan-600 text-white px-8 rounded-xl shadow-lg shadow-teal-200 transition-all hover:shadow-xl hover:shadow-teal-200 disabled:opacity-70"
+                disabled={
+                  isLoading ||
+                  isUploading ||
+                  !isStep3Ready ||
+                  !formData.latitude
+                }
+                className="bg-gradient-to-r from-teal-600 to-cyan-500 hover:from-teal-700 hover:to-cyan-600 text-white px-8 rounded-xl shadow-lg shadow-teal-200 transition-all hover:shadow-xl hover:shadow-teal-200 disabled:opacity-70 disabled:cursor-not-allowed"
               >
                 {isUploading ? (
                   <>

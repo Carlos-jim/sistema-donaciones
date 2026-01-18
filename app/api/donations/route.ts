@@ -123,6 +123,33 @@ Requiere Receta: ${prescription === "yes" ? "Sí" : "No"}
         },
       });
 
+      // 4. Find matching Requests and Notify Users
+      // Find active requests for this medication
+      const matchingRequests = await tx.solicitudMedicamento.findMany({
+        where: {
+          medicamentoId: dbMedicamento.id,
+          solicitud: {
+            estado: "PENDIENTE",
+          },
+        },
+        include: {
+          solicitud: true,
+        },
+      });
+
+      // Create notifications for each matching request
+      for (const req of matchingRequests) {
+        await tx.notificacion.create({
+          data: {
+            userId: req.solicitud.usuarioComunId,
+            type: "MATCH_DONATION",
+            title: "¡Medicamento Disponible!",
+            message: `Alguien ha donado ${medication}, que estabas solicitando. Revisa los detalles.`,
+            link: `/dashboard/donations/${newDonacion.id}`, // Assuming we have a details page
+          },
+        });
+      }
+
       return newDonacion;
     });
 
