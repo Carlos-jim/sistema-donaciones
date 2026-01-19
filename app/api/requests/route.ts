@@ -1,5 +1,8 @@
 import { NextResponse } from "next/server";
+import { cookies } from "next/headers";
 import prisma from "@/lib/prisma";
+import { Prisma } from "@prisma/client";
+import { tokenService } from "@/lib/auth/token.service";
 
 export async function POST(request: Request) {
   try {
@@ -13,31 +16,36 @@ export async function POST(request: Request) {
       recipePhotoUrl,
     } = body;
 
-    // TODO: Get the actual user ID from the session
-    // For now, we'll create a placeholder user or use an existing one
-    let usuario = await prisma.usuarioComun.findFirst();
+    const token = (await cookies()).get("auth-token")?.value;
 
-    if (!usuario) {
-      // Create a default user for testing
-      usuario = await prisma.usuarioComun.create({
-        data: {
-          nombre: "Usuario de Prueba",
-          email: "test@example.com",
-          password: "placeholder",
-        },
-      });
+    if (!token) {
+      return NextResponse.json({ error: "No autorizado" }, { status: 401 });
     }
+
+    const payload = await tokenService.verify(token);
+
+    if (!payload || !payload.userId) {
+      return NextResponse.json({ error: "Token inválido" }, { status: 401 });
+    }
+
+    // Assign to the verified user
+    const userId = payload.userId;
 
     // Create the solicitud
     const solicitud = await prisma.solicitud.create({
       data: {
         motivo: motivo || null,
-        latitude: ubicacion?.lat || null,
-        longitude: ubicacion?.lng || null,
+        direccion: ubicacion
+          ? {
+              calle: ubicacion.address || "Ubicación seleccionada en mapa",
+              lat: ubicacion.lat,
+              long: ubicacion.lng,
+            }
+          : Prisma.JsonNull,
         requiresPrescription: requiereReceta || false,
         recipePhotoUrl: recipePhotoUrl || null,
         tiempoEspera: tiempoEspera || "BAJO", // Default to BAJO
-        usuarioComunId: usuario.id,
+        usuarioComunId: userId,
       },
     });
 
@@ -115,7 +123,22 @@ export async function POST(request: Request) {
 
 export async function GET() {
   try {
+    const token = (await cookies()).get("auth-token")?.value;
+
+    if (!token) {
+      return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+    }
+
+    const payload = await tokenService.verify(token);
+
+    if (!payload || !payload.userId) {
+      return NextResponse.json({ error: "Token inválido" }, { status: 401 });
+    }
+
     const solicitudes = await prisma.solicitud.findMany({
+      where: {
+        usuarioComunId: payload.userId,
+      },
       include: {
         usuarioComun: {
           select: {

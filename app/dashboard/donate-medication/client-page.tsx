@@ -42,6 +42,7 @@ interface DonationFormData {
   availability: string;
   requiresPrescription: boolean;
   donationPhotoUrl: string;
+  address: string;
 }
 
 // Step indicator component
@@ -111,6 +112,7 @@ export default function DonateMedicationClient({
     availability: "flexible",
     requiresPrescription: false,
     donationPhotoUrl: "",
+    address: "", // Initialized as empty string
   });
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -130,7 +132,11 @@ export default function DonateMedicationClient({
         description: formData.description,
         location:
           formData.latitude && formData.longitude
-            ? { lat: formData.latitude, lng: formData.longitude }
+            ? {
+                lat: formData.latitude,
+                lng: formData.longitude,
+                address: formData.address,
+              }
             : undefined,
         availability: formData.availability,
         donationPhotoUrl: formData.donationPhotoUrl,
@@ -187,6 +193,7 @@ export default function DonateMedicationClient({
         availability: "flexible",
         requiresPrescription: false,
         donationPhotoUrl: "",
+        address: "",
       });
       setCurrentStep(1);
 
@@ -496,40 +503,6 @@ export default function DonateMedicationClient({
 
                     <div className="space-y-3">
                       <Label className="text-sm font-semibold text-gray-700 flex items-center gap-2">
-                        <Clock className="w-4 h-4 text-teal-600" />
-                        Disponibilidad para Entrega
-                      </Label>
-                      <Select
-                        value={formData.availability}
-                        onValueChange={(value) =>
-                          setFormData({ ...formData, availability: value })
-                        }
-                      >
-                        <SelectTrigger className="h-12 rounded-xl border-gray-200 focus:border-teal-500 focus:ring-teal-500/20">
-                          <SelectValue placeholder="Selecciona tu disponibilidad" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="flexible">
-                            Horario flexible
-                          </SelectItem>
-                          <SelectItem value="morning">
-                            Mañanas (8am - 12pm)
-                          </SelectItem>
-                          <SelectItem value="afternoon">
-                            Tardes (12pm - 6pm)
-                          </SelectItem>
-                          <SelectItem value="evening">
-                            Noches (6pm - 10pm)
-                          </SelectItem>
-                          <SelectItem value="weekend">
-                            Solo fines de semana
-                          </SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    <div className="space-y-3">
-                      <Label className="text-sm font-semibold text-gray-700 flex items-center gap-2">
                         <Pill className="w-4 h-4 text-teal-600" />
                         ¿Requiere Receta Médica?
                       </Label>
@@ -606,6 +579,21 @@ export default function DonateMedicationClient({
                         para la entrega.
                       </p>
                     </div>
+                    <div className="space-y-2">
+                      <Label
+                        htmlFor="address"
+                        className="text-sm font-semibold text-gray-700"
+                      >
+                        Dirección / Calle (Selecciona en el mapa)
+                      </Label>
+                      <Input
+                        id="address"
+                        placeholder="Selecciona una ubicación en el mapa..."
+                        value={formData.address}
+                        readOnly
+                        className="rounded-xl border-gray-200 bg-gray-50 focus:border-teal-500 focus:ring-teal-500/20"
+                      />
+                    </div>
                     <div className="h-[280px] rounded-2xl overflow-hidden border-2 border-gray-200 shadow-inner">
                       <MapView
                         confirmLocationChange={true}
@@ -616,6 +604,7 @@ export default function DonateMedicationClient({
                             ...prev,
                             latitude: pos.lat,
                             longitude: pos.lng,
+                            address: pos.address || prev.address || "",
                           }));
                         }}
                       />

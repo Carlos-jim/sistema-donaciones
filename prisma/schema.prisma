@@ -123,8 +123,7 @@ model Donacion {
   descripcion String?
   donationPhotoUrl String?
   estado      EstadoDonacion @default(DISPONIBLE)
-  latitude    Float?
-  longitude   Float?
+  direccion   Json?
   createdAt   DateTime       @default(now())
   updatedAt   DateTime       @updatedAt
 
@@ -154,8 +153,7 @@ model Solicitud {
   motivo               String?
   estado               EstadoSolicitud @default(PENDIENTE)
   tiempoEspera         TiempoEspera    @default(BAJO)
-  latitude             Float?
-  longitude            Float?
+  direccion            Json?
   requiresPrescription Boolean         @default(false)
   recipePhotoUrl       String?
   createdAt            DateTime        @default(now())

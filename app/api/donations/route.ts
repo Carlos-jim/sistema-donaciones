@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
+import { cookies } from "next/headers";
 import prisma from "@/lib/prisma";
+import { tokenService } from "@/lib/auth/token.service";
 import { z } from "zod";
 
 // Input validation schema
@@ -19,6 +21,7 @@ const donationSchema = z.object({
     .object({
       lat: z.number(),
       lng: z.number(),
+      address: z.string().optional(),
     })
     .optional(),
 });
@@ -56,19 +59,19 @@ export async function POST(request: Request) {
       donationPhotoUrl,
     } = result.data;
 
-    // TODO: Get real user authentication
-    // Mimicking requests/route.ts behavior regarding user resolution
-    let usuario = await prisma.usuarioComun.findFirst();
+    const token = (await cookies()).get("auth-token")?.value;
 
-    if (!usuario) {
-      usuario = await prisma.usuarioComun.create({
-        data: {
-          nombre: "Donante de Prueba",
-          email: "donante@example.com",
-          password: "placeholder",
-        },
-      });
+    if (!token) {
+      return NextResponse.json({ error: "No autorizado" }, { status: 401 });
     }
+
+    const payload = await tokenService.verify(token);
+
+    if (!payload || !payload.userId) {
+      return NextResponse.json({ error: "Token inválido" }, { status: 401 });
+    }
+
+    const userId = payload.userId;
 
     // Construct description with metadata since schema doesn't support specific columns yet
     // Construct description without location (stored separately now)
@@ -91,9 +94,14 @@ Requiere Receta: ${prescription === "yes" ? "Sí" : "No"}
           descripcion: fullDescription,
           donationPhotoUrl: donationPhotoUrl || null,
           estado: "DISPONIBLE",
-          latitude: location?.lat || null,
-          longitude: location?.lng || null,
-          usuarioComunId: usuario.id,
+          direccion: location
+            ? {
+                calle: location.address || "Ubicación seleccionada en mapa",
+                lat: location.lat,
+                long: location.lng,
+              }
+            : undefined,
+          usuarioComunId: userId,
         },
       });
 

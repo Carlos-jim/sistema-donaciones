@@ -64,8 +64,11 @@ interface Donacion {
   descripcion: string | null;
   donationPhotoUrl: string | null;
   estado: "DISPONIBLE" | "RESERVADA" | "ENTREGADA" | "EXPIRADA";
-  latitude: number | null;
-  longitude: number | null;
+  direccion: {
+    lat: number;
+    long: number;
+    calle: string;
+  } | null;
   createdAt: string;
   medicamentos: Array<{
     fechaExpiracion: string;
@@ -293,7 +296,7 @@ export default function MyDonationsPage() {
                             />
                           </div>
                         )}
-                        {donacion.latitude && (
+                        {donacion.direccion && (
                           <div className="w-8 h-8 rounded-full border-2 border-white bg-blue-100 flex items-center justify-center z-10 text-blue-600">
                             <MapPin className="w-4 h-4" />
                           </div>
@@ -404,15 +407,20 @@ export default function MyDonationsPage() {
                 )}
 
                 {/* Location */}
-                {selectedDonacion.latitude && selectedDonacion.longitude && (
+                {selectedDonacion.direccion && (
                   <div>
                     <h4 className="font-semibold text-gray-700 mb-2 flex items-center gap-2">
                       <MapPin className="w-4 h-4 text-teal-600" />
                       Ubicación de Recogida
                     </h4>
                     <div className="text-sm text-gray-600 bg-gray-50 p-3 rounded-xl">
-                      Lat: {selectedDonacion.latitude.toFixed(4)}, Lng:{" "}
-                      {selectedDonacion.longitude.toFixed(4)}
+                      <p className="font-medium text-gray-900 mb-1">
+                        {selectedDonacion.direccion.calle}
+                      </p>
+                      <span className="text-gray-500 text-xs">
+                        Lat: {selectedDonacion.direccion.lat.toFixed(4)}, Lng:{" "}
+                        {selectedDonacion.direccion.long.toFixed(4)}
+                      </span>
                     </div>
                   </div>
                 )}

@@ -61,8 +61,11 @@ const itemVariants = {
 interface Solicitud {
   id: string;
   motivo: string | null;
-  latitude: number | null;
-  longitude: number | null;
+  direccion: {
+    lat: number;
+    long: number;
+    calle: string;
+  } | null;
   tiempoEspera: string;
   requiresPrescription: boolean;
   recipePhotoUrl: string | null;
@@ -320,10 +323,10 @@ export default function MyRequestsPage() {
                         <Calendar className="h-4 w-4 mr-2 text-teal-600/70" />
                         {formatDate(solicitud.createdAt)}
                       </div>
-                      {solicitud.latitude && solicitud.longitude && (
+                      {solicitud.direccion && (
                         <div className="flex items-center text-sm text-gray-500">
                           <MapPin className="h-4 w-4 mr-2 text-teal-600/70" />
-                          Ubicación registrada
+                          {solicitud.direccion.calle}
                         </div>
                       )}
                       {solicitud.motivo && (
@@ -434,15 +437,20 @@ export default function MyRequestsPage() {
                 )}
 
                 {/* Location */}
-                {selectedSolicitud.latitude && selectedSolicitud.longitude && (
+                {selectedSolicitud.direccion && (
                   <div>
                     <h4 className="font-semibold text-gray-700 mb-2 flex items-center gap-2">
                       <MapPin className="w-4 h-4 text-teal-600" />
                       Ubicación
                     </h4>
                     <div className="text-sm text-gray-600 bg-gray-50 p-3 rounded-xl">
-                      Lat: {selectedSolicitud.latitude.toFixed(4)}, Lng:{" "}
-                      {selectedSolicitud.longitude.toFixed(4)}
+                      <p className="font-medium text-gray-900 mb-1">
+                        {selectedSolicitud.direccion.calle}
+                      </p>
+                      <span className="text-gray-500 text-xs">
+                        Lat: {selectedSolicitud.direccion.lat.toFixed(4)}, Lng:{" "}
+                        {selectedSolicitud.direccion.long.toFixed(4)}
+                      </span>
                     </div>
                   </div>
                 )}

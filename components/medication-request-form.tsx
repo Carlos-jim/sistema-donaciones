@@ -41,6 +41,7 @@ interface MedicationRequestFormData {
   waitTime: string;
   recipePhotoUrl: string | null;
   recipePhotoFile: File | null;
+  address: string;
 }
 
 interface MedicationRequestFormProps {
@@ -115,6 +116,7 @@ export function MedicationRequestForm({
     waitTime: "MEDIO",
     recipePhotoUrl: null,
     recipePhotoFile: null,
+    address: "",
   });
 
   const [isDragging, setIsDragging] = useState(false);
@@ -232,6 +234,7 @@ export function MedicationRequestForm({
           ubicacion: {
             lat: formData.latitude,
             lng: formData.longitude,
+            address: formData.address,
           },
           requiereReceta: formData.requiresPrescription,
           tiempoEspera: formData.waitTime,
@@ -265,6 +268,7 @@ export function MedicationRequestForm({
         waitTime: "MEDIO",
         recipePhotoUrl: null,
         recipePhotoFile: null,
+        address: "",
       });
       setCurrentStep(1);
       if (fileInputRef.current) {
@@ -677,16 +681,32 @@ export function MedicationRequestForm({
                   </p>
                 </div>
                 <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label
+                      htmlFor="address"
+                      className="text-sm font-semibold text-gray-700"
+                    >
+                      Dirección / Calle (Selecciona en el mapa)
+                    </Label>
+                    <Input
+                      id="address"
+                      placeholder="Selecciona una ubicación en el mapa..."
+                      value={formData.address}
+                      readOnly
+                      className="rounded-xl border-gray-200 bg-gray-50 focus:border-teal-500 focus:ring-teal-500/20"
+                    />
+                  </div>
                   <div className="h-[280px] rounded-2xl overflow-hidden border-2 border-gray-200 shadow-inner relative">
                     <MapView
                       initialUserLocation={initialLocation}
                       isLocationLocked={!!initialLocation}
                       onUserLocationChange={(pos) => {
-                        setFormData({
-                          ...formData,
+                        setFormData((prev) => ({
+                          ...prev,
                           latitude: pos.lat,
                           longitude: pos.lng,
-                        });
+                          address: pos.address || prev.address || "",
+                        }));
                       }}
                     />
                   </div>

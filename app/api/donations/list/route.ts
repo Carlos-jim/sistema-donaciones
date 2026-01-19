@@ -1,22 +1,25 @@
 import { NextResponse } from "next/server";
+import { cookies } from "next/headers";
 import prisma from "@/lib/prisma";
+import { tokenService } from "@/lib/auth/token.service";
 
 export async function GET() {
   try {
-    // TODO: Get real user authentication
-    // Mimicking existing behavior
-    const usuario = await prisma.usuarioComun.findFirst();
+    const token = (await cookies()).get("auth-token")?.value;
 
-    if (!usuario) {
-      return NextResponse.json(
-        { error: "Usuario no encontrado" },
-        { status: 404 },
-      );
+    if (!token) {
+      return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+    }
+
+    const payload = await tokenService.verify(token);
+
+    if (!payload || !payload.userId) {
+      return NextResponse.json({ error: "Token inválido" }, { status: 401 });
     }
 
     const donaciones = await prisma.donacion.findMany({
       where: {
-        usuarioComunId: usuario.id,
+        usuarioComunId: payload.userId,
       },
       include: {
         medicamentos: {

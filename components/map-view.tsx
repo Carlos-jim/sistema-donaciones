@@ -136,7 +136,11 @@ const PHARMACY_LOCATIONS: MapLocation[] = [
 interface MapViewProps {
   locations?: MapLocation[];
   onPositionChange?: (pos: { lat: number; lng: number }) => void;
-  onUserLocationChange?: (latlng: { lat: number; lng: number }) => void;
+  onUserLocationChange?: (latlng: {
+    lat: number;
+    lng: number;
+    address?: string;
+  }) => void;
   showUserMarker?: boolean;
   confirmLocationChange?: boolean;
   initialUserLocation?: { lat: number; lng: number } | null;
@@ -178,18 +182,22 @@ function MapViewInner({
     setIsClient(true);
   }, []);
 
-  const handleLocationUpdateAttempt = (lat: number, lng: number) => {
+  const handleLocationUpdateAttempt = (
+    lat: number,
+    lng: number,
+    address?: string,
+  ) => {
     const newPos: [number, number] = [lat, lng];
 
     if (confirmLocationChange && userLocation && !isLocationLocked) {
       setPendingLocation(newPos);
       setIsConfirmDialogOpen(true);
     } else {
-      applyLocationUpdate(newPos);
+      applyLocationUpdate(newPos, address);
     }
   };
 
-  const applyLocationUpdate = (pos: [number, number]) => {
+  const applyLocationUpdate = (pos: [number, number], address?: string) => {
     // Only move the user marker if location is NOT locked
     if (!isLocationLocked) {
       setUserLocation(pos);
@@ -202,6 +210,7 @@ function MapViewInner({
     onUserLocationChange?.({
       lat: pos[0],
       lng: pos[1],
+      address: address, // Pass the address/title
     });
     setPendingLocation(null);
     setIsConfirmDialogOpen(false);
@@ -271,7 +280,7 @@ function MapViewInner({
 
         // Update the effective location to be the pharmacy
         // We allow this even if locked, as it's a specific selection action
-        handleLocationUpdateAttempt(pharmacy.lat, pharmacy.lng);
+        handleLocationUpdateAttempt(pharmacy.lat, pharmacy.lng, pharmacy.title);
       } catch (error) {
         console.warn("Map not ready:", error);
       }
@@ -288,7 +297,11 @@ function MapViewInner({
           ];
           setCenter(newLocation);
           if (!isLocationLocked) {
-            handleLocationUpdateAttempt(newLocation[0], newLocation[1]);
+            handleLocationUpdateAttempt(
+              newLocation[0],
+              newLocation[1],
+              "Tu ubicación actual",
+            );
           }
 
           if (mapRef.current) {
@@ -400,7 +413,11 @@ function MapViewInner({
         if (isLocationLocked) return;
         if (onUserLocationChange) {
           const { lat, lng } = e.latlng;
-          handleLocationUpdateAttempt(lat, lng);
+          handleLocationUpdateAttempt(
+            lat,
+            lng,
+            "Ubicación seleccionada en mapa",
+          );
         }
       },
     });
@@ -451,7 +468,11 @@ function MapViewInner({
                 if (isLocationLocked) return;
                 const marker = e.target;
                 const position = marker.getLatLng();
-                handleLocationUpdateAttempt(position.lat, position.lng);
+                handleLocationUpdateAttempt(
+                  position.lat,
+                  position.lng,
+                  "Ubicación personalizada",
+                );
               },
             }}
           >
@@ -490,7 +511,7 @@ function MapViewInner({
                     setSelection({ lat: loc.lat, lng: loc.lng });
                     // Explicitly update location when clicking a pharmacy
                     // This works even if isLocationLocked is true, as per handleLocationUpdateAttempt logic
-                    handleLocationUpdateAttempt(loc.lat, loc.lng);
+                    handleLocationUpdateAttempt(loc.lat, loc.lng, loc.title);
                   }
                 },
               }}
