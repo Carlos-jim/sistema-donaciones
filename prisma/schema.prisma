@@ -27,6 +27,8 @@ enum TipoUsuario {
 enum EstadoSolicitud {
   PENDIENTE
   APROBADA
+  RECIBIDA
+  LISTA_PARA_RETIRO
   RECHAZADA
   COMPLETADA
 }
@@ -34,6 +36,7 @@ enum EstadoSolicitud {
 enum EstadoDonacion {
   DISPONIBLE
   RESERVADA
+  RECIBIDA
   ENTREGADA
   EXPIRADA
 }
@@ -120,6 +123,7 @@ model Notificacion {
 /// Donación realizada por un ente de salud o usuario común
 model Donacion {
   id          String         @id @default(cuid())
+  codigo      String?        @unique
   descripcion String?
   donationPhotoUrl String?
   estado      EstadoDonacion @default(DISPONIBLE)
@@ -150,6 +154,7 @@ enum TiempoEspera {
 /// Solicitud realizada por un usuario común
 model Solicitud {
   id                   String          @id @default(cuid())
+  codigo               String?         @unique // Optional initially to allow migration of existing data, but should be filled
   motivo               String?
   estado               EstadoSolicitud @default(PENDIENTE)
   tiempoEspera         TiempoEspera    @default(BAJO)
@@ -202,6 +207,8 @@ model Farmacia {
   direccion String
   telefono  String?
   horario   String?
+  email     String   @unique
+  password  String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

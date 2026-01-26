@@ -61,6 +61,7 @@ const itemVariants = {
 // Types corresponding to prisma schema + aggregated fields
 interface Donacion {
   id: string;
+  codigo: string | null;
   descripcion: string | null;
   donationPhotoUrl: string | null;
   estado: "DISPONIBLE" | "RESERVADA" | "ENTREGADA" | "EXPIRADA";
@@ -340,6 +341,19 @@ export default function MyDonationsPage() {
                   </div>
                 </div>
               </DialogHeader>
+
+              <div className="bg-teal-50 border border-teal-100 rounded-xl p-4 mt-6 flex flex-col items-center justify-center text-center">
+                <span className="text-teal-600 text-sm font-medium mb-1">
+                  CÓDIGO DE DONACIÓN
+                </span>
+                <span className="text-3xl font-mono font-bold text-teal-800 tracking-wider">
+                  {selectedDonacion.codigo || "PENDIENTE"}
+                </span>
+                <span className="text-teal-600/70 text-xs mt-2">
+                  Presenta este código en la farmacia al entregar los
+                  medicamentos
+                </span>
+              </div>
 
               <div className="space-y-6 mt-4">
                 {/* Status Wrapper */}

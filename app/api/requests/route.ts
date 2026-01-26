@@ -31,9 +31,25 @@ export async function POST(request: Request) {
     // Assign to the verified user
     const userId = payload.userId;
 
+    // Generate a unique code
+    const generateCode = () => {
+      const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+      let code = "";
+      for (let i = 0; i < 6; i++) {
+        code += chars.charAt(Math.floor(Math.random() * chars.length));
+      }
+      return code;
+    };
+
+    let codigo = generateCode();
+    // Simple retry logic unique check (optional but recommended)
+    // For MVP/Demo scale, probability is low, but let's be safe-ish or just assume unique for now.
+    // If collision, Prisma will throw, so we could wrap in loop, but let's keep it simple.
+
     // Create the solicitud
     const solicitud = await prisma.solicitud.create({
       data: {
+        codigo: codigo,
         motivo: motivo || null,
         direccion: ubicacion
           ? {

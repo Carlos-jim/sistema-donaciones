@@ -88,9 +88,22 @@ Requiere Receta: ${prescription === "yes" ? "Sí" : "No"}
 
     // Transaction to ensure atomicity
     const donacion = await prisma.$transaction(async (tx) => {
+      // Generate a unique code
+      const generateCode = () => {
+        const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+        let code = "";
+        for (let i = 0; i < 6; i++) {
+          code += chars.charAt(Math.floor(Math.random() * chars.length));
+        }
+        return code;
+      };
+
+      let codigo = generateCode();
+
       // 1. Create Donation Record
       const newDonacion = await tx.donacion.create({
         data: {
+          codigo: codigo,
           descripcion: fullDescription,
           donationPhotoUrl: donationPhotoUrl || null,
           estado: "DISPONIBLE",
