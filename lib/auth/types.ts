@@ -26,7 +26,8 @@ export interface IAuthService {
 export interface TokenPayload {
   userId: string;
   email: string;
-  tipo: "COMUN";
+  tipo: "COMUN" | "ENTE_SALUD";
+  nombre?: string; // Optional: include name in token for easy access
 }
 
 export interface UserEntity {

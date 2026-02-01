@@ -81,6 +81,9 @@ model EnteSalud {
   // Relación: realiza donaciones
   donaciones Donacion[]
 
+  // Relación: solicitudes aprobadas/rechazadas por este ente
+  solicitudesAprobadas Solicitud[]
+
   @@map("entes_salud")
 }
 
@@ -168,9 +171,18 @@ model Solicitud {
   usuarioComunId String
   usuarioComun   UsuarioComun @relation(fields: [usuarioComunId], references: [id])
 
-  // FK: Administrador que aprueba/rechaza la solicitud
+  // FK: Administrador que aprueba/rechaza la solicitud (Legacy/Global admin)
   aprobadoPorId String?
   aprobadoPor   Administrador? @relation(fields: [aprobadoPorId], references: [id])
+
+  // FK: Ente de Salud (Supervisor) que aprueba/rechaza
+  aprobadoPorEnteId String?
+  aprobadoPorEnte   EnteSalud? @relation(fields: [aprobadoPorEnteId], references: [id])
+
+  // Trazabilidad de Aprobacion/Rechazo
+  approvalDate        DateTime?
+  rejectionReason     String?
+  approvalInstitution String? // Nombre de la institución al momento de aprobar
 
   // FK: Farmacia donde se realiza la solicitud
   farmaciaId String?
