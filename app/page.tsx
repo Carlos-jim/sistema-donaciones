@@ -9,7 +9,7 @@ export default function Home() {
         <div className="container flex h-16 items-center justify-between">
           <div className="flex items-center gap-2">
             <Heart className="h-6 w-6 text-teal-600" />
-            <span className="text-xl font-bold">MediShare</span>
+            <span className="text-xl font-bold">MediShareNE</span>
           </div>
           <nav className="hidden md:flex gap-6">
             <Link href="/" className="text-sm font-medium">
@@ -150,9 +150,9 @@ export default function Home() {
         <div className="container flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div className="flex items-center gap-2">
             <Heart className="h-5 w-5 text-teal-600" />
-            <span className="text-lg font-semibold">MediShare</span>
+            <span className="text-lg font-semibold">MediShareNE</span>
           </div>
-          <p className="text-sm text-gray-500">© 2025 MediShare. Todos los derechos reservados.</p>
+          <p className="text-sm text-gray-500">© 2025 MediShareNE. Todos los derechos reservados.</p>
           <div className="flex gap-4">
             <Link href="#" className="text-sm text-gray-500 hover:underline">
               Términos

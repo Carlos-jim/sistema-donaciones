@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -33,38 +32,15 @@ import {
   CheckCircle2,
 } from "lucide-react";
 
-// Easing for animations
-const smoothEase = [0.25, 0.46, 0.45, 0.94] as [number, number, number, number];
-
-const containerVariants = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: {
-      staggerChildren: 0.1,
-    },
-  },
-};
-
-const itemVariants = {
-  hidden: { opacity: 0, y: 20 },
-  visible: {
-    opacity: 1,
-    y: 0,
-    transition: {
-      duration: 0.5,
-      ease: smoothEase,
-    },
-  },
-};
-
 // Types corresponding to prisma schema + aggregated fields
 interface Donacion {
   id: string;
   codigo: string | null;
   descripcion: string | null;
   donationPhotoUrl: string | null;
-  estado: "DISPONIBLE" | "RESERVADA" | "ENTREGADA" | "EXPIRADA";
+  recipePhotoUrl?: string | null;
+  type?: "DONATION_OFFER" | "ACCEPTED_REQUEST";
+  estado: "DISPONIBLE" | "RESERVADA" | "ENTREGADA" | "EXPIRADA" | "EN_PROCESO" | "PENDIENTE" | "APROBADA";
   direccion: {
     lat: number;
     long: number;
@@ -72,7 +48,7 @@ interface Donacion {
   } | null;
   createdAt: string;
   medicamentos: Array<{
-    fechaExpiracion: string;
+    fechaExpiracion: string | null;
     cantidad: number;
     medicamento: {
       nombre: string;
@@ -83,6 +59,7 @@ interface Donacion {
 
 export default function MyDonationsPage() {
   const [donaciones, setDonaciones] = useState<Donacion[]>([]);
+  // ... (keep state)
   const [isLoading, setIsLoading] = useState(true);
   const [selectedDonacion, setSelectedDonacion] = useState<Donacion | null>(
     null,
@@ -116,22 +93,28 @@ export default function MyDonationsPage() {
       case "DISPONIBLE":
         return "bg-green-100 text-green-800 border-green-200";
       case "RESERVADA":
+      case "EN_PROCESO":
         return "bg-amber-100 text-amber-800 border-amber-200";
       case "ENTREGADA":
         return "bg-blue-100 text-blue-800 border-blue-200";
       case "EXPIRADA":
         return "bg-red-100 text-red-800 border-red-200";
+      case "PENDIENTE":
+        return "bg-gray-100 text-gray-800 border-gray-200";
+      case "APROBADA":
+        return "bg-teal-100 text-teal-800 border-teal-200";
       default:
         return "bg-gray-100 text-gray-800 border-gray-200";
     }
   };
 
   const getStatusLabel = (status: string) => {
+    if (status === "EN_PROCESO") return "En Proceso";
     return status.charAt(0).toUpperCase() + status.slice(1).toLowerCase();
   };
 
-  const formatDate = (dateString: string) => {
-    if (!dateString) return "";
+  const formatDate = (dateString: string | null) => {
+    if (!dateString) return "N/A";
     return new Date(dateString).toLocaleDateString("es-ES", {
       day: "numeric",
       month: "long",
@@ -149,13 +132,11 @@ export default function MyDonationsPage() {
     });
   };
 
+  // ... (keep return until list mapping)
   return (
     <>
-      <motion.div
+      <div
         className="space-y-8"
-        variants={containerVariants}
-        initial="hidden"
-        animate="visible"
       >
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
@@ -163,7 +144,7 @@ export default function MyDonationsPage() {
               Mis Donaciones
             </h1>
             <p className="text-gray-500 mt-1">
-              Gestiona el historial de los medicamentos que has ofrecido.
+              Historial de medicamentos ofrecidos y solicitudes aceptadas.
             </p>
           </div>
           <Link href="/dashboard/donate-medication">
@@ -197,10 +178,10 @@ export default function MyDonationsPage() {
             ))}
           </div>
         ) : donaciones.length === 0 ? (
-          <motion.div
-            variants={itemVariants}
+          <div
             className="text-center py-16 px-4 bg-white rounded-2xl border border-dashed border-gray-300"
           >
+            {/* ... keep empty state ... */}
             <div className="bg-teal-50 text-teal-400 h-16 w-16 rounded-full flex items-center justify-center mx-auto mb-4">
               <Gift className="h-8 w-8" />
             </div>
@@ -208,8 +189,7 @@ export default function MyDonationsPage() {
               No tienes donaciones registradas
             </h3>
             <p className="text-gray-500 mt-2 mb-6 max-w-sm mx-auto">
-              Tus donaciones ayudan a personas que necesitan medicamentos
-              urgentemente.
+              Empieza donando medicamentos o aceptando solicitudes de otros.
             </p>
             <Link href="/dashboard/donate-medication">
               <Button
@@ -219,36 +199,40 @@ export default function MyDonationsPage() {
                 Hacer mi primera donación
               </Button>
             </Link>
-          </motion.div>
+          </div>
         ) : (
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             {donaciones.map((donacion) => (
-              <motion.div
+              <div
                 key={donacion.id}
-                variants={itemVariants}
-                whileHover={{ y: -5 }}
                 className="h-full"
               >
                 <Card className="h-full border-0 shadow-lg shadow-gray-200/50 hover:shadow-xl hover:shadow-teal-900/5 transition-all duration-300 overflow-hidden flex flex-col">
                   <div
-                    className={`h-2 w-full ${
-                      donacion.estado === "DISPONIBLE"
-                        ? "bg-green-500"
-                        : donacion.estado === "RESERVADA"
-                          ? "bg-amber-500"
-                          : "bg-gray-300"
-                    }`}
+                    className={`h-2 w-full ${donacion.estado === "DISPONIBLE" || donacion.estado === "APROBADA"
+                      ? "bg-green-500"
+                      : donacion.estado === "RESERVADA" || donacion.estado === "EN_PROCESO"
+                        ? "bg-amber-500"
+                        : "bg-gray-300"
+                      }`}
                   />
                   <CardHeader className="pb-3 bg-gradient-to-b from-gray-50/50 to-transparent">
                     <div className="flex justify-between items-start mb-2">
-                      <Badge
-                        className={`${getStatusColor(
-                          donacion.estado,
-                        )} transition-colors`}
-                        variant="outline"
-                      >
-                        {getStatusLabel(donacion.estado)}
-                      </Badge>
+                      <div className="flex gap-2">
+                        <Badge
+                          className={`${getStatusColor(
+                            donacion.estado,
+                          )} transition-colors`}
+                          variant="outline"
+                        >
+                          {getStatusLabel(donacion.estado)}
+                        </Badge>
+                        {donacion.type === "ACCEPTED_REQUEST" && (
+                          <Badge variant="secondary" className="bg-purple-100 text-purple-700 border-purple-200">
+                            Solicitud
+                          </Badge>
+                        )}
+                      </div>
                       <span className="text-xs font-medium text-gray-400 bg-gray-100 px-2 py-1 rounded-full flex items-center gap-1">
                         <Clock className="w-3 h-3" />
                         {new Date(donacion.createdAt).toLocaleDateString()}
@@ -297,6 +281,12 @@ export default function MyDonationsPage() {
                             />
                           </div>
                         )}
+                        {/* Show recipe icon if request */}
+                        {donacion.recipePhotoUrl && (
+                          <div className="w-8 h-8 rounded-full border-2 border-white bg-purple-100 flex items-center justify-center relative overflow-hidden z-10 text-purple-600">
+                            <CheckCircle2 className="w-4 h-4" />
+                          </div>
+                        )}
                         {donacion.direccion && (
                           <div className="w-8 h-8 rounded-full border-2 border-white bg-blue-100 flex items-center justify-center z-10 text-blue-600">
                             <MapPin className="w-4 h-4" />
@@ -315,11 +305,11 @@ export default function MyDonationsPage() {
                     </div>
                   </CardFooter>
                 </Card>
-              </motion.div>
+              </div>
             ))}
           </div>
         )}
-      </motion.div>
+      </div>
 
       {/* Details Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
@@ -333,7 +323,7 @@ export default function MyDonationsPage() {
                   </div>
                   <div>
                     <DialogTitle className="text-xl">
-                      Detalles de la Donación
+                      Detalles de la {selectedDonacion.type === "ACCEPTED_REQUEST" ? "Solicitud Aceptada" : "Donación"}
                     </DialogTitle>
                     <DialogDescription>
                       Registrada el {formatDateTime(selectedDonacion.createdAt)}
@@ -342,32 +332,35 @@ export default function MyDonationsPage() {
                 </div>
               </DialogHeader>
 
-              <div className="bg-teal-50 border border-teal-100 rounded-xl p-4 mt-6 flex flex-col items-center justify-center text-center">
-                <span className="text-teal-600 text-sm font-medium mb-1">
-                  CÓDIGO DE DONACIÓN
-                </span>
-                <span className="text-3xl font-mono font-bold text-teal-800 tracking-wider">
-                  {selectedDonacion.codigo || "PENDIENTE"}
-                </span>
-                <span className="text-teal-600/70 text-xs mt-2">
-                  Presenta este código en la farmacia al entregar los
-                  medicamentos
-                </span>
-              </div>
+              {/* Status and Code Block */}
+              <div className="mt-6 flex flex-col gap-4">
+                {selectedDonacion.codigo && (selectedDonacion.type === "ACCEPTED_REQUEST" || selectedDonacion.estado === "ENTREGADA") && (
+                  <div className="bg-teal-50 border border-teal-100 rounded-xl p-4 flex flex-col items-center justify-center text-center">
+                    <span className="text-teal-600 text-sm font-medium mb-1">
+                      CÓDIGO DE COMPROBANTE
+                    </span>
+                    <span className="text-3xl font-mono font-bold text-teal-800 tracking-wider">
+                      {selectedDonacion.codigo}
+                    </span>
+                    <span className="text-teal-600/70 text-xs mt-2">
+                      Presenta este código en la farmacia
+                    </span>
+                  </div>
+                )}
 
-              <div className="space-y-6 mt-4">
-                {/* Status Wrapper */}
-                <div className="flex flex-wrap gap-3">
+                <div className="flex justify-center">
                   <Badge
                     className={`${getStatusColor(
                       selectedDonacion.estado,
-                    )} text-sm px-3 py-1`}
+                    )} text-sm px-4 py-1.5`}
                     variant="outline"
                   >
                     Estado: {getStatusLabel(selectedDonacion.estado)}
                   </Badge>
                 </div>
+              </div>
 
+              <div className="space-y-6 mt-6">
                 {/* Main Info */}
                 <div>
                   <h4 className="font-semibold text-gray-700 mb-3 flex items-center gap-2">
@@ -412,7 +405,7 @@ export default function MyDonationsPage() {
                 {selectedDonacion.descripcion && (
                   <div>
                     <h4 className="font-semibold text-gray-700 mb-2">
-                      Descripción y Detalles
+                      {selectedDonacion.type === "ACCEPTED_REQUEST" ? "Motivo de Solicitud" : "Descripción"}
                     </h4>
                     <div className="text-gray-600 bg-gray-50 p-4 rounded-xl border-l-4 border-teal-500 whitespace-pre-wrap text-sm">
                       {selectedDonacion.descripcion}
@@ -425,7 +418,7 @@ export default function MyDonationsPage() {
                   <div>
                     <h4 className="font-semibold text-gray-700 mb-2 flex items-center gap-2">
                       <MapPin className="w-4 h-4 text-teal-600" />
-                      Ubicación de Recogida
+                      Ubicación de Recogida/Entrega
                     </h4>
                     <div className="text-sm text-gray-600 bg-gray-50 p-3 rounded-xl">
                       <p className="font-medium text-gray-900 mb-1">
@@ -439,23 +432,44 @@ export default function MyDonationsPage() {
                   </div>
                 )}
 
-                {/* Photo */}
-                {selectedDonacion.donationPhotoUrl && (
-                  <div>
-                    <h4 className="font-semibold text-gray-700 mb-3 flex items-center gap-2">
-                      <Camera className="w-4 h-4 text-teal-600" />
-                      Foto del Medicamento
-                    </h4>
-                    <div className="relative rounded-2xl overflow-hidden border-2 border-gray-200 shadow-lg bg-gray-100 aspect-video md:aspect-auto md:h-[300px]">
-                      <Image
-                        src={selectedDonacion.donationPhotoUrl}
-                        alt="Foto del medicamento"
-                        fill
-                        className="object-contain"
-                      />
+                {/* Photos */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {selectedDonacion.donationPhotoUrl && (
+                    <div>
+                      <h4 className="font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                        <Camera className="w-4 h-4 text-teal-600" />
+                        Foto del Medicamento
+                      </h4>
+                      <div className="relative rounded-2xl overflow-hidden border-2 border-gray-200 shadow-lg bg-gray-100 aspect-video">
+                        <Image
+                          src={selectedDonacion.donationPhotoUrl}
+                          alt="Foto del medicamento"
+                          fill
+                          className="object-contain"
+                        />
+                      </div>
                     </div>
-                  </div>
-                )}
+                  )}
+
+                  {/* RECIPE PHOTO */}
+                  {selectedDonacion.recipePhotoUrl && (
+                    <div>
+                      <h4 className="font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                        <CheckCircle2 className="w-4 h-4 text-purple-600" />
+                        Foto del Récipe
+                      </h4>
+                      <div className="relative rounded-2xl overflow-hidden border-2 border-purple-200 shadow-lg bg-purple-50 aspect-video">
+                        <Image
+                          src={selectedDonacion.recipePhotoUrl}
+                          alt="Foto del recipe"
+                          fill
+                          className="object-contain"
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
+
               </div>
             </>
           )}

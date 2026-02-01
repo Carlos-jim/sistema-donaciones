@@ -319,7 +319,7 @@ async function main() {
         data: {
             userId: usuario1.id,
             type: "SYSTEM",
-            title: "Bienvenido a MediShare",
+            title: "Bienvenido a MediShareNE",
             message: "Tu cuenta ha sido creada exitosamente.",
             read: false,
         },

@@ -70,16 +70,132 @@ async function main() {
         },
     });
 
-    // Create Pharmacy
+    // Create Pharmacies
     console.log("💊 Creating pharmacies...");
-    const farmacia = await prisma.farmacia.create({
+
+    // Farmatodo Sambil Margarita (Maneiro)
+    const farmacia1 = await prisma.farmacia.create({
         data: {
-            nombre: "Farmacia Central",
-            direccion: "Av. Libertador, Caracas",
-            telefono: "0212-5554321",
-            horario: "Lunes a Sábado 8:00 AM - 8:00 PM",
-            email: "farmacia@farmacentral.com",
+            nombre: "Farmatodo Sambil Margarita",
+            direccion: "Av. Jóvito Villalba, C.C. Sambil, Pampatar",
+            telefono: "0295-2601111",
+            horario: "Lunes a Domingo 8:00 AM - 10:00 PM",
+            email: "sambil@farmatodo.com",
             password: await hashPassword("farmacia123"),
+            latitude: 10.996578,
+            longitude: -63.8133486,
+        },
+    });
+
+    // Farmatodo Playa El Ángel
+    const farmacia2 = await prisma.farmacia.create({
+        data: {
+            nombre: "Farmatodo Playa El Ángel",
+            direccion: "Av. Aldonza Manrique, Playa El Ángel",
+            telefono: "0295-2622222",
+            horario: "Lunes a Domingo 24 Horas",
+            email: "playaelangel@farmatodo.com",
+            password: await hashPassword("farmacia123"),
+            latitude: 10.9878333,
+            longitude: -63.8177528,
+        },
+    });
+
+    // Farmatodo C.C. La Vela
+    const farmacia3 = await prisma.farmacia.create({
+        data: {
+            nombre: "Farmatodo C.C. La Vela",
+            direccion: "C.C. La Vela, Nivel Planta, Urb. Costa Azul",
+            telefono: "0295-2603333",
+            horario: "Lunes a Domingo 9:00 AM - 9:00 PM",
+            email: "lavela@farmatodo.com",
+            password: await hashPassword("farmacia123"),
+            latitude: 10.9777303,
+            longitude: -63.8195757,
+        },
+    });
+
+    // Farmatodo Jorge Coll
+    const farmacia4 = await prisma.farmacia.create({
+        data: {
+            nombre: "Farmatodo Jorge Coll",
+            direccion: "Urb. Jorge Coll, Pampatar",
+            telefono: "0295-2604444",
+            horario: "Lunes a Domingo 8:00 AM - 9:00 PM",
+            email: "jorgecoll@farmatodo.com",
+            password: await hashPassword("farmacia123"),
+            latitude: 10.9947051,
+            longitude: -63.8052786,
+        },
+    });
+
+    // Farmatodo La Asunción
+    const farmacia5 = await prisma.farmacia.create({
+        data: {
+            nombre: "Farmatodo La Asunción",
+            direccion: "Av. 31 de Julio, Sector Cocheima, La Asunción",
+            telefono: "0295-2605555",
+            horario: "Lunes a Domingo 8:00 AM - 8:00 PM",
+            email: "laasuncion@farmatodo.com",
+            password: await hashPassword("farmacia123"),
+            latitude: 11.0402671,
+            longitude: -63.8571535,
+        },
+    });
+
+    // Farmahorro (Farmaplus) Caribe
+    await prisma.farmacia.create({
+        data: {
+            nombre: "Farmahorro Caribe",
+            direccion: "Av. Jóvito Villalba, Sector Caribe, Pampatar",
+            telefono: "0295-2606666",
+            horario: "Lunes a Domingo 8:00 AM - 10:00 PM",
+            email: "caribe@farmahorro.com",
+            password: await hashPassword("farmacia123"),
+            latitude: 10.9927,
+            longitude: -63.825,
+        },
+    });
+
+    // Farmacia Sigo - Sambil Margarita
+    await prisma.farmacia.create({
+        data: {
+            nombre: "Farmacia Sigo Sambil",
+            direccion: "C.C. Sambil Margarita, Entrada Playa El Yaque",
+            telefono: "0295-2607777",
+            horario: "Lunes a Domingo 10:00 AM - 9:00 PM",
+            email: "sigosambil@sigo.com",
+            password: await hashPassword("farmacia123"),
+            latitude: 10.9988,
+            longitude: -63.8141,
+        },
+    });
+
+    // Farmacia Sigo - Parque Costazul
+    await prisma.farmacia.create({
+        data: {
+            nombre: "Farmacia Sigo Costazul",
+            direccion: "Av. Jóvito Villalba, C.C. Parque Costazul",
+            telefono: "0295-2608888",
+            horario: "Lunes a Domingo 9:00 AM - 9:00 PM",
+            email: "sigocostazul@sigo.com",
+            password: await hashPassword("farmacia123"),
+            latitude: 10.9908,
+            longitude: -63.8237,
+        },
+    });
+
+    // Farmacia Sigo - La Proveeduría
+    await prisma.farmacia.create({
+        data: {
+            nombre: "Farmacia Sigo La Proveeduría",
+            direccion: "Av. Juan Bautista Arismendi, Porlamar",
+            telefono: "0295-2609999",
+            horario: "Lunes a Sábado 8:00 AM - 7:00 PM",
+            email: "proveeduria@sigo.com",
+            password: await hashPassword("farmacia123"),
+            latitude: 10.9523,
+            longitude: -63.8684,
         },
     });
 
@@ -115,6 +231,28 @@ async function main() {
             telefono: "0412-9876543",
             cedula: "V-11223344",
             direccion: { lat: 10.5000, lng: -66.9167 },
+        },
+    });
+
+    const usuario4 = await prisma.usuarioComun.create({
+        data: {
+            nombre: "Luis Pérez",
+            email: "luis@example.com",
+            password: await hashPassword("user123"),
+            telefono: "0416-5551234",
+            cedula: "V-22334455",
+            direccion: { lat: 10.4850, lng: -66.8650 },
+        },
+    });
+
+    const usuario5 = await prisma.usuarioComun.create({
+        data: {
+            nombre: "Carmen López",
+            email: "carmen@example.com",
+            password: await hashPassword("user123"),
+            telefono: "0426-8889999",
+            cedula: "V-33445566",
+            direccion: { lat: 10.4750, lng: -66.8850 },
         },
     });
 
@@ -193,6 +331,24 @@ async function main() {
                 concentracion: "100 UI/ml",
             },
         }),
+        prisma.medicamento.create({
+            data: {
+                nombre: "Enalapril",
+                descripcion: "Inhibidor de ECA para hipertensión",
+                principioActivo: "Enalapril maleato",
+                presentacion: "Tabletas",
+                concentracion: "10mg",
+            },
+        }),
+        prisma.medicamento.create({
+            data: {
+                nombre: "Atorvastatina",
+                descripcion: "Estatina para colesterol alto",
+                principioActivo: "Atorvastatina cálcica",
+                presentacion: "Tabletas",
+                concentracion: "20mg",
+            },
+        }),
     ]);
 
     // Create Pending Requests
@@ -206,7 +362,7 @@ async function main() {
             direccion: { lat: 10.4806, lng: -66.9036 },
             requiresPrescription: true,
             usuarioComunId: usuario1.id,
-            farmaciaId: farmacia.id,
+            farmaciaId: farmacia1.id,
             medicamentos: {
                 create: [
                     { medicamentoId: medicamentos[0].id, cantidad: 2, prioridad: 3 },
@@ -233,15 +389,20 @@ async function main() {
         },
     });
 
+    // Create APPROVED Requests (for donor testing)
+    console.log("✅ Creating approved requests...");
     await prisma.solicitud.create({
         data: {
             codigo: "SOL-003",
             motivo: "Necesito medicamento para diabetes",
-            estado: "PENDIENTE",
+            estado: "APROBADA",
             tiempoEspera: "ALTO",
             direccion: { lat: 10.5000, lng: -66.9167 },
             requiresPrescription: true,
             usuarioComunId: usuario3.id,
+            aprobadoPorEnteId: enteSalud.id,
+            approvalDate: new Date(),
+            approvalInstitution: enteSalud.nombre,
             medicamentos: {
                 create: [
                     { medicamentoId: medicamentos[4].id, cantidad: 2, prioridad: 3 },
@@ -251,11 +412,10 @@ async function main() {
         },
     });
 
-    // Create approved request
     await prisma.solicitud.create({
         data: {
             codigo: "SOL-004",
-            motivo: "Alergia estacional",
+            motivo: "Alergia estacional severa",
             estado: "APROBADA",
             tiempoEspera: "BAJO",
             direccion: { lat: 10.4850, lng: -66.8900 },
@@ -267,6 +427,127 @@ async function main() {
             medicamentos: {
                 create: [
                     { medicamentoId: medicamentos[6].id, cantidad: 1, prioridad: 1 },
+                ],
+            },
+        },
+    });
+
+    await prisma.solicitud.create({
+        data: {
+            codigo: "SOL-005",
+            motivo: "Tratamiento para reflujo gástrico crónico",
+            estado: "APROBADA",
+            tiempoEspera: "MEDIO",
+            direccion: { lat: 10.4780, lng: -66.8700 },
+            requiresPrescription: true,
+            usuarioComunId: usuario4.id,
+            aprobadoPorEnteId: enteSalud.id,
+            approvalDate: new Date(),
+            approvalInstitution: enteSalud.nombre,
+            medicamentos: {
+                create: [
+                    { medicamentoId: medicamentos[5].id, cantidad: 2, prioridad: 2 },
+                ],
+            },
+        },
+    });
+
+    await prisma.solicitud.create({
+        data: {
+            codigo: "SOL-006",
+            motivo: "Infección respiratoria que requiere antibiótico",
+            estado: "APROBADA",
+            tiempoEspera: "ALTO",
+            direccion: { lat: 10.4920, lng: -66.8550 },
+            requiresPrescription: true,
+            usuarioComunId: usuario5.id,
+            aprobadoPorEnteId: enteSalud.id,
+            approvalDate: new Date(),
+            approvalInstitution: enteSalud.nombre,
+            medicamentos: {
+                create: [
+                    { medicamentoId: medicamentos[2].id, cantidad: 1, prioridad: 3 },
+                ],
+            },
+        },
+    });
+
+    await prisma.solicitud.create({
+        data: {
+            codigo: "SOL-007",
+            motivo: "Control de presión arterial",
+            estado: "APROBADA",
+            tiempoEspera: "MEDIO",
+            direccion: { lat: 10.4650, lng: -66.8800 },
+            requiresPrescription: true,
+            usuarioComunId: usuario2.id,
+            aprobadoPorEnteId: enteSalud.id,
+            approvalDate: new Date(),
+            approvalInstitution: enteSalud.nombre,
+            medicamentos: {
+                create: [
+                    { medicamentoId: medicamentos[8].id, cantidad: 1, prioridad: 2 },
+                ],
+            },
+        },
+    });
+
+    await prisma.solicitud.create({
+        data: {
+            codigo: "SOL-008",
+            motivo: "Tratamiento colesterol alto",
+            estado: "APROBADA",
+            tiempoEspera: "BAJO",
+            direccion: { lat: 10.4880, lng: -66.8620 },
+            requiresPrescription: true,
+            usuarioComunId: usuario3.id,
+            aprobadoPorEnteId: enteSalud.id,
+            approvalDate: new Date(),
+            approvalInstitution: enteSalud.nombre,
+            medicamentos: {
+                create: [
+                    { medicamentoId: medicamentos[9].id, cantidad: 1, prioridad: 1 },
+                ],
+            },
+        },
+    });
+
+    await prisma.solicitud.create({
+        data: {
+            codigo: "SOL-009",
+            motivo: "Dolor de cabeza frecuente",
+            estado: "APROBADA",
+            tiempoEspera: "BAJO",
+            direccion: { lat: 10.4720, lng: -66.8950 },
+            requiresPrescription: false,
+            usuarioComunId: usuario4.id,
+            aprobadoPorEnteId: enteSalud.id,
+            approvalDate: new Date(),
+            approvalInstitution: enteSalud.nombre,
+            medicamentos: {
+                create: [
+                    { medicamentoId: medicamentos[0].id, cantidad: 1, prioridad: 1 },
+                    { medicamentoId: medicamentos[1].id, cantidad: 1, prioridad: 1 },
+                ],
+            },
+        },
+    });
+
+    await prisma.solicitud.create({
+        data: {
+            codigo: "SOL-010",
+            motivo: "Necesito antiinflamatorio para artritis",
+            estado: "APROBADA",
+            tiempoEspera: "MEDIO",
+            direccion: { lat: 10.4950, lng: -66.8480 },
+            requiresPrescription: false,
+            usuarioComunId: usuario5.id,
+            aprobadoPorEnteId: enteSalud.id,
+            approvalDate: new Date(),
+            approvalInstitution: enteSalud.nombre,
+            medicamentos: {
+                create: [
+                    { medicamentoId: medicamentos[1].id, cantidad: 2, prioridad: 2 },
                 ],
             },
         },
@@ -336,15 +617,16 @@ async function main() {
     console.log("\n📊 Summary:");
     console.log("   - 1 Administrator");
     console.log("   - 2 Health Entities");
-    console.log("   - 1 Pharmacy");
-    console.log("   - 3 Common Users");
-    console.log("   - 8 Medications");
-    console.log("   - 4 Requests (3 pending, 1 approved)");
+    console.log("   - 9 Pharmacies (Margarita Island)");
+    console.log("   - 5 Common Users");
+    console.log("   - 10 Medications");
+    console.log("   - 10 Requests (2 pending, 8 approved)");
     console.log("   - 2 Donations");
     console.log("\n🔑 Test credentials:");
     console.log("   Admin: admin@medishare.com / admin123");
     console.log("   Supervisor: supervisor@hospitalcentral.com / supervisor123");
     console.log("   User: maria@example.com / user123");
+    console.log("   User: carlos@example.com / user123");
 }
 
 main()

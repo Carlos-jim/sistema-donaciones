@@ -61,78 +61,6 @@ const SAMPLE_LOCATIONS: MapLocation[] = [
   },
 ];
 
-const PHARMACY_LOCATIONS: MapLocation[] = [
-  // Pampatar / Playa El Ángel / Sambil
-  {
-    id: "f1",
-    lat: 10.996578,
-    lng: -63.8133486,
-    type: "pharmacy",
-    title: "Farmatodo Sambil Margarita (Maneiro)",
-  },
-  {
-    id: "f2",
-    lat: 10.9878333,
-    lng: -63.8177528,
-    type: "pharmacy",
-    title: "Farmatodo Playa El Ángel (Av. Aldonza Manrique)",
-  },
-  {
-    id: "f3",
-    lat: 10.9777303,
-    lng: -63.8195757,
-    type: "pharmacy",
-    title: "Farmatodo C.C. La Vela",
-  },
-  {
-    id: "f4",
-    lat: 10.9947051,
-    lng: -63.8052786,
-    type: "pharmacy",
-    title: "Farmatodo Jorge Coll", // Ubicado en la Urb. Jorge Coll, cerca de Pampatar
-  },
-
-  // La Asunción
-  {
-    id: "f5",
-    lat: 11.0402671,
-    lng: -63.8571535,
-    type: "pharmacy",
-    title: "Farmatodo La Asunción (Sector Cocheima)",
-  },
-  // --- FARMAPLUS / FARMAHORRO ---
-  {
-    id: "fp1",
-    lat: 10.9927,
-    lng: -63.825,
-    type: "pharmacy",
-    title: "Farmahorro (Farmaplus) Caribe - Pampatar",
-  },
-
-  // --- FARMACIAS SIGO (Dentro de Supermercados Sigo) ---
-  {
-    id: "fs1",
-    lat: 10.9988,
-    lng: -63.8141,
-    type: "pharmacy",
-    title: "Farmacia Sigo - Sambil Margarita",
-  },
-  {
-    id: "fs2",
-    lat: 10.9908,
-    lng: -63.8237,
-    type: "pharmacy",
-    title: "Farmacia Sigo - Parque Costazul",
-  },
-  {
-    id: "fs3",
-    lat: 10.9523,
-    lng: -63.8684,
-    type: "pharmacy",
-    title: "Farmacia Sigo - La Proveeduría (Porlamar)",
-  },
-];
-
 interface MapViewProps {
   locations?: MapLocation[];
   onPositionChange?: (pos: { lat: number; lng: number }) => void;
@@ -173,6 +101,8 @@ function MapViewInner({
     lng: number;
   } | null>(null);
 
+  const [dbPharmacies, setDbPharmacies] = useState<MapLocation[]>([]);
+
   const [isConfirmDialogOpen, setIsConfirmDialogOpen] = useState(false);
   const [pendingLocation, setPendingLocation] = useState<
     [number, number] | null
@@ -180,7 +110,29 @@ function MapViewInner({
 
   useEffect(() => {
     setIsClient(true);
+    fetchPharmacies();
   }, []);
+
+  const fetchPharmacies = async () => {
+    try {
+      const response = await fetch("/api/pharmacies");
+      if (response.ok) {
+        const data = await response.json();
+        const mappedPharmacies: MapLocation[] = data
+          .filter((p: any) => p.latitude && p.longitude)
+          .map((p: any) => ({
+            id: p.id,
+            lat: p.latitude,
+            lng: p.longitude,
+            type: "pharmacy",
+            title: p.nombre,
+          }));
+        setDbPharmacies(mappedPharmacies);
+      }
+    } catch (error) {
+      console.error("Error loading pharmacies for map:", error);
+    }
+  };
 
   const handleLocationUpdateAttempt = (
     lat: number,
@@ -242,14 +194,14 @@ function MapViewInner({
     const a =
       Math.sin(dLat / 2) * Math.sin(dLat / 2) +
       Math.cos(lat1 * (Math.PI / 180)) *
-        Math.cos(lat2 * (Math.PI / 180)) *
-        Math.sin(dLon / 2) *
-        Math.sin(dLon / 2);
+      Math.cos(lat2 * (Math.PI / 180)) *
+      Math.sin(dLon / 2) *
+      Math.sin(dLon / 2);
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     return R * c;
   };
 
-  const sortedPharmacies = [...PHARMACY_LOCATIONS].sort((a, b) => {
+  const sortedPharmacies = [...dbPharmacies].sort((a, b) => {
     if (!userLocation) return 0;
     const distA = calculateDistance(
       userLocation[0],
@@ -270,7 +222,7 @@ function MapViewInner({
     const pharmacyId = e.target.value;
     if (!pharmacyId) return;
 
-    const pharmacy = PHARMACY_LOCATIONS.find((p) => p.id === pharmacyId);
+    const pharmacy = dbPharmacies.find((p) => p.id === pharmacyId);
     if (pharmacy && mapRef.current) {
       try {
         mapRef.current.flyTo([pharmacy.lat, pharmacy.lng], 18, {
@@ -312,7 +264,7 @@ function MapViewInner({
             }
           }
         },
-        () => {},
+        () => { },
         {
           enableHighAccuracy: true,
           timeout: 15000,
@@ -436,7 +388,7 @@ function MapViewInner({
 
   const displayLocations = [
     ...(locations || SAMPLE_LOCATIONS),
-    ...PHARMACY_LOCATIONS,
+    ...dbPharmacies,
   ];
 
   return (

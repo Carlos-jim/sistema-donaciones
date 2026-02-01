@@ -19,7 +19,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { MapPin, PlusCircle, Search, ArrowUpDown } from "lucide-react";
+import { MapPin, PlusCircle, Search, ArrowUpDown, Filter } from "lucide-react";
+import { Input } from "@/components/ui/input";
 import { MedicationRequestCard } from "@/components/medication-request-card";
 import { MedicationDonationCard } from "@/components/medication-donation-card";
 import { MapView, type MapLocation } from "@/components/map-view";
@@ -146,13 +147,15 @@ export default function DashboardClient({
   const [solicitudes, setSolicitudes] = useState<Solicitud[]>([]);
   const [donaciones, setDonaciones] = useState<Donacion[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [urgencyFilter, setUrgencyFilter] = useState<string>("all");
 
   // Fetch requests from API
   useEffect(() => {
     async function fetchData() {
       try {
         const [requestsRes, donationsRes] = await Promise.all([
-          fetch("/api/requests"),
+          fetch("/api/requests/approved"),
           fetch("/api/donations"),
         ]);
 
@@ -172,6 +175,19 @@ export default function DashboardClient({
     }
     fetchData();
   }, []);
+
+  // Refetch function for when a request is accepted
+  const refetchRequests = async () => {
+    try {
+      const response = await fetch("/api/requests/approved");
+      if (response.ok) {
+        const data = await response.json();
+        setSolicitudes(data);
+      }
+    } catch (error) {
+      console.error("Error refetching requests:", error);
+    }
+  };
 
   // Calculate distances and sort requests
   const sortedRequests = useMemo(() => {
@@ -222,6 +238,20 @@ export default function DashboardClient({
       });
     }
   }, [solicitudes, userLocation, sortBy]);
+
+  // Filter requests by search and urgency
+  const filteredRequests = useMemo(() => {
+    return sortedRequests.filter((request) => {
+      const matchesSearch = searchTerm === "" ||
+        request.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        request.requester.toLowerCase().includes(searchTerm.toLowerCase());
+
+      const matchesUrgency = urgencyFilter === "all" ||
+        request.urgency.toLowerCase() === urgencyFilter.toLowerCase();
+
+      return matchesSearch && matchesUrgency;
+    });
+  }, [sortedRequests, searchTerm, urgencyFilter]);
 
   // Calculate distances and sort donations
   const sortedDonations = useMemo(() => {
@@ -407,49 +437,87 @@ export default function DashboardClient({
               >
                 <Card className="border-0 shadow-xl shadow-gray-200/50">
                   <CardHeader className="bg-gradient-to-r from-gray-50 to-white">
-                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                      <div>
-                        <CardTitle>Solicitudes Activas</CardTitle>
-                        <CardDescription>
-                          Solicitudes de medicamentos que necesitan ser
-                          atendidas.
-                        </CardDescription>
+                    <div className="flex flex-col gap-4">
+                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                        <div>
+                          <CardTitle>Solicitudes Disponibles</CardTitle>
+                          <CardDescription>
+                            Ayuda a quienes necesitan medicamentos. Haz clic en "Quiero Donar" para comprometerte.
+                          </CardDescription>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <ArrowUpDown className="h-4 w-4 text-gray-500" />
+                          <Select
+                            value={sortBy}
+                            onValueChange={(value: "nearest" | "recent") =>
+                              setSortBy(value)
+                            }
+                          >
+                            <SelectTrigger className="w-[180px]">
+                              <SelectValue placeholder="Ordenar por" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="nearest">
+                                Más cercanos
+                              </SelectItem>
+                              <SelectItem value="recent">
+                                Más recientes
+                              </SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <ArrowUpDown className="h-4 w-4 text-gray-500" />
-                        <Select
-                          value={sortBy}
-                          onValueChange={(value: "nearest" | "recent") =>
-                            setSortBy(value)
-                          }
-                        >
-                          <SelectTrigger className="w-[180px]">
-                            <SelectValue placeholder="Ordenar por" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="nearest">
-                              Más cercanos
-                            </SelectItem>
-                            <SelectItem value="recent">
-                              Más recientes
-                            </SelectItem>
-                          </SelectContent>
-                        </Select>
+                      {/* Search and Filter Row */}
+                      <div className="flex flex-col sm:flex-row gap-3">
+                        <div className="relative flex-1">
+                          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                          <Input
+                            placeholder="Buscar por medicamento o beneficiario..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            className="pl-10"
+                          />
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Filter className="h-4 w-4 text-gray-500" />
+                          <Select value={urgencyFilter} onValueChange={setUrgencyFilter}>
+                            <SelectTrigger className="w-[160px]">
+                              <SelectValue placeholder="Urgencia" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="all">Todas</SelectItem>
+                              <SelectItem value="alta">Alta</SelectItem>
+                              <SelectItem value="media">Media</SelectItem>
+                              <SelectItem value="baja">Baja</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
                       </div>
+                      {/* Results count */}
+                      <p className="text-sm text-gray-500">
+                        {filteredRequests.length} solicitud{filteredRequests.length !== 1 ? 'es' : ''} disponible{filteredRequests.length !== 1 ? 's' : ''}
+                      </p>
                     </div>
                   </CardHeader>
                   <CardContent>
                     {isLoading ? (
                       <div className="text-center py-8 text-gray-500">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-teal-600 mx-auto mb-3"></div>
                         Cargando solicitudes...
                       </div>
-                    ) : sortedRequests.length === 0 ? (
-                      <div className="text-center py-8 text-gray-500">
-                        No hay solicitudes activas
+                    ) : filteredRequests.length === 0 ? (
+                      <div className="text-center py-12 text-gray-500">
+                        <Search className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                        <p className="text-lg font-medium">No hay solicitudes disponibles</p>
+                        <p className="text-sm mt-1">
+                          {searchTerm || urgencyFilter !== "all"
+                            ? "Intenta ajustar los filtros de búsqueda"
+                            : "Las solicitudes aprobadas aparecerán aquí"}
+                        </p>
                       </div>
                     ) : (
                       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                        {sortedRequests.map((request, index) => (
+                        {filteredRequests.map((request, index) => (
                           <motion.div
                             key={request.id}
                             custom={index}
@@ -458,7 +526,10 @@ export default function DashboardClient({
                             animate="visible"
                             className="transition-transform duration-300 hover:-translate-y-1"
                           >
-                            <MedicationRequestCard {...request} />
+                            <MedicationRequestCard
+                              {...request}
+                              onAccepted={refetchRequests}
+                            />
                           </motion.div>
                         ))}
                       </div>

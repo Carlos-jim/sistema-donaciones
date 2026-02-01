@@ -141,7 +141,7 @@ export function DashboardHeader() {
         >
           <Heart className="h-6 w-6 text-teal-600" />
           <span className="text-xl font-bold bg-gradient-to-r from-teal-600 to-teal-400 bg-clip-text text-transparent">
-            MediShare
+            MediShareNE
           </span>
         </motion.div>
         <motion.nav

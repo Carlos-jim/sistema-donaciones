@@ -27,6 +27,7 @@ enum TipoUsuario {
 enum EstadoSolicitud {
   PENDIENTE
   APROBADA
+  EN_PROCESO
   RECIBIDA
   LISTA_PARA_RETIRO
   RECHAZADA
@@ -103,10 +104,12 @@ model UsuarioComun {
   updatedAt DateTime @updatedAt
 
   // Relaciones: realiza donaciones y solicitudes
-  // Relaciones: realiza donaciones y solicitudes
   donaciones  Donacion[]
   solicitudes Solicitud[]
   notificaciones Notificacion[]
+
+  // Solicitudes donde este usuario fue asignado como donante
+  solicitudesComoDonante Solicitud[] @relation("DonorAssignment")
 
   @@map("usuarios_comunes")
 }
@@ -191,6 +194,18 @@ model Solicitud {
   farmaciaId String?
   farmacia   Farmacia? @relation(fields: [farmaciaId], references: [id])
 
+  // FK: Donante asignado (Usuario que acepta donar)
+  donanteAsignadoId String?
+  donanteAsignado   UsuarioComun? @relation("DonorAssignment", fields: [donanteAsignadoId], references: [id])
+  assignedDate      DateTime?
+
+  // FK: Farmacia donde el donante entregará el medicamento
+  farmaciaEntregaId String?
+  farmaciaEntrega   Farmacia? @relation("DeliveryPharmacy", fields: [farmaciaEntregaId], references: [id])
+  
+  // Código de comprobante único (vincula Donante-Farmacia-Solicitud)
+  codigoComprobante String?   @unique
+
   // Relación: contiene medicamentos
   medicamentos SolicitudMedicamento[]
 
@@ -224,11 +239,16 @@ model Farmacia {
   horario   String?
   email     String   @unique
   password  String
+  latitude  Float?
+  longitude Float?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   // Relación: solicitudes realizadas en esta farmacia
   solicitudes Solicitud[]
+  
+  // Relación: entregas de donaciones en esta farmacia
+  entregasDonaciones Solicitud[] @relation("DeliveryPharmacy")
 
   @@map("farmacias")
 }
