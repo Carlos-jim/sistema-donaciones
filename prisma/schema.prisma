@@ -84,6 +84,9 @@ model EnteSalud {
   // Relación: solicitudes aprobadas/rechazadas por este ente
   solicitudesAprobadas Solicitud[]
 
+  // Relación: prioridades modificadas por este ente
+  prioridadesModificadas SolicitudMedicamento[] @relation("PriorityModification")
+
   @@map("entes_salud")
 }
 
@@ -259,6 +262,7 @@ model SolicitudMedicamento {
   cantidad  Int      @default(1)
   prioridad Int      @default(1) // 1 = baja, 2 = media, 3 = alta
   createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
 
   // FKs
   solicitudId String
@@ -266,6 +270,14 @@ model SolicitudMedicamento {
 
   medicamentoId String
   medicamento   Medicamento @relation(fields: [medicamentoId], references: [id], onDelete: Cascade)
+
+  // FK: Ente de salud que modificó la prioridad (audit)
+  prioridadModificadaPorId String?
+  prioridadModificadaPor   EnteSalud? @relation("PriorityModification", fields: [prioridadModificadaPorId], references: [id])
+
+  // Auditoría de cambios de prioridad
+  prioridadOriginal        Int?
+  fechaModificacionPrioridad DateTime?
 
   @@unique([solicitudId, medicamentoId])
   @@map("solicitud_medicamentos")
