@@ -3,6 +3,7 @@
 import { useState, useCallback, useEffect, useRef, useMemo } from "react";
 import dynamic from "next/dynamic";
 import { Button } from "@/components/ui/button";
+import { Combobox } from "@/components/ui/combobox";
 import { Search, Locate } from "lucide-react";
 
 import {
@@ -107,6 +108,7 @@ function MapViewInner({
   const [pendingLocation, setPendingLocation] = useState<
     [number, number] | null
   >(null);
+  const [selectedPharmacy, setSelectedPharmacy] = useState<string>("");
 
   useEffect(() => {
     setIsClient(true);
@@ -218,8 +220,8 @@ function MapViewInner({
     return distA - distB;
   });
 
-  const handlePharmacyChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const pharmacyId = e.target.value;
+  const handlePharmacyChange = (pharmacyId: string) => {
+    setSelectedPharmacy(pharmacyId);
     if (!pharmacyId) return;
 
     const pharmacy = dbPharmacies.find((p) => p.id === pharmacyId);
@@ -508,15 +510,8 @@ function MapViewInner({
 
       <div className="absolute left-4 right-4 top-4 flex gap-2 z-[1000]">
         <div className="relative flex-1">
-          <select
-            className="w-full rounded-md border border-gray-200 bg-white py-2 pl-3 pr-10 text-sm shadow-sm focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500"
-            onChange={handlePharmacyChange}
-            defaultValue=""
-          >
-            <option value="" disabled>
-              📍 Seleccionar Farmacia cercana...
-            </option>
-            {sortedPharmacies.map((pharmacy) => {
+          <Combobox
+            options={sortedPharmacies.map((pharmacy) => {
               let distanceLabel = "";
               if (userLocation) {
                 const dist = calculateDistance(
@@ -525,15 +520,20 @@ function MapViewInner({
                   pharmacy.lat,
                   pharmacy.lng,
                 );
-                distanceLabel = `(${dist.toFixed(1)} km)`;
+                distanceLabel = `${dist.toFixed(1)} km de distancia`;
               }
-              return (
-                <option key={pharmacy.id} value={pharmacy.id}>
-                  {pharmacy.title} {distanceLabel}
-                </option>
-              );
+              return {
+                value: pharmacy.id,
+                label: pharmacy.title,
+                description: distanceLabel || "Farmacia",
+              };
             })}
-          </select>
+            value={selectedPharmacy}
+            onValueChange={handlePharmacyChange}
+            placeholder="📍 Seleccionar Farmacia cercana..."
+            emptyMessage="No se encontraron farmacias."
+            className="bg-white shadow-sm"
+          />
         </div>
         <Button
           variant="outline"
