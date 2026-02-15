@@ -1,345 +1,324 @@
 "use client";
 
 import { useState } from "react";
-import { getSolicitudByCodigo, updateStatus } from "../actions";
-import { EstadoSolicitud, EstadoDonacion } from "@prisma/client";
 import {
-  CheckCircle,
-  Search,
-  Package,
-  ClipboardCheck,
-  HandHeart,
   AlertTriangle,
+  CheckCircle,
+  ClipboardCheck,
   Gift,
+  HandHeart,
+  Search,
+  ShieldAlert,
 } from "lucide-react";
+import {
+  confirmRequesterPickup,
+  lookupByValidationCode,
+  markDonationReceived,
+  markDonorReceived,
+  markReadyForPickup,
+  rejectByPharmacy,
+} from "../actions";
 
-type ItemWithDetails = Awaited<ReturnType<typeof getSolicitudByCodigo>>["data"];
+type ItemWithDetails = Awaited<
+  ReturnType<typeof lookupByValidationCode>
+> extends { data: infer DataShape }
+  ? DataShape | null
+  : null;
 
-export default function PharmacyPage() {
-  const [codigo, setCodigo] = useState("");
-  const [item, setItem] = useState<ItemWithDetails | null>(null);
+function statusClass(status: string) {
+  if (["COMPLETADA", "RECIBIDA"].includes(status)) {
+    return "bg-green-100 text-green-800";
+  }
+  if (["RECHAZADA", "ABANDONADA", "EXPIRADA"].includes(status)) {
+    return "bg-red-100 text-red-800";
+  }
+  if (["LISTA_PARA_RETIRO", "EN_PROCESO", "APROBADA"].includes(status)) {
+    return "bg-amber-100 text-amber-800";
+  }
+  return "bg-gray-100 text-gray-700";
+}
+
+function roleLabel(role: string | undefined) {
+  switch (role) {
+    case "DONOR_DELIVERY":
+      return "Código de Donante";
+    case "REQUESTER_PICKUP":
+      return "Código de Solicitante";
+    case "DONATION":
+      return "Código de Donación";
+    default:
+      return "Código legado";
+  }
+}
+
+export default function PharmacyReceptionPage() {
+  const [inputCode, setInputCode] = useState("");
+  const [item, setItem] = useState<ItemWithDetails>(null);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
   const [actionLoading, setActionLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [rejectionReason, setRejectionReason] = useState("");
 
-  const handleSearch = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const fetchCode = async (code: string) => {
     setLoading(true);
     setError("");
-    setItem(null);
-
-    const result = await getSolicitudByCodigo(codigo);
+    const result = await lookupByValidationCode(code);
     if (result.success && result.data) {
       setItem(result.data);
     } else {
+      setItem(null);
       setError(result.error || "Código no encontrado");
     }
     setLoading(false);
   };
 
-  const handleStatusUpdate = async (newStatus: string) => {
-    if (!item) return;
+  const handleSearch = async (e: React.FormEvent) => {
+    e.preventDefault();
+    await fetchCode(inputCode);
+  };
+
+  const runAction = async (
+    handler: () => Promise<{ success: boolean; error?: string }>,
+  ) => {
     setActionLoading(true);
-    const result = await updateStatus(item.id, item.type, newStatus);
+    const result = await handler();
     if (result.success) {
-      // Refresh local state to show updated status
-      const updated = await getSolicitudByCodigo(item.codigo!);
-      if (updated.success && updated.data) {
-        setItem(updated.data);
-      }
+      await fetchCode(inputCode);
     } else {
-      alert("Error al actualizar el estado");
+      setError(result.error || "No se pudo completar la operación");
     }
     setActionLoading(false);
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col items-center py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-4xl w-full space-y-8">
+    <div className="min-h-screen bg-gray-50 py-10 px-4">
+      <div className="mx-auto max-w-4xl space-y-6">
         <div className="text-center">
           <HandHeart className="mx-auto h-12 w-12 text-teal-600" />
-          <h2 className="mt-6 text-3xl font-extrabold text-gray-900">
-            Portal de Farmacia
+          <h2 className="mt-4 text-3xl font-bold text-gray-900">
+            Recepción y Entrega en Farmacia
           </h2>
-          <p className="mt-2 text-sm text-gray-600">
-            Gestiona la recepción, validación y entrega de donaciones y
-            solicitudes.
+          <p className="text-sm text-gray-600 mt-2">
+            Ingresa código manual o token QR para validar la operación.
           </p>
         </div>
 
-        {/* Search Section */}
-        <div className="bg-white p-6 rounded-lg shadow-md">
-          <form onSubmit={handleSearch} className="flex gap-4">
-            <div className="relative flex-grow">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <Search className="h-5 w-5 text-gray-400" />
-              </div>
+        <div className="bg-white rounded-xl border shadow-sm p-4">
+          <form onSubmit={handleSearch} className="flex gap-3">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
               <input
-                type="text"
-                className="focus:ring-teal-500 focus:border-teal-500 block w-full pl-10 sm:text-sm border-gray-300 rounded-md p-3 border"
-                placeholder="Ingresa el código (ej. A1B2C3)"
-                value={codigo}
-                onChange={(e) => setCodigo(e.target.value)}
+                className="w-full border rounded-md pl-9 pr-3 py-2 text-sm"
+                placeholder="Ingresa código DON-... / RET-... o token QR"
+                value={inputCode}
+                onChange={(e) => setInputCode(e.target.value)}
               />
             </div>
             <button
+              className="px-4 py-2 rounded-md bg-teal-600 text-white text-sm disabled:opacity-50"
+              disabled={loading || !inputCode.trim()}
               type="submit"
-              disabled={loading}
-              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-teal-600 hover:bg-teal-700 focus:outline-none disabled:opacity-50"
             >
-              {loading ? "Buscando..." : "Buscar"}
+              {loading ? "Buscando..." : "Validar"}
             </button>
           </form>
-          {error && <p className="mt-2 text-red-600 text-sm">{error}</p>}
+          {error && <p className="text-sm text-red-600 mt-3">{error}</p>}
         </div>
 
-        {/* Action Section */}
         {item && (
-          <div className="bg-white rounded-lg shadow-md overflow-hidden animate-fade-in">
-            <div className="p-6 border-b border-gray-200">
-              <div className="flex justify-between items-center">
+          <div className="bg-white rounded-xl border shadow-sm overflow-hidden">
+            <div className="p-5 border-b">
+              <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
-                  <h3 className="text-lg font-medium text-gray-900">
-                    {item.type === "SOLICITUD" ? "Solicitud" : "Donación"} #
-                    {item.codigo}
-                  </h3>
                   <p className="text-sm text-gray-500">
+                    {item.type === "SOLICITUD" ? "Solicitud" : "Donación"}
+                  </p>
+                  <h3 className="text-xl font-semibold text-gray-900">
                     {item.type === "SOLICITUD"
-                      ? `Beneficiario: ${item.usuarioComun?.nombre}`
-                      : `Donante: ${item.usuarioComun?.nombre}`}
+                      ? item.codigoRetiroSolicitante ||
+                        item.codigoEntregaDonante ||
+                        item.codigo ||
+                        item.codigoComprobante
+                      : item.codigo}
+                  </h3>
+                  <p className="text-xs text-gray-500 mt-1">
+                    {roleLabel(
+                      "validationRole" in item ? item.validationRole : undefined,
+                    )}
                   </p>
                 </div>
                 <span
-                  className={`px-3 py-1 rounded-full text-sm font-semibold 
-                  ${
-                    item.estado === "RECIBIDA" || item.estado === "ENTREGADA"
-                      ? "bg-blue-100 text-blue-800"
-                      : item.estado === "LISTA_PARA_RETIRO"
-                        ? "bg-green-100 text-green-800"
-                        : "bg-yellow-100 text-yellow-800"
-                  }`}
+                  className={`px-3 py-1 rounded-full text-xs font-semibold ${statusClass(item.estado)}`}
                 >
                   {item.estado.replace(/_/g, " ")}
                 </span>
               </div>
             </div>
 
-            <div className="p-6 space-y-6">
-              {/* SOLICITUD LOGIC */}
+            <div className="p-5 space-y-5">
               {item.type === "SOLICITUD" && (
                 <>
-                  {/* Step 1: Receive Package */}
-                  {(item.estado === "PENDIENTE" ||
-                    item.estado === "APROBADA") && (
-                    <div className="space-y-4">
-                      <div className="flex items-start gap-4 p-4 bg-yellow-50 rounded-md">
-                        <Package className="h-6 w-6 text-yellow-600 mt-1" />
-                        <div>
-                          <h4 className="font-medium text-yellow-900">
-                            Confirmar Recepción
-                          </h4>
-                          <p className="text-sm text-yellow-700">
-                            Verifica que el paquete ha llegado físicamente a la
-                            farmacia.
-                          </p>
-                        </div>
-                      </div>
-                      <button
-                        onClick={() => handleStatusUpdate("RECIBIDA")}
-                        disabled={actionLoading}
-                        className="w-full flex justify-center items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
-                      >
-                        {actionLoading
-                          ? "Procesando..."
-                          : "Marcar como Recibido en Farmacia"}
-                      </button>
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <div className="rounded-lg bg-gray-50 border p-3">
+                      <p className="text-xs text-gray-500">Beneficiario</p>
+                      <p className="font-medium text-gray-900">
+                        {item.usuarioComun?.nombre || "No disponible"}
+                      </p>
                     </div>
-                  )}
+                    <div className="rounded-lg bg-gray-50 border p-3">
+                      <p className="text-xs text-gray-500">Donante asignado</p>
+                      <p className="font-medium text-gray-900">
+                        {item.donanteAsignado?.nombre || "No asignado"}
+                      </p>
+                    </div>
+                  </div>
 
-                  {/* Step 2: Validate Medication */}
-                  {item.estado === "RECIBIDA" && (
-                    <div className="space-y-4">
-                      <div className="flex items-start gap-4 p-4 bg-blue-50 rounded-md">
-                        <ClipboardCheck className="h-6 w-6 text-blue-600 mt-1" />
-                        <div>
-                          <h4 className="font-medium text-blue-900">
-                            Validación Física
-                          </h4>
-                          <p className="text-sm text-blue-700">
-                            Realiza el checklist de seguridad antes de habilitar
-                            el retiro.
-                          </p>
-                        </div>
-                      </div>
-                      {/* ... Checklist omitted for brevity/simplicity in this refactor, can keep if needed ... */}
-                      <div className="bg-gray-50 p-4 rounded-md space-y-2">
-                        <label className="flex items-center gap-2">
-                          <input
-                            type="checkbox"
-                            className="rounded text-teal-600 focus:ring-teal-500"
-                          />
-                          <span className="text-sm text-gray-700">
-                            Empaque sellado e íntegro
-                          </span>
-                        </label>
-                        <label className="flex items-center gap-2">
-                          <input
-                            type="checkbox"
-                            className="rounded text-teal-600 focus:ring-teal-500"
-                          />
-                          <span className="text-sm text-gray-700">
-                            Fecha de vencimiento vigente
-                          </span>
-                        </label>
-                      </div>
+                  {(item.validationRole === "DONOR_DELIVERY" ||
+                    item.validationRole === "LEGACY") && (
+                    <div className="space-y-3">
+                      <h4 className="font-semibold text-gray-900">
+                        Flujo de Entrega del Donante
+                      </h4>
 
-                      <div className="flex gap-4">
+                      {(item.estado === "EN_PROCESO" ||
+                        item.estado === "APROBADA") && (
                         <button
-                          onClick={() => handleStatusUpdate("RECHAZADA")}
+                          className="w-full py-2 rounded-md bg-blue-600 text-white text-sm disabled:opacity-50"
                           disabled={actionLoading}
-                          className="flex-1 px-4 py-2 border border-red-300 text-sm font-medium rounded-md text-red-700 bg-white hover:bg-red-50"
-                        >
-                          Rechazar
-                        </button>
-                        <button
                           onClick={() =>
-                            handleStatusUpdate("LISTA_PARA_RETIRO")
+                            runAction(() => markDonorReceived(item.id))
                           }
-                          disabled={actionLoading}
-                          className="flex-1 px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700"
                         >
-                          {actionLoading
-                            ? "Procesando..."
-                            : "Validación Exitosa"}
+                          Confirmar recepción del donante
                         </button>
-                      </div>
+                      )}
+
+                      {item.estado === "RECIBIDA" && (
+                        <div className="space-y-3">
+                          <button
+                            className="w-full py-2 rounded-md bg-green-600 text-white text-sm disabled:opacity-50"
+                            disabled={actionLoading}
+                            onClick={() =>
+                              runAction(() => markReadyForPickup(item.id))
+                            }
+                          >
+                            Marcar como lista para retiro
+                          </button>
+
+                          <div className="rounded-lg border border-red-200 bg-red-50 p-3 space-y-2">
+                            <div className="flex items-center gap-2 text-red-700">
+                              <ShieldAlert className="h-4 w-4" />
+                              <p className="font-medium text-sm">
+                                Rechazo sanitario (vencido/dañado)
+                              </p>
+                            </div>
+                            <textarea
+                              className="w-full rounded-md border border-red-200 bg-white text-sm p-2"
+                              placeholder="Motivo obligatorio del rechazo en farmacia"
+                              value={rejectionReason}
+                              onChange={(e) => setRejectionReason(e.target.value)}
+                            />
+                            <button
+                              className="w-full py-2 rounded-md bg-red-600 text-white text-sm disabled:opacity-50"
+                              disabled={actionLoading || !rejectionReason.trim()}
+                              onClick={() =>
+                                runAction(() =>
+                                  rejectByPharmacy(item.id, rejectionReason),
+                                )
+                              }
+                            >
+                              Rechazar y cerrar caso
+                            </button>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   )}
 
-                  {/* Step 3: Final Handover */}
-                  {item.estado === "LISTA_PARA_RETIRO" && (
-                    <div className="space-y-4">
-                      <div className="flex items-start gap-4 p-4 bg-green-50 rounded-md">
-                        <CheckCircle className="h-6 w-6 text-green-600 mt-1" />
-                        <div>
-                          <h4 className="font-medium text-green-900">
-                            Entrega Final
-                          </h4>
-                          <p className="text-sm text-green-700">
-                            Verifica el récipe y la identidad del beneficiario.
-                          </p>
+                  {item.validationRole === "REQUESTER_PICKUP" && (
+                    <div className="space-y-3">
+                      <h4 className="font-semibold text-gray-900">
+                        Flujo de Retiro del Solicitante
+                      </h4>
+                      {item.estado === "LISTA_PARA_RETIRO" ? (
+                        <button
+                          className="w-full py-2 rounded-md bg-teal-600 text-white text-sm disabled:opacity-50"
+                          disabled={actionLoading}
+                          onClick={() =>
+                            runAction(() => confirmRequesterPickup(item.id))
+                          }
+                        >
+                          Confirmar retiro y cerrar solicitud
+                        </button>
+                      ) : (
+                        <div className="rounded-md border bg-amber-50 text-amber-800 text-sm p-3">
+                          Este código solo aplica cuando la solicitud está
+                          LISTA PARA RETIRO.
                         </div>
-                      </div>
-                      <button
-                        onClick={() => handleStatusUpdate("COMPLETADA")}
-                        disabled={actionLoading}
-                        className="w-full px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-teal-600 hover:bg-teal-700"
-                      >
-                        {actionLoading
-                          ? "Finalizando..."
-                          : "Confirmar Entrega y Cerrar"}
-                      </button>
+                      )}
                     </div>
                   )}
 
                   {item.estado === "COMPLETADA" && (
-                    <div className="text-center py-8">
-                      <CheckCircle className="mx-auto h-16 w-16 text-green-500" />
-                      <h3 className="mt-4 text-xl font-bold text-gray-900">
-                        Solicitud Completada
-                      </h3>
+                    <div className="rounded-md border border-green-200 bg-green-50 text-green-800 p-3 text-sm flex items-center gap-2">
+                      <CheckCircle className="h-4 w-4" />
+                      Solicitud cerrada correctamente.
+                    </div>
+                  )}
+
+                  {item.estado === "ABANDONADA" && (
+                    <div className="rounded-md border border-orange-200 bg-orange-50 text-orange-800 p-3 text-sm flex items-center gap-2">
+                      <AlertTriangle className="h-4 w-4" />
+                      Solicitud abandonada por no retiro. Convertida en donación
+                      flotante.
                     </div>
                   )}
                 </>
               )}
 
-              {/* DONACION LOGIC */}
               {item.type === "DONACION" && (
-                <>
-                  <div className="grid sm:grid-cols-2 gap-4 mb-6">
-                    <div className="bg-gray-50 p-4 rounded-lg">
-                      <h4 className="text-sm font-medium text-gray-500">
-                        Medicamento
-                      </h4>
-                      <p className="font-semibold text-gray-900 mt-1">
-                        {item.medicamentos[0]?.medicamento.nombre}
-                        <span className="text-gray-500 font-normal ml-2">
-                          ({item.medicamentos[0]?.cantidad} unidades)
-                        </span>
-                      </p>
-                    </div>
-                    <div className="bg-gray-50 p-4 rounded-lg">
-                      <h4 className="text-sm font-medium text-gray-500">
-                        Estado Actual
-                      </h4>
-                      <p className="font-semibold text-gray-900 mt-1">
-                        {item.estado}
-                      </p>
-                    </div>
-                    {item.descripcion && (
-                      <div className="bg-gray-50 p-4 rounded-lg sm:col-span-2">
-                        <h4 className="text-sm font-medium text-gray-500">
-                          Descripción
-                        </h4>
-                        <p className="text-gray-700 mt-1 text-sm">
-                          {item.descripcion}
-                        </p>
-                      </div>
-                    )}
+                <div className="space-y-3">
+                  <div className="rounded-md border bg-teal-50 p-3 text-sm text-teal-800 flex items-center gap-2">
+                    <Gift className="h-4 w-4" />
+                    Donación directa registrada en farmacia.
                   </div>
-
-                  {(item.estado === "DISPONIBLE" ||
-                    item.estado === "RESERVADA") && (
-                    <div className="space-y-4">
-                      <div className="flex items-start gap-4 p-4 bg-teal-50 rounded-md">
-                        <Gift className="h-6 w-6 text-teal-600 mt-1" />
-                        <div>
-                          <h4 className="font-medium text-teal-900">
-                            Recepción de Donación
-                          </h4>
-                          <p className="text-sm text-teal-700">
-                            Recibe los medicamentos del donante y verifica su
-                            estado físico.
-                          </p>
-                        </div>
-                      </div>
-
-                      <button
-                        onClick={() => handleStatusUpdate("RECIBIDA")}
-                        disabled={actionLoading}
-                        className="w-full flex justify-center items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-teal-600 hover:bg-teal-700"
-                      >
-                        {actionLoading
-                          ? "Procesando..."
-                          : "Confirmar Recepción (Marcar como Recibida)"}
-                      </button>
+                  {["DISPONIBLE", "RESERVADA"].includes(item.estado) ? (
+                    <button
+                      className="w-full py-2 rounded-md bg-teal-600 text-white text-sm disabled:opacity-50"
+                      disabled={actionLoading}
+                      onClick={() =>
+                        runAction(() => markDonationReceived(item.id))
+                      }
+                    >
+                      Confirmar recepción de donación
+                    </button>
+                  ) : (
+                    <div className="rounded-md border bg-gray-50 text-gray-700 p-3 text-sm">
+                      La donación ya fue procesada.
                     </div>
                   )}
-
-                  {(item.estado === "RECIBIDA" ||
-                    item.estado === "ENTREGADA") && (
-                    <div className="text-center py-8">
-                      <CheckCircle className="mx-auto h-16 w-16 text-green-500" />
-                      <h3 className="mt-4 text-xl font-bold text-gray-900">
-                        Donación Recibida Correctamente
-                      </h3>
-                      <p className="text-gray-500">
-                        Los medicamentos ahora están en posesión de la farmacia
-                        (Status: {item.estado}).
-                      </p>
-                    </div>
-                  )}
-
-                  {item.estado === "EXPIRADA" && (
-                    <div className="text-center py-8">
-                      <AlertTriangle className="mx-auto h-16 w-16 text-red-500" />
-                      <h3 className="mt-4 text-xl font-bold text-gray-900">
-                        Donación Expirada
-                      </h3>
-                    </div>
-                  )}
-                </>
+                </div>
               )}
+
+              <div>
+                <h4 className="font-semibold text-gray-900 mb-2 flex items-center gap-2">
+                  <ClipboardCheck className="h-4 w-4" />
+                  Medicamentos
+                </h4>
+                <div className="space-y-2">
+                  {item.medicamentos?.map((med) => (
+                    <div
+                      key={med.id}
+                      className="rounded-md border bg-gray-50 p-3 text-sm flex items-center justify-between"
+                    >
+                      <span className="font-medium text-gray-900">
+                        {med.medicamento.nombre}
+                      </span>
+                      <span className="text-gray-600">{med.cantidad}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
           </div>
         )}

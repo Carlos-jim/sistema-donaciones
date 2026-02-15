@@ -20,10 +20,9 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea"; // Assuming Textarea exists or use Input
 import { useToast } from "@/components/ui/use-toast";
 import { approveRequest, rejectRequest, updateMedicamentoPriority } from "./actions";
-import { Eye, CheckCircle, XCircle, FileText, Edit, Save, X } from "lucide-react";
+import { Eye, CheckCircle, XCircle, FileText } from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 
@@ -285,66 +284,113 @@ export default function RequestsInbox({
                       Medicamentos Solicitados
                     </h3>
                     <ul className="space-y-2">
-                      {selectedRequest.medicamentos.map((m, i) => (
-                        <li key={m.id} className="flex items-center justify-between p-2 rounded border bg-white">
-                          <div className="flex-1">
-                            <div className="font-medium text-sm">
-                              {m.medicamento.nombre} - {m.medicamento.presentacion}
-                            </div>
-                            <div className="text-xs text-gray-600">
-                              Cantidad: {m.cantidad}
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            {editingPriority === m.id ? (
-                              <div className="flex items-center gap-2">
-                                <select
-                                  value={tempPriorities[m.id] || m.prioridad}
-                                  onChange={(e) => 
-                                    setTempPriorities({ ...tempPriorities, [m.id]: parseInt(e.target.value) })
-                                  }
-                                  className="text-xs border rounded px-2 py-1"
-                                  disabled={isUpdatingPriority}
-                                >
-                                  <option value={1}>Baja (1)</option>
-                                  <option value={2}>Media (2)</option>
-                                  <option value={3}>Alta (3)</option>
-                                </select>
-                                <Button
-                                  size="sm"
-                                  variant="ghost"
-                                  onClick={() => handlePrioritySave(m.id)}
-                                  disabled={isUpdatingPriority}
-                                >
-                                  <Save className="w-3 h-3" />
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  variant="ghost"
-                                  onClick={() => handlePriorityCancel(m.id)}
-                                  disabled={isUpdatingPriority}
-                                >
-                                  <X className="w-3 h-3" />
-                                </Button>
+                      {selectedRequest.medicamentos.map((m) => {
+                        const priorityData =
+                          priorityLabels[m.prioridad as keyof typeof priorityLabels] ||
+                          priorityLabels[2];
+
+                        return (
+                          <li
+                            key={m.id}
+                            className={`rounded-lg border p-3 ${
+                              editingPriority === m.id
+                                ? "border-teal-300 bg-teal-50/50"
+                                : "bg-white"
+                            }`}
+                          >
+                            <div className="space-y-3">
+                              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                                <div className="flex-1">
+                                  <div className="font-medium text-sm">
+                                    {m.medicamento.nombre} - {m.medicamento.presentacion}
+                                  </div>
+                                  <div className="text-xs text-gray-600">
+                                    Cantidad: {m.cantidad}
+                                  </div>
+                                </div>
+                                <div className="flex flex-col items-start gap-2 sm:items-end">
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-xs text-gray-600">
+                                      Prioridad actual
+                                    </span>
+                                    <span
+                                      className={`rounded-full px-2 py-1 text-xs font-medium ${priorityData.color}`}
+                                    >
+                                      {priorityData.label}
+                                    </span>
+                                  </div>
+                                  {editingPriority !== m.id && (
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      onClick={() => handlePriorityEdit(m.id, m.prioridad)}
+                                      disabled={isLoading || isRejecting}
+                                      aria-label={`Cambiar prioridad de ${m.medicamento.nombre}`}
+                                    >
+                                      Cambiar prioridad
+                                    </Button>
+                                  )}
+                                </div>
                               </div>
-                            ) : (
-                              <div className="flex items-center gap-2">
-                                <span className={`text-xs px-2 py-1 rounded-full font-medium ${priorityLabels[m.prioridad as keyof typeof priorityLabels].color}`}>
-                                  {priorityLabels[m.prioridad as keyof typeof priorityLabels].label}
-                                </span>
-                                <Button
-                                  size="sm"
-                                  variant="ghost"
-                                  onClick={() => handlePriorityEdit(m.id, m.prioridad)}
-                                  disabled={isLoading || isRejecting}
-                                >
-                                  <Edit className="w-3 h-3" />
-                                </Button>
-                              </div>
-                            )}
-                          </div>
-                        </li>
-                      ))}
+
+                              {editingPriority === m.id && (
+                                <div className="rounded-md border border-teal-200 bg-white p-3">
+                                  <p className="text-sm font-medium text-teal-700">
+                                    Actualizar prioridad
+                                  </p>
+                                  <div className="mt-2 flex flex-col gap-3 sm:flex-row sm:items-center">
+                                    <div className="flex items-center gap-2">
+                                      <Label
+                                        htmlFor={`priority-${m.id}`}
+                                        className="text-sm text-gray-700"
+                                      >
+                                        Nueva prioridad
+                                      </Label>
+                                      <select
+                                        id={`priority-${m.id}`}
+                                        value={tempPriorities[m.id] || m.prioridad}
+                                        onChange={(e) =>
+                                          setTempPriorities({
+                                            ...tempPriorities,
+                                            [m.id]: parseInt(e.target.value, 10),
+                                          })}
+                                        className="h-9 min-w-[170px] rounded-md border border-gray-300 bg-white px-3 text-sm"
+                                        disabled={isUpdatingPriority}
+                                        aria-label={`Seleccionar prioridad para ${m.medicamento.nombre}`}
+                                      >
+                                        <option value={1}>Baja</option>
+                                        <option value={2}>Media</option>
+                                        <option value={3}>Alta</option>
+                                      </select>
+                                    </div>
+                                    <div className="flex gap-2 sm:ml-auto">
+                                      <Button
+                                        size="sm"
+                                        onClick={() => handlePrioritySave(m.id)}
+                                        disabled={isUpdatingPriority}
+                                        aria-label={`Guardar prioridad de ${m.medicamento.nombre}`}
+                                      >
+                                        {isUpdatingPriority
+                                          ? "Guardando..."
+                                          : "Guardar prioridad"}
+                                      </Button>
+                                      <Button
+                                        size="sm"
+                                        variant="outline"
+                                        onClick={() => handlePriorityCancel(m.id)}
+                                        disabled={isUpdatingPriority}
+                                        aria-label={`Cancelar cambio de prioridad de ${m.medicamento.nombre}`}
+                                      >
+                                        Cancelar
+                                      </Button>
+                                    </div>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          </li>
+                        );
+                      })}
                     </ul>
                     {selectedRequest.medicamentos.some(m => m.fechaModificacionPrioridad) && (
                       <div className="mt-3 p-2 bg-blue-50 rounded border border-blue-200">

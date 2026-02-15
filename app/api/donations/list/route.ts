@@ -2,9 +2,20 @@ import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import prisma from "@/lib/prisma";
 import { tokenService } from "@/lib/auth/token.service";
+import { signDeliveryQrPayload } from "@/lib/delivery-codes";
+import { processAbandonedPickups } from "@/lib/abandoned-pickups.service";
 
 export async function GET() {
   try {
+    try {
+      await processAbandonedPickups(new Date());
+    } catch (maintenanceError) {
+      console.error(
+        "Background abandoned pickup processing failed:",
+        maintenanceError,
+      );
+    }
+
     const token = (await cookies()).get("auth-token")?.value;
 
     if (!token) {
@@ -17,11 +28,20 @@ export async function GET() {
       return NextResponse.json({ error: "Token inválido" }, { status: 401 });
     }
 
-    const donacionesPropia = await prisma.donacion.findMany({
+    const ownOffers = await prisma.donacion.findMany({
       where: {
         usuarioComunId: payload.userId,
       },
       include: {
+        farmacia: {
+          select: {
+            id: true,
+            nombre: true,
+            direccion: true,
+            latitude: true,
+            longitude: true,
+          },
+        },
         medicamentos: {
           include: {
             medicamento: true,
@@ -33,56 +53,89 @@ export async function GET() {
       },
     });
 
-    const solicitudesAceptadas = await prisma.solicitud.findMany({
+    const acceptedDeliveries = await prisma.solicitud.findMany({
       where: {
         donanteAsignadoId: payload.userId,
       },
-      include: {
+      select: {
+        id: true,
+        estado: true,
+        motivo: true,
+        assignedDate: true,
+        fechaRecepcionFarmacia: true,
+        fechaListaRetiro: true,
+        fechaLimiteRetiro: true,
+        fechaRetiro: true,
+        codigoEntregaDonante: true,
+        codigoRetiroSolicitante: true,
+        farmaciaEntregaId: true,
         medicamentos: {
           include: {
             medicamento: true,
           },
         },
-        farmaciaEntrega: true,
+        farmaciaEntrega: {
+          select: {
+            id: true,
+            nombre: true,
+            direccion: true,
+            latitude: true,
+            longitude: true,
+          },
+        },
       },
       orderBy: {
         assignedDate: "desc",
       },
     });
 
-    // Normalize and combine
-    const united = [
-      ...donacionesPropia.map((d) => ({
-        ...d,
-        type: "DONATION_OFFER",
-        // Map fields to a common structure if needed, or keep as is
-      })),
-      ...solicitudesAceptadas.map((s) => ({
-        id: s.id,
-        codigo: s.codigoComprobante || s.codigo, // Use receipt code if available
-        descripcion: s.motivo,
-        donationPhotoUrl: null, // Requests don't have donation photos usually
-        recipePhotoUrl: s.recipePhotoUrl, // Important: Include recipe photo
-        estado: s.estado,
-        direccion: s.farmaciaEntrega
-          ? {
-            calle: s.farmaciaEntrega.direccion,
-            lat: s.farmaciaEntrega.latitude || 0,
-            long: s.farmaciaEntrega.longitude || 0,
-          }
-          : null, // Or user location if needed
-        createdAt: s.assignedDate || s.createdAt,
-        type: "ACCEPTED_REQUEST",
-        medicamentos: s.medicamentos.map((sm) => ({
-          cantidad: sm.cantidad,
-          fechaExpiracion: null, // Requests usually don't have this info until donation
-          medicamento: sm.medicamento
-        })),
-        requesterName: "Beneficiario Anónimo" // Or fetch user name
-      })),
-    ].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    const deliveriesWithQr = await Promise.all(
+      acceptedDeliveries.map(async (delivery) => {
+        let donorQrPayload: string | null = null;
+        let requesterQrPayload: string | null = null;
 
-    return NextResponse.json(united);
+        if (delivery.codigoEntregaDonante && delivery.farmaciaEntregaId) {
+          donorQrPayload = await signDeliveryQrPayload({
+            solicitudId: delivery.id,
+            pharmacyId: delivery.farmaciaEntregaId,
+            code: delivery.codigoEntregaDonante,
+            role: "DONOR_DELIVERY",
+          });
+        }
+
+        if (delivery.codigoRetiroSolicitante && delivery.farmaciaEntregaId) {
+          requesterQrPayload = await signDeliveryQrPayload({
+            solicitudId: delivery.id,
+            pharmacyId: delivery.farmaciaEntregaId,
+            code: delivery.codigoRetiroSolicitante,
+            role: "REQUESTER_PICKUP",
+          });
+        }
+
+        return {
+          id: delivery.id,
+          estado: delivery.estado,
+          motivo: delivery.motivo,
+          assignedDate: delivery.assignedDate,
+          fechaRecepcionFarmacia: delivery.fechaRecepcionFarmacia,
+          fechaListaRetiro: delivery.fechaListaRetiro,
+          fechaLimiteRetiro: delivery.fechaLimiteRetiro,
+          fechaRetiro: delivery.fechaRetiro,
+          codigoEntregaDonante: delivery.codigoEntregaDonante,
+          codigoRetiroSolicitante: delivery.codigoRetiroSolicitante,
+          farmaciaEntrega: delivery.farmaciaEntrega,
+          medicamentos: delivery.medicamentos,
+          beneficiaryLabel: "Beneficiario anónimo",
+          donorQrPayload,
+          requesterQrPayload,
+        };
+      }),
+    );
+
+    return NextResponse.json({
+      ownOffers,
+      acceptedDeliveries: deliveriesWithQr,
+    });
   } catch (error) {
     console.error("Error fetching donations:", error);
     return NextResponse.json(

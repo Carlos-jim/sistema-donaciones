@@ -3,6 +3,8 @@ import { cookies } from "next/headers";
 import prisma from "@/lib/prisma";
 import { Prisma } from "@prisma/client";
 import { tokenService } from "@/lib/auth/token.service";
+import { signDeliveryQrPayload } from "@/lib/delivery-codes";
+import { processAbandonedPickups } from "@/lib/abandoned-pickups.service";
 
 export async function POST(request: Request) {
   try {
@@ -113,7 +115,7 @@ export async function POST(request: Request) {
               type: "MATCH_REQUEST",
               title: "¡Alguien necesita tu donación!",
               message: `Se ha solicitado ${med.nombre}, un medicamento que tienes disponible.`,
-              link: `/dashboard/requests/${solicitud.id}`,
+              link: "/dashboard/requests",
             },
           });
         }
@@ -139,6 +141,15 @@ export async function POST(request: Request) {
 
 export async function GET() {
   try {
+    try {
+      await processAbandonedPickups(new Date());
+    } catch (maintenanceError) {
+      console.error(
+        "Background abandoned pickup processing failed:",
+        maintenanceError,
+      );
+    }
+
     const token = (await cookies()).get("auth-token")?.value;
 
     if (!token) {
@@ -167,13 +178,44 @@ export async function GET() {
             medicamento: true,
           },
         },
+        farmaciaEntrega: {
+          select: {
+            id: true,
+            nombre: true,
+            direccion: true,
+          },
+        },
       },
       orderBy: {
         createdAt: "desc",
       },
     });
 
-    return NextResponse.json(solicitudes);
+    const enriched = await Promise.all(
+      solicitudes.map(async (solicitud) => {
+        let requesterQrPayload: string | null = null;
+
+        if (
+          solicitud.codigoRetiroSolicitante &&
+          solicitud.farmaciaEntregaId &&
+          solicitud.estado === "LISTA_PARA_RETIRO"
+        ) {
+          requesterQrPayload = await signDeliveryQrPayload({
+            solicitudId: solicitud.id,
+            pharmacyId: solicitud.farmaciaEntregaId,
+            code: solicitud.codigoRetiroSolicitante,
+            role: "REQUESTER_PICKUP",
+          });
+        }
+
+        return {
+          ...solicitud,
+          requesterQrPayload,
+        };
+      }),
+    );
+
+    return NextResponse.json(enriched);
   } catch (error) {
     console.error("Error fetching solicitudes:", error);
     return NextResponse.json(

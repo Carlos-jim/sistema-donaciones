@@ -32,6 +32,7 @@ enum EstadoSolicitud {
   LISTA_PARA_RETIRO
   RECHAZADA
   COMPLETADA
+  ABANDONADA
 }
 
 enum EstadoDonacion {
@@ -40,6 +41,17 @@ enum EstadoDonacion {
   RECIBIDA
   ENTREGADA
   EXPIRADA
+}
+
+enum TipoRechazoSolicitud {
+  SUPERVISOR
+  FARMACIA
+}
+
+enum DonacionOrigen {
+  USUARIO
+  ENTE_SALUD
+  ABANDONO_RETIRO
 }
 
 // ==========================================
@@ -136,6 +148,7 @@ model Donacion {
   descripcion String?
   donationPhotoUrl String?
   estado      EstadoDonacion @default(DISPONIBLE)
+  origen      DonacionOrigen @default(USUARIO)
   direccion   Json?
   createdAt   DateTime       @default(now())
   updatedAt   DateTime       @updatedAt
@@ -147,6 +160,14 @@ model Donacion {
   // FK: Usuario común que realiza la donación (opcional)
   usuarioComunId String?
   usuarioComun   UsuarioComun? @relation(fields: [usuarioComunId], references: [id])
+
+  // FK: Farmacia donde queda disponible la donación (ej. abandono de retiro)
+  farmaciaId String?
+  farmacia   Farmacia? @relation(fields: [farmaciaId], references: [id])
+
+  // FK: Solicitud origen para donaciones flotantes por abandono (idempotencia)
+  solicitudOrigenId String?   @unique
+  solicitudOrigen   Solicitud? @relation("AbandonedPickupDonation", fields: [solicitudOrigenId], references: [id])
 
   // Relación: contiene medicamentos
   medicamentos DonacionMedicamento[]
@@ -205,6 +226,17 @@ model Solicitud {
   
   // Código de comprobante único (vincula Donante-Farmacia-Solicitud)
   codigoComprobante String?   @unique
+  codigoEntregaDonante String? @unique
+  codigoRetiroSolicitante String? @unique
+  fechaRecepcionFarmacia DateTime?
+  fechaListaRetiro DateTime?
+  fechaLimiteRetiro DateTime?
+  fechaRetiro DateTime?
+  tipoRechazo TipoRechazoSolicitud?
+  motivoRechazoFarmacia String?
+
+  // Relación 1:1 con donación flotante generada por abandono
+  donacionPorAbandono Donacion? @relation("AbandonedPickupDonation")
 
   // Relación: contiene medicamentos
   medicamentos SolicitudMedicamento[]
@@ -249,6 +281,9 @@ model Farmacia {
   
   // Relación: entregas de donaciones en esta farmacia
   entregasDonaciones Solicitud[] @relation("DeliveryPharmacy")
+
+  // Relación: donaciones físicas disponibles en esta farmacia
+  donaciones Donacion[]
 
   @@map("farmacias")
 }
