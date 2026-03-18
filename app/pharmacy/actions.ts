@@ -1,10 +1,24 @@
 "use server";
 
-import { prisma } from "@/lib/prisma";
-import { EstadoSolicitud } from "@prisma/client";
+import prisma from "@/lib/prisma";
+import { normalizeCodeInput } from "@/lib/delivery-codes";
 import { revalidatePath } from "next/cache";
 
-export async function getSolicitudByCodigo(codigo: string) {
+const RETRIEVAL_WINDOW_DAYS = 7;
+
+function addDays(date: Date, days: number) {
+  const value = new Date(date);
+  value.setDate(value.getDate() + days);
+  return value;
+}
+
+type ValidationRole =
+  | "DONOR_DELIVERY"
+  | "REQUESTER_PICKUP"
+  | "LEGACY"
+  | "DONATION";
+
+export async function lookupByValidationCode(input: string) {
   try {
     // Try to find Solicitud first by codigo OR codigoComprobante
     const solicitud = await prisma.solicitud.findFirst({
@@ -22,6 +36,33 @@ export async function getSolicitudByCodigo(codigo: string) {
     });
 
     if (solicitud) {
+      if (
+        tokenPayload &&
+        solicitud.farmaciaEntregaId &&
+        tokenPayload.pharmacyId !== solicitud.farmaciaEntregaId
+      ) {
+        return {
+          success: false,
+          error: "Token QR inválido para esta solicitud",
+        };
+      }
+
+      let validationRole: ValidationRole = "LEGACY";
+
+      if (tokenPayload) {
+        validationRole = tokenPayload.role;
+      } else if (
+        solicitud.codigoEntregaDonante &&
+        code === solicitud.codigoEntregaDonante
+      ) {
+        validationRole = "DONOR_DELIVERY";
+      } else if (
+        solicitud.codigoRetiroSolicitante &&
+        code === solicitud.codigoRetiroSolicitante
+      ) {
+        validationRole = "REQUESTER_PICKUP";
+      }
+
       return {
         success: true,
         data: {
@@ -33,11 +74,15 @@ export async function getSolicitudByCodigo(codigo: string) {
       };
     }
 
-    // Try to find Donacion
     const donacion = await prisma.donacion.findUnique({
-      where: { codigo },
+      where: { codigo: code },
       include: {
-        usuarioComun: true,
+        usuarioComun: {
+          select: { id: true, nombre: true, email: true },
+        },
+        farmacia: {
+          select: { id: true, nombre: true, direccion: true },
+        },
         medicamentos: {
           include: {
             medicamento: true,
@@ -49,7 +94,12 @@ export async function getSolicitudByCodigo(codigo: string) {
     if (donacion) {
       return {
         success: true,
-        data: { type: "DONACION" as const, ...donacion },
+        data: {
+          type: "DONACION" as const,
+          validationRole: "DONATION" as const,
+          enteredCode: code,
+          ...donacion,
+        },
       };
     }
 
@@ -118,7 +168,8 @@ export async function updateStatus(
             userId: solicitud.usuarioComunId,
             type: "SYSTEM",
             title: "Medicamento rechazado por la farmacia",
-            message: "La farmacia no aceptó el medicamento (mal estado o no coincide con la solicitud). Tu solicitud ha sido reactivada para que otro donante pueda ayudarte.",
+            message:
+              "La farmacia no aceptó el medicamento (mal estado o no coincide con la solicitud). Tu solicitud ha sido reactivada para que otro donante pueda ayudarte.",
             link: `/dashboard/requests`,
           },
         });
@@ -194,7 +245,7 @@ export async function updateStatus(
     revalidatePath("/pharmacy");
     return { success: true };
   } catch (error) {
-    console.error("Error updating status:", error);
-    return { success: false, error: "Error al actualizar el estado" };
+    console.error("Error updating donation state:", error);
+    return { success: false, error: "Error al actualizar la donación" };
   }
 }

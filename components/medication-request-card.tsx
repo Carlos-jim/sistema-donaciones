@@ -28,6 +28,7 @@ import {
 import { MapPin, Clock, Heart, User, CheckCircle, Building2, Copy } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { useRouter } from "next/navigation";
+import { getQrImageUrl } from "@/lib/qr";
 
 interface Pharmacy {
     id: string;
@@ -40,8 +41,12 @@ interface Pharmacy {
 }
 
 interface AcceptResult {
-    codigoComprobante: string;
+    donorCode: string;
+    requesterCode: string;
+    donorQrPayload: string;
+    requesterQrPayload: string;
     farmacia: {
+        id?: string;
         nombre: string;
         direccion: string;
     };
@@ -50,32 +55,23 @@ interface AcceptResult {
 interface MedicationRequestCardProps {
     id: string;
     name: string;
-    requester: string;
-    location: string;
     distance: string;
     urgency: string;
     date: string;
     motivo?: string;
-    medicamentos?: Array<{
-        nombre: string;
-        cantidad: number;
-        presentacion?: string;
-    }>;
     onAccepted?: () => void;
 }
 
 export function MedicationRequestCard({
     id,
     name,
-    requester,
-    location,
     distance,
     urgency,
     date,
     motivo,
-    medicamentos,
     onAccepted,
 }: MedicationRequestCardProps) {
+    const beneficiaryLabel = "Beneficiario anónimo";
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [isAccepting, setIsAccepting] = useState(false);
     const [acceptResult, setAcceptResult] = useState<AcceptResult | null>(null);
@@ -176,7 +172,7 @@ export function MedicationRequestCard({
 
             toast({
                 title: "¡Solicitud Aceptada!",
-                description: `Código de comprobante: ${result.data.codigoComprobante}`,
+                description: `Código donante: ${result.data.donorCode}`,
             });
         } catch (error) {
             toast({
@@ -217,7 +213,7 @@ export function MedicationRequestCard({
                     <div className="space-y-2 text-sm">
                         <div className="flex items-center text-gray-600">
                             <User className="h-4 w-4 mr-2 text-teal-600" />
-                            <span className="font-medium">{requester}</span>
+                            <span className="font-medium">{beneficiaryLabel}</span>
                         </div>
                         {distance !== "N/A" && (
                             <div className="flex items-center text-gray-500">
@@ -251,7 +247,7 @@ export function MedicationRequestCard({
                         </DialogTitle>
                         <DialogDescription>
                             {acceptResult
-                                ? "Guarda este código para presentarlo en la farmacia"
+                                ? "Guarda ambos códigos para el flujo de entrega/retiro"
                                 : "Selecciona la farmacia donde entregarás el medicamento"}
                         </DialogDescription>
                     </DialogHeader>
@@ -265,22 +261,50 @@ export function MedicationRequestCard({
                                 </div>
                             </div>
 
-                            {/* Receipt code */}
+                            {/* Donor code */}
                             <div className="p-4 bg-gradient-to-r from-teal-50 to-teal-100 rounded-xl border-2 border-teal-200">
-                                <p className="text-sm text-teal-700 mb-1 font-medium">Código de Comprobante</p>
+                                <p className="text-sm text-teal-700 mb-1 font-medium">Código Donante (entrega)</p>
                                 <div className="flex items-center justify-between">
                                     <span className="text-2xl font-bold text-teal-800 tracking-wider">
-                                        {acceptResult.codigoComprobante}
+                                        {acceptResult.donorCode}
                                     </span>
                                     <Button
                                         variant="ghost"
                                         size="sm"
-                                        onClick={() => copyToClipboard(acceptResult.codigoComprobante)}
+                                        onClick={() => copyToClipboard(acceptResult.donorCode)}
                                         className="text-teal-700 hover:text-teal-900"
                                     >
                                         <Copy className="h-4 w-4" />
                                     </Button>
                                 </div>
+                                <img
+                                    src={getQrImageUrl(acceptResult.donorQrPayload, 180)}
+                                    alt="QR del donante"
+                                    className="mt-3 mx-auto h-[180px] w-[180px] rounded-lg border bg-white p-2"
+                                />
+                            </div>
+
+                            {/* Requester code */}
+                            <div className="p-4 bg-gradient-to-r from-blue-50 to-blue-100 rounded-xl border-2 border-blue-200">
+                                <p className="text-sm text-blue-700 mb-1 font-medium">Código Solicitante (retiro)</p>
+                                <div className="flex items-center justify-between">
+                                    <span className="text-xl font-bold text-blue-800 tracking-wider">
+                                        {acceptResult.requesterCode}
+                                    </span>
+                                    <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => copyToClipboard(acceptResult.requesterCode)}
+                                        className="text-blue-700 hover:text-blue-900"
+                                    >
+                                        <Copy className="h-4 w-4" />
+                                    </Button>
+                                </div>
+                                <img
+                                    src={getQrImageUrl(acceptResult.requesterQrPayload, 180)}
+                                    alt="QR del solicitante"
+                                    className="mt-3 mx-auto h-[180px] w-[180px] rounded-lg border bg-white p-2"
+                                />
                             </div>
 
                             {/* Pharmacy info */}
@@ -303,8 +327,8 @@ export function MedicationRequestCard({
                                 <strong>Próximos pasos:</strong>
                                 <ul className="mt-1 space-y-1 list-disc list-inside">
                                     <li>Lleva el medicamento a la farmacia indicada</li>
-                                    <li>Presenta el código de comprobante</li>
-                                    <li>El beneficiario será notificado cuando esté listo</li>
+                                    <li>Presenta el código del donante al entregar</li>
+                                    <li>El solicitante usará su propio código para retirar</li>
                                 </ul>
                             </div>
 
@@ -322,7 +346,7 @@ export function MedicationRequestCard({
                                     <h4 className="font-semibold text-gray-900 mb-2">{name}</h4>
                                     <div className="text-sm text-gray-600 space-y-1">
                                         <p>
-                                            <strong>Beneficiario:</strong> {requester}
+                                            <strong>Beneficiario:</strong> {beneficiaryLabel}
                                         </p>
                                         {distance !== "N/A" && (
                                             <p>
@@ -377,8 +401,8 @@ export function MedicationRequestCard({
                                 )}
 
                                 <div className="text-sm text-gray-500 bg-yellow-50 p-3 rounded-lg border border-yellow-100">
-                                    <strong>Importante:</strong> Al confirmar, recibirás un código de comprobante.
-                                    Deberás presentarlo en la farmacia seleccionada al entregar el medicamento.
+                                    <strong>Importante:</strong> Al confirmar, se generan dos códigos diferenciados:
+                                    uno para el donante (entrega) y otro para el solicitante (retiro).
                                 </div>
                             </div>
 

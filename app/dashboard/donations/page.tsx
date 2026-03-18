@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import Image from "next/image";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -70,13 +70,77 @@ interface Donacion {
   deliveryConfirmedAt?: string | null;
   farmaciaEntrega?: Pharmacy | null;
   medicamentos: Array<{
+    id: string;
+    cantidad: number;
     fechaExpiracion: string | null;
+    medicamento: {
+      nombre: string;
+      presentacion: string | null;
+    };
+  }>;
+};
+
+type AcceptedDelivery = {
+  id: string;
+  estado: string;
+  motivo: string | null;
+  beneficiaryLabel?: string;
+  assignedDate: string | null;
+  fechaRecepcionFarmacia: string | null;
+  fechaListaRetiro: string | null;
+  fechaLimiteRetiro: string | null;
+  fechaRetiro: string | null;
+  codigoEntregaDonante: string | null;
+  codigoRetiroSolicitante: string | null;
+  donorQrPayload: string | null;
+  requesterQrPayload: string | null;
+  farmaciaEntrega: {
+    id: string;
+    nombre: string;
+    direccion: string;
+  } | null;
+  medicamentos: Array<{
+    id: string;
     cantidad: number;
     medicamento: {
       nombre: string;
       presentacion: string | null;
     };
   }>;
+};
+
+type DonationsPayload = {
+  ownOffers: OwnOffer[];
+  acceptedDeliveries: AcceptedDelivery[];
+};
+
+function statusBadgeClass(status: string) {
+  switch (status) {
+    case "COMPLETADA":
+    case "RECIBIDA":
+      return "bg-green-100 text-green-800 border-green-200";
+    case "LISTA_PARA_RETIRO":
+    case "EN_PROCESO":
+    case "APROBADA":
+      return "bg-amber-100 text-amber-800 border-amber-200";
+    case "RECHAZADA":
+    case "ABANDONADA":
+    case "EXPIRADA":
+      return "bg-red-100 text-red-800 border-red-200";
+    default:
+      return "bg-gray-100 text-gray-800 border-gray-200";
+  }
+}
+
+function formatDate(date: string | null) {
+  if (!date) return "N/A";
+  return new Date(date).toLocaleString("es-ES", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 }
 
 export default function MyDonationsPage() {
@@ -263,11 +327,23 @@ export default function MyDonationsPage() {
                     <Skeleton className="h-5 w-24 rounded-full" />
                     <Skeleton className="h-5 w-16 rounded-full" />
                   </div>
-                  <Skeleton className="h-7 w-3/4 rounded-md" />
                 </CardHeader>
-                <CardContent className="flex-1 space-y-4">
-                  <Skeleton className="h-4 w-full" />
-                  <Skeleton className="h-4 w-2/3" />
+                <CardContent className="space-y-2 text-sm text-gray-600">
+                  <p>
+                    <strong>Código:</strong> {offer.codigo || "Sin código"}
+                  </p>
+                  <p>
+                    <strong>Creada:</strong> {formatDate(offer.createdAt)}
+                  </p>
+                  <p>
+                    <strong>Cantidad:</strong>{" "}
+                    {offer.medicamentos[0]?.cantidad || 0}
+                  </p>
+                  {offer.descripcion && (
+                    <p className="line-clamp-2">
+                      <strong>Descripción:</strong> {offer.descripcion}
+                    </p>
+                  )}
                 </CardContent>
               </Card>
             ))}
@@ -410,31 +486,24 @@ export default function MyDonationsPage() {
                         Ver Detalles
                       </Button>
                     </div>
-                  </CardFooter>
-                </Card>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* Details Dialog */}
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-          {selectedDonacion && (
-            <>
-              <DialogHeader>
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 bg-gradient-to-br from-teal-500 to-teal-600 rounded-xl flex items-center justify-center">
-                    <Gift className="w-6 h-6 text-white" />
+                    <Badge className={statusBadgeClass(delivery.estado)} variant="outline">
+                      {delivery.estado.replace(/_/g, " ")}
+                    </Badge>
                   </div>
-                  <div>
-                    <DialogTitle className="text-xl">
-                      Detalles de la {selectedDonacion.type === "ACCEPTED_REQUEST" ? "Solicitud Aceptada" : "Donación"}
-                    </DialogTitle>
-                    <DialogDescription>
-                      Registrada el {formatDateTime(selectedDonacion.createdAt)}
-                    </DialogDescription>
+                </CardHeader>
+                <CardContent className="grid gap-4 md:grid-cols-3">
+                  <div className="space-y-2 text-sm">
+                    <p className="font-medium text-gray-900">Código del donante</p>
+                    <p className="font-mono text-teal-700">
+                      {delivery.codigoEntregaDonante || "N/A"}
+                    </p>
+                    {delivery.donorQrPayload && (
+                      <img
+                        src={getQrImageUrl(delivery.donorQrPayload, 160)}
+                        alt="QR de entrega del donante"
+                        className="h-40 w-40 rounded-md border bg-white p-2"
+                      />
+                    )}
                   </div>
                 </div>
               </DialogHeader>
@@ -583,15 +652,13 @@ export default function MyDonationsPage() {
                   </div>
                 </div>
 
-                {/* Description */}
-                {selectedDonacion.descripcion && (
-                  <div>
-                    <h4 className="font-semibold text-gray-700 mb-2">
-                      {selectedDonacion.type === "ACCEPTED_REQUEST" ? "Motivo de Solicitud" : "Descripción"}
-                    </h4>
-                    <div className="text-gray-600 bg-gray-50 p-4 rounded-xl border-l-4 border-teal-500 whitespace-pre-wrap text-sm">
-                      {selectedDonacion.descripcion}
-                    </div>
+                  <div className="space-y-2 text-sm text-gray-700">
+                    <p className="font-medium text-gray-900">Timeline</p>
+                    <p>Asignada: {formatDate(delivery.assignedDate)}</p>
+                    <p>Recibida en farmacia: {formatDate(delivery.fechaRecepcionFarmacia)}</p>
+                    <p>Lista para retiro: {formatDate(delivery.fechaListaRetiro)}</p>
+                    <p>Límite retiro: {formatDate(delivery.fechaLimiteRetiro)}</p>
+                    <p>Retirada: {formatDate(delivery.fechaRetiro)}</p>
                   </div>
                 )}
 

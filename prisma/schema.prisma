@@ -43,6 +43,17 @@ enum EstadoDonacion {
   EXPIRADA
 }
 
+enum TipoRechazoSolicitud {
+  SUPERVISOR
+  FARMACIA
+}
+
+enum DonacionOrigen {
+  USUARIO
+  ENTE_SALUD
+  ABANDONO_RETIRO
+}
+
 // ==========================================
 // MODELOS PRINCIPALES
 // ==========================================
@@ -139,6 +150,7 @@ model Donacion {
   descripcion String?
   donationPhotoUrl String?
   estado      EstadoDonacion @default(DISPONIBLE)
+  origen      DonacionOrigen @default(USUARIO)
   direccion   Json?
   createdAt   DateTime       @default(now())
   updatedAt   DateTime       @updatedAt
@@ -150,6 +162,14 @@ model Donacion {
   // FK: Usuario común que realiza la donación (opcional)
   usuarioComunId String?
   usuarioComun   UsuarioComun? @relation(fields: [usuarioComunId], references: [id])
+
+  // FK: Farmacia donde queda disponible la donación (ej. abandono de retiro)
+  farmaciaId String?
+  farmacia   Farmacia? @relation(fields: [farmaciaId], references: [id])
+
+  // FK: Solicitud origen para donaciones flotantes por abandono (idempotencia)
+  solicitudOrigenId String?   @unique
+  solicitudOrigen   Solicitud? @relation("AbandonedPickupDonation", fields: [solicitudOrigenId], references: [id])
 
   // Relación: contiene medicamentos
   medicamentos DonacionMedicamento[]
@@ -265,6 +285,9 @@ model Farmacia {
   
   // Relación: entregas de donaciones en esta farmacia
   entregasDonaciones Solicitud[] @relation("DeliveryPharmacy")
+
+  // Relación: donaciones físicas disponibles en esta farmacia
+  donaciones Donacion[]
 
   @@map("farmacias")
 }

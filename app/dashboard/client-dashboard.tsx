@@ -101,9 +101,7 @@ interface Solicitud {
   longitude: number | null;
   tiempoEspera: string;
   createdAt: string;
-  usuarioComun: {
-    nombre: string;
-  };
+  beneficiaryLabel: string;
   medicamentos: Array<{
     medicamento: {
       nombre: string;
@@ -211,8 +209,6 @@ export default function DashboardClient({
       return {
         id: sol.id,
         name: sol.medicamentos[0]?.medicamento?.nombre || "Medicamento",
-        requester: sol.usuarioComun?.nombre || "Usuario",
-        location: "Ubicación",
         distance: distance !== null ? formatDistance(distance) : "N/A",
         distanceValue: distance,
         urgency: urgencyMap[sol.tiempoEspera] || "Media",
@@ -243,8 +239,7 @@ export default function DashboardClient({
   const filteredRequests = useMemo(() => {
     return sortedRequests.filter((request) => {
       const matchesSearch = searchTerm === "" ||
-        request.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        request.requester.toLowerCase().includes(searchTerm.toLowerCase());
+        request.name.toLowerCase().includes(searchTerm.toLowerCase());
 
       const matchesUrgency = urgencyFilter === "all" ||
         request.urgency.toLowerCase() === urgencyFilter.toLowerCase();
@@ -312,7 +307,7 @@ export default function DashboardClient({
         lat: req.lat!,
         lng: req.lng!,
         type: "request" as const,
-        title: `${req.name} - ${req.requester}`,
+        title: `${req.name} - Beneficiario anónimo`,
         distance: req.distanceValue ?? undefined,
       }));
 
@@ -389,14 +384,14 @@ export default function DashboardClient({
               className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm transition-all duration-300"
             >
               <Search className="mr-2 h-4 w-4" />
-              Solicitudes
+              Listado de Solicitudes
             </TabsTrigger>
             <TabsTrigger
               value="donations"
               className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm transition-all duration-300"
             >
               <PlusCircle className="mr-2 h-4 w-4" />
-              Donaciones
+              Donaciones Públicas
             </TabsTrigger>
           </TabsList>
 
@@ -410,9 +405,9 @@ export default function DashboardClient({
               >
                 <Card className="border-0 shadow-xl shadow-gray-200/50 overflow-hidden">
                   <CardHeader className="bg-gradient-to-r from-gray-50 to-white">
-                    <CardTitle>Mapa de Solicitudes y Donaciones</CardTitle>
+                    <CardTitle>Mapa de Solicitudes y Donaciones Públicas</CardTitle>
                     <CardDescription>
-                      Visualiza las solicitudes y donaciones de medicamentos
+                      Visualiza el listado de solicitudes y donaciones públicas
                       cercanas a tu ubicación.
                     </CardDescription>
                   </CardHeader>
@@ -440,7 +435,7 @@ export default function DashboardClient({
                     <div className="flex flex-col gap-4">
                       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                         <div>
-                          <CardTitle>Solicitudes Disponibles</CardTitle>
+                          <CardTitle>Listado de Solicitudes</CardTitle>
                           <CardDescription>
                             Ayuda a quienes necesitan medicamentos. Haz clic en "Quiero Donar" para comprometerte.
                           </CardDescription>
@@ -472,7 +467,7 @@ export default function DashboardClient({
                         <div className="relative flex-1">
                           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
                           <Input
-                            placeholder="Buscar por medicamento o beneficiario..."
+                            placeholder="Buscar por medicamento..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                             className="pl-10"
@@ -548,7 +543,7 @@ export default function DashboardClient({
               >
                 <Card className="border-0 shadow-xl shadow-gray-200/50">
                   <CardHeader className="bg-gradient-to-r from-gray-50 to-white">
-                    <CardTitle>Donaciones Disponibles</CardTitle>
+                    <CardTitle>Donaciones Públicas Disponibles</CardTitle>
                     <CardDescription>
                       Medicamentos disponibles para donación.
                     </CardDescription>
@@ -657,7 +652,7 @@ export default function DashboardClient({
               <div className="space-y-4">
                 {[
                   {
-                    text: "Carlos donó Paracetamol a María",
+                    text: "Se confirmó una donación de Paracetamol",
                     time: "Hace 2 horas",
                   },
                   {
@@ -665,11 +660,11 @@ export default function DashboardClient({
                     time: "Hace 5 horas",
                   },
                   {
-                    text: "Laura ofreció donar Omeprazol",
+                    text: "Nueva oferta pública: Omeprazol",
                     time: "Hace 1 día",
                   },
                   {
-                    text: "Roberto atendió solicitud de Ana",
+                    text: "Solicitud atendida con retiro en farmacia",
                     time: "Hace 2 días",
                   },
                 ].map((activity, index) => (

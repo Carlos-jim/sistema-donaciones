@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { Space_Grotesk } from "next/font/google";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -27,6 +28,11 @@ import {
 import { MapView } from "@/components/map-view";
 import { useToast } from "@/hooks/use-toast";
 
+const spaceGrotesk = Space_Grotesk({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+});
+
 // Step indicator component
 function StepIndicator({
   step,
@@ -49,10 +55,10 @@ function StepIndicator({
           w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300
           ${
             isCompleted
-              ? "bg-teal-600 text-white"
+              ? "bg-teal-600 text-white shadow-md shadow-teal-500/30"
               : isActive
-                ? "bg-gradient-to-br from-teal-500 to-teal-600 text-white scale-110 shadow-lg shadow-teal-500/30"
-                : "bg-gray-100 text-gray-400"
+                ? "bg-gradient-to-br from-teal-500 to-cyan-500 text-white scale-110 shadow-lg shadow-teal-500/30"
+                : "bg-white/80 text-gray-400 border border-gray-100"
           }
         `}
       >
@@ -63,7 +69,7 @@ function StepIndicator({
         )}
       </div>
       <span
-        className={`text-xs font-medium transition-colors ${isActive ? "text-teal-600" : "text-gray-500"}`}
+        className={`text-xs font-medium transition-colors ${isActive ? "text-teal-700" : "text-gray-500"}`}
       >
         {title}
       </span>
@@ -183,25 +189,31 @@ export default function RegisterPage() {
   const isStep2Valid = formData.hasLocation;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-teal-50/20 to-white py-8 px-4 flex flex-col justify-center">
+    <div
+      className={`${spaceGrotesk.className} relative min-h-screen overflow-hidden bg-gradient-to-br from-slate-50 via-teal-50/40 to-white py-10 px-4 flex flex-col justify-center`}
+    >
+      <div className="pointer-events-none absolute -top-28 right-[-10%] h-72 w-72 rounded-full bg-gradient-to-br from-teal-200/50 to-cyan-200/40 blur-3xl" />
+      <div className="pointer-events-none absolute -bottom-28 left-[-10%] h-72 w-72 rounded-full bg-gradient-to-tr from-cyan-200/40 to-teal-100/60 blur-3xl" />
+      <div className="pointer-events-none absolute top-16 left-1/2 h-36 w-36 -translate-x-1/2 rounded-full bg-gradient-to-tr from-teal-100/60 to-white/50 blur-2xl" />
+
       <div className="mx-auto w-full max-w-lg">
         {/* Logo/Brand */}
         <div className="mb-8 text-center">
           <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-tr from-teal-600 to-cyan-500 shadow-lg shadow-teal-500/20 mb-4">
             <User className="h-6 w-6 text-white" />
           </div>
-          <h2 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-teal-900 to-teal-600">
+          <h2 className="text-3xl font-semibold text-slate-900">
             Crear Nueva Cuenta
           </h2>
-          <p className="mt-2 text-sm text-gray-500">
-            Únete a nuestra comunidad de ayuda
+          <p className="mt-2 text-sm text-slate-500">
+            Únete a una red de donaciones trazables y seguras.
           </p>
         </div>
 
         {/* Card */}
-        <div className="bg-white/80 backdrop-blur-xl rounded-3xl border border-gray-100 shadow-xl shadow-gray-200/50 overflow-hidden">
+        <div className="bg-white/80 backdrop-blur-xl rounded-3xl border border-white/70 shadow-2xl shadow-teal-500/10 overflow-hidden">
           {/* Steps Header */}
-          <div className="bg-gray-50/50 border-b border-gray-100 px-8 py-4">
+          <div className="bg-white/70 border-b border-white/60 px-8 py-4">
             <div className="flex justify-between items-center px-4">
               <StepIndicator
                 step={1}
@@ -247,7 +259,7 @@ export default function RegisterPage() {
                       onChange={(e) =>
                         setFormData({ ...formData, firstName: e.target.value })
                       }
-                      className="rounded-xl border-gray-200 focus:border-teal-500 focus:ring-teal-500/20"
+                      className="h-11 rounded-xl border-gray-200 bg-white/90 focus-visible:ring-teal-500/40 focus-visible:ring-offset-0"
                     />
                   </div>
                   <div className="space-y-2">
@@ -262,7 +274,7 @@ export default function RegisterPage() {
                       onChange={(e) =>
                         setFormData({ ...formData, lastName: e.target.value })
                       }
-                      className="rounded-xl border-gray-200 focus:border-teal-500 focus:ring-teal-500/20"
+                      className="h-11 rounded-xl border-gray-200 bg-white/90 focus-visible:ring-teal-500/40 focus-visible:ring-offset-0"
                     />
                   </div>
                 </div>
@@ -281,7 +293,7 @@ export default function RegisterPage() {
                     onChange={(e) =>
                       setFormData({ ...formData, phone: e.target.value })
                     }
-                    className="rounded-xl border-gray-200 focus:border-teal-500 focus:ring-teal-500/20"
+                    className="h-11 rounded-xl border-gray-200 bg-white/90 focus-visible:ring-teal-500/40 focus-visible:ring-offset-0"
                   />
                 </div>
 
@@ -297,7 +309,7 @@ export default function RegisterPage() {
                         setFormData({ ...formData, cedulaType: val })
                       }
                     >
-                      <SelectTrigger className="w-[80px] rounded-xl border-gray-200 focus:border-teal-500 focus:ring-teal-500/20">
+                      <SelectTrigger className="h-11 w-[80px] rounded-xl border-gray-200 bg-white/90 focus:border-teal-500 focus:ring-teal-500/20">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -308,7 +320,7 @@ export default function RegisterPage() {
                     <Input
                       id="cedula"
                       placeholder="12345678"
-                      className="flex-1 rounded-xl border-gray-200 focus:border-teal-500 focus:ring-teal-500/20"
+                      className="flex-1 h-11 rounded-xl border-gray-200 bg-white/90 focus-visible:ring-teal-500/40 focus-visible:ring-offset-0"
                       required
                       value={formData.cedulaNumber}
                       onChange={(e) =>
@@ -337,7 +349,7 @@ export default function RegisterPage() {
                   </p>
                 </div>
 
-                <div className="h-[300px] w-full rounded-2xl overflow-hidden border-2 border-dashed border-teal-200 relative group">
+                <div className="h-[300px] w-full rounded-2xl overflow-hidden border border-teal-100/80 bg-white/70 shadow-lg shadow-teal-500/5 relative group">
                   <MapView
                     onUserLocationChange={handleLocationChange}
                     showUserMarker={true}
@@ -345,14 +357,14 @@ export default function RegisterPage() {
                   {!formData.hasLocation && (
                     <div className="absolute inset-x-0 bottom-4 text-center pointer-events-none z-[1001]">
                       <span className="bg-white/90 backdrop-blur px-3 py-1 rounded-full text-xs font-semibold text-teal-600 shadow-sm border border-teal-100">
-                        👆 Arrastra el marcador para confirmar
+                        Arrastra el marcador para confirmar
                       </span>
                     </div>
                   )}
                 </div>
 
                 {formData.hasLocation && (
-                  <div className="bg-teal-50 border border-teal-100 rounded-xl p-3 flex items-start gap-3">
+                  <div className="bg-teal-50/70 border border-teal-100 rounded-xl p-3 flex items-start gap-3">
                     <CheckCircle2 className="w-5 h-5 text-teal-600 shrink-0 mt-0.5" />
                     <div>
                       <p className="text-xs font-bold text-teal-800 uppercase tracking-wide">
@@ -382,7 +394,7 @@ export default function RegisterPage() {
                     onChange={(e) =>
                       setFormData({ ...formData, email: e.target.value })
                     }
-                    className="rounded-xl border-gray-200 focus:border-teal-500 focus:ring-teal-500/20"
+                    className="h-11 rounded-xl border-gray-200 bg-white/90 focus-visible:ring-teal-500/40 focus-visible:ring-offset-0"
                   />
                 </div>
 
@@ -397,7 +409,7 @@ export default function RegisterPage() {
                     onChange={(e) =>
                       setFormData({ ...formData, password: e.target.value })
                     }
-                    className="rounded-xl border-gray-200 focus:border-teal-500 focus:ring-teal-500/20"
+                    className="h-11 rounded-xl border-gray-200 bg-white/90 focus-visible:ring-teal-500/40 focus-visible:ring-offset-0"
                   />
                   <p className="text-xs text-gray-500">Mínimo 8 caracteres</p>
                 </div>
@@ -416,7 +428,7 @@ export default function RegisterPage() {
                         confirmPassword: e.target.value,
                       })
                     }
-                    className="rounded-xl border-gray-200 focus:border-teal-500 focus:ring-teal-500/20"
+                    className="h-11 rounded-xl border-gray-200 bg-white/90 focus-visible:ring-teal-500/40 focus-visible:ring-offset-0"
                   />
                 </div>
               </div>
@@ -447,7 +459,7 @@ export default function RegisterPage() {
                     (currentStep === 1 && !isStep1Valid) ||
                     (currentStep === 2 && !isStep2Valid)
                   }
-                  className="rounded-xl bg-teal-600 hover:bg-teal-700 text-white min-w-[120px]"
+                  className="rounded-xl bg-gradient-to-r from-teal-600 via-teal-500 to-cyan-500 hover:from-teal-700 hover:via-teal-600 hover:to-cyan-600 text-white min-w-[120px] shadow-lg shadow-teal-500/20"
                 >
                   Siguiente
                   <ArrowRight className="w-4 h-4 ml-2" />
@@ -456,7 +468,7 @@ export default function RegisterPage() {
                 <Button
                   type="submit"
                   disabled={isLoading}
-                  className="rounded-xl bg-gradient-to-r from-teal-600 to-cyan-600 hover:from-teal-700 hover:to-cyan-700 text-white min-w-[140px] shadow-lg shadow-teal-500/20"
+                  className="rounded-xl bg-gradient-to-r from-teal-600 via-teal-500 to-cyan-500 hover:from-teal-700 hover:via-teal-600 hover:to-cyan-600 text-white min-w-[140px] shadow-lg shadow-teal-500/20"
                 >
                   {isLoading ? (
                     <Loader2 className="w-4 h-4 animate-spin" />

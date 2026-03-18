@@ -68,6 +68,8 @@ export async function rejectRequest(requestId: string, reason: string) {
       estado: "RECHAZADA",
       aprobadoPorEnteId: ente.id,
       rejectionReason: reason,
+      tipoRechazo: "SUPERVISOR",
+      motivoRechazoFarmacia: null,
     },
   });
 

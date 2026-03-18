@@ -16,7 +16,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 
 const navItems = [
-  { href: "/dashboard", label: "Dashboard" },
+  { href: "/dashboard", label: "Listado de Solicitudes" },
   { href: "/dashboard/requests", label: "Mis Solicitudes" },
   { href: "/dashboard/donations", label: "Mis Donaciones" },
 ];

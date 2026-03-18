@@ -5,11 +5,17 @@ import type React from "react";
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
+import { Space_Grotesk } from "next/font/google";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Heart, Mail, Lock, Loader2, ArrowRight } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
+
+const spaceGrotesk = Space_Grotesk({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+});
 
 export default function LoginPage() {
   const router = useRouter();
@@ -86,7 +92,10 @@ export default function LoginPage() {
               )}
 
               <div className="space-y-2">
-                <Label htmlFor="email" className="text-gray-700 flex items-center gap-2">
+                <Label
+                  htmlFor="email"
+                  className="text-gray-700 flex items-center gap-2"
+                >
                   <Mail className="w-4 h-4 text-teal-600" />
                   Correo Electrónico
                 </Label>
@@ -103,7 +112,10 @@ export default function LoginPage() {
 
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <Label htmlFor="password" className="text-gray-700 flex items-center gap-2">
+                  <Label
+                    htmlFor="password"
+                    className="text-gray-700 flex items-center gap-2"
+                  >
                     <Lock className="w-4 h-4 text-teal-600" />
                     Contraseña
                   </Label>
