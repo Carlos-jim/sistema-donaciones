@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
@@ -199,7 +200,7 @@ function canConfirmReception(s: Solicitud) {
 }
 
 export default function MyRequestsPage() {
-  const [requests, setRequests] = useState<RequestItem[]>([]);
+  const [requests, setRequests] = useState<Solicitud[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedSolicitud, setSelectedSolicitud] = useState<Solicitud | null>(
     null,
@@ -227,7 +228,7 @@ export default function MyRequestsPage() {
   async function fetchSolicitudes() {
     try {
       const res = await fetch("/api/requests");
-      if (res.ok) setSolicitudes(await res.json());
+      if (res.ok) setRequests(await res.json());
     } catch (error) {
       console.error("Error fetching solicitudes:", error);
     } finally {
@@ -554,7 +555,7 @@ export default function MyRequestsPage() {
               </Card>
             ))}
           </div>
-        ) : solicitudes.length === 0 ? (
+        ) : requests.length === 0 ? (
           <motion.div
             variants={itemVariants}
             className="text-center py-16 px-4 bg-white rounded-2xl border border-dashed border-gray-300"
@@ -580,7 +581,7 @@ export default function MyRequestsPage() {
           </motion.div>
         ) : (
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {solicitudes.map((solicitud) => {
+            {requests.map((solicitud) => {
               const estadoConfig =
                 ESTADO_CONFIG[solicitud.estado] ?? ESTADO_CONFIG.PENDIENTE;
               const urgencyConfig = URGENCY_CONFIG[solicitud.tiempoEspera];

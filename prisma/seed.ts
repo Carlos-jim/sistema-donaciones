@@ -82,18 +82,122 @@ async function main() {
     },
   });
 
-  // ── Farmacia ───────────────────────────────────────────────────────────────
-  console.log("💊 Creating pharmacy...");
-  const farmacia = await prisma.farmacia.create({
+  // ── Farmacias ──────────────────────────────────────────────────────────────
+  console.log("💊 Creating pharmacies...");
+  const farmacia1 = await prisma.farmacia.create({
     data: {
-      nombre: "Farmacia Central",
-      direccion: "Av. Libertador, Caracas",
-      telefono: "0212-5554321",
-      horario: "Lunes a Sábado 8:00 AM - 8:00 PM",
-      email: "farmacia@farmacentral.com",
+      nombre: "Farmatodo Sambil Margarita",
+      direccion: "Av. Jovito Villalba, C.C. Sambil, Pampatar",
+      telefono: "0295-2601111",
+      horario: "Lunes a Domingo 8:00 AM - 10:00 PM",
+      email: "sambil@farmatodo.com",
       password: await hash("farmacia123", 12),
-      latitude: 10.9878,
-      longitude: -63.9113,
+      latitude: 10.996578,
+      longitude: -63.8133486,
+    },
+  });
+
+  const farmacia2 = await prisma.farmacia.create({
+    data: {
+      nombre: "Farmatodo Playa El Angel",
+      direccion: "Av. Aldonza Manrique, Playa El Angel",
+      telefono: "0295-2622222",
+      horario: "Lunes a Domingo 24 Horas",
+      email: "playaelangel@farmatodo.com",
+      password: await hash("farmacia123", 12),
+      latitude: 10.9878333,
+      longitude: -63.8177528,
+    },
+  });
+
+  await prisma.farmacia.create({
+    data: {
+      nombre: "Farmatodo C.C. La Vela",
+      direccion: "C.C. La Vela, Nivel Planta, Urb. Costa Azul",
+      telefono: "0295-2603333",
+      horario: "Lunes a Domingo 9:00 AM - 9:00 PM",
+      email: "lavela@farmatodo.com",
+      password: await hash("farmacia123", 12),
+      latitude: 10.9777303,
+      longitude: -63.8195757,
+    },
+  });
+
+  await prisma.farmacia.create({
+    data: {
+      nombre: "Farmatodo Jorge Coll",
+      direccion: "Urb. Jorge Coll, Pampatar",
+      telefono: "0295-2604444",
+      horario: "Lunes a Domingo 8:00 AM - 9:00 PM",
+      email: "jorgecoll@farmatodo.com",
+      password: await hash("farmacia123", 12),
+      latitude: 10.9947051,
+      longitude: -63.8052786,
+    },
+  });
+
+  await prisma.farmacia.create({
+    data: {
+      nombre: "Farmatodo La Asuncion",
+      direccion: "Av. 31 de Julio, Sector Cocheima, La Asuncion",
+      telefono: "0295-2605555",
+      horario: "Lunes a Domingo 8:00 AM - 8:00 PM",
+      email: "laasuncion@farmatodo.com",
+      password: await hash("farmacia123", 12),
+      latitude: 11.0402671,
+      longitude: -63.8571535,
+    },
+  });
+
+  await prisma.farmacia.create({
+    data: {
+      nombre: "Farmahorro Caribe",
+      direccion: "Av. Jovito Villalba, Sector Caribe, Pampatar",
+      telefono: "0295-2606666",
+      horario: "Lunes a Domingo 8:00 AM - 10:00 PM",
+      email: "caribe@farmahorro.com",
+      password: await hash("farmacia123", 12),
+      latitude: 10.9927,
+      longitude: -63.825,
+    },
+  });
+
+  await prisma.farmacia.create({
+    data: {
+      nombre: "Farmacia Sigo Sambil",
+      direccion: "C.C. Sambil Margarita, Entrada Playa El Yaque",
+      telefono: "0295-2607777",
+      horario: "Lunes a Domingo 10:00 AM - 9:00 PM",
+      email: "sigosambil@sigo.com",
+      password: await hash("farmacia123", 12),
+      latitude: 10.9988,
+      longitude: -63.8141,
+    },
+  });
+
+  await prisma.farmacia.create({
+    data: {
+      nombre: "Farmacia Sigo Costazul",
+      direccion: "Av. Jovito Villalba, C.C. Parque Costazul",
+      telefono: "0295-2608888",
+      horario: "Lunes a Domingo 9:00 AM - 9:00 PM",
+      email: "sigocostazul@sigo.com",
+      password: await hash("farmacia123", 12),
+      latitude: 10.9908,
+      longitude: -63.8237,
+    },
+  });
+
+  await prisma.farmacia.create({
+    data: {
+      nombre: "Farmacia Sigo La Proveeduria",
+      direccion: "Av. Juan Bautista Arismendi, Porlamar",
+      telefono: "0295-2609999",
+      horario: "Lunes a Sabado 8:00 AM - 7:00 PM",
+      email: "proveeduria@sigo.com",
+      password: await hash("farmacia123", 12),
+      latitude: 10.9523,
+      longitude: -63.8684,
     },
   });
 
@@ -416,7 +520,7 @@ async function main() {
     { userId: testUser.id, type: "MATCH_DONATION", title: "Nueva donación de Ibuprofeno disponible",  message: "Carlos Rodríguez donó 15 tabletas de Ibuprofeno cerca de tu ubicación.",                 read: false, link: "/dashboard/browse"   },
     { userId: testUser.id, type: "MATCH_REQUEST",  title: "Tu solicitud SOL-T003 fue aprobada",       message: "Hospital Central de Caracas aprobó tu solicitud de Metformina e Insulina.",               read: false, link: "/dashboard/requests" },
     { userId: testUser.id, type: "MATCH_DONATION", title: "Donante asignado a tu solicitud SOL-T004", message: "María García aceptó donar Loratadina. Revisa la farmacia propuesta y confírmala.",          read: false, link: "/dashboard/requests" },
-    { userId: testUser.id, type: "SYSTEM",         title: "Tu medicamento está listo para retiro",    message: "SOL-T006: Aspirina lista en Farmacia Central. Confirma que irás a retirarla.",              read: false, link: "/dashboard/requests" },
+    { userId: testUser.id, type: "SYSTEM",         title: "Tu medicamento está listo para retiro",    message: "SOL-T006: Aspirina lista en Farmatodo Sambil Margarita. Confirma que irás a retirarla.",    read: false, link: "/dashboard/requests" },
     { userId: testUser.id, type: "SYSTEM",         title: "Solicitud SOL-T008 rechazada",             message: "Tu solicitud de Insulina fue rechazada por falta de récipe médico vigente.",                read: true,  link: "/dashboard/requests" },
     { userId: usuario2.id, type: "SYSTEM",         title: "Bienvenido a MediShareNE",                 message: "Tu cuenta fue creada exitosamente.",                                                        read: false, link: null                  },
     { userId: usuario2.id, type: "MATCH_REQUEST",  title: "¡Alguien necesita tu medicamento!",        message: "Hay una solicitud de Paracetamol cerca de ti. ¡Considera donar!",                          read: false, link: "/dashboard/browse"   },
@@ -429,7 +533,7 @@ async function main() {
   console.log("\n📊 Summary:");
   console.log("   - 1 Administrator");
   console.log("   - 2 Health Entities");
-  console.log("   - 5 Pharmacies");
+  console.log("   - 9 Pharmacies (Margarita Island)");
   console.log("   - 5 Users");
   console.log("   - 12 Medications");
   console.log("   - 13 Requests (9 for test user covering all states + 4 pending others)");
@@ -439,7 +543,7 @@ async function main() {
   console.log("   test@example.com              → test123");
   console.log("   admin@medishare.com           → admin123");
   console.log("   supervisor@hospitalcentral.com → supervisor123");
-  console.log("   farmacia@farmacentral.com      → farmacia123");
+  console.log("   sambil@farmatodo.com          → farmacia123");
   console.log("   maria@example.com             → user123");
 }
 

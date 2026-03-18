@@ -24,12 +24,22 @@ export async function GET() {
 
     const user = await prisma.usuarioComun.findUnique({
       where: { id: payload.userId },
-      select: { id: true, nombre: true, email: true, telefono: true, cedula: true, direccion: true, createdAt: true },
+      select: {
+        id: true,
+        nombre: true,
+        email: true,
+        telefono: true,
+        direccion: true,
+        createdAt: true,
+      },
     });
 
     if (!user) return NextResponse.json({ error: "Usuario no encontrado" }, { status: 404 });
 
-    return NextResponse.json(user);
+    return NextResponse.json({
+      ...user,
+      cedula: null,
+    });
   } catch (error) {
     console.error("Error fetching profile:", error);
     return NextResponse.json({ error: "Error interno" }, { status: 500 });
@@ -50,7 +60,7 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ error: parsed.error.errors[0].message }, { status: 400 });
     }
 
-    const { nombre, email, telefono, cedula, currentPassword, newPassword } = parsed.data;
+    const { nombre, email, telefono, currentPassword, newPassword } = parsed.data;
 
     const user = await prisma.usuarioComun.findUnique({ where: { id: payload.userId } });
     if (!user) return NextResponse.json({ error: "Usuario no encontrado" }, { status: 404 });
@@ -80,13 +90,25 @@ export async function PATCH(request: Request) {
         ...(nombre && { nombre }),
         ...(email && { email }),
         ...(telefono !== undefined && { telefono }),
-        ...(cedula !== undefined && { cedula }),
         ...(hashedPassword && { password: hashedPassword }),
       },
-      select: { id: true, nombre: true, email: true, telefono: true, cedula: true, direccion: true, createdAt: true },
+      select: {
+        id: true,
+        nombre: true,
+        email: true,
+        telefono: true,
+        direccion: true,
+        createdAt: true,
+      },
     });
 
-    return NextResponse.json({ success: true, user: updated });
+    return NextResponse.json({
+      success: true,
+      user: {
+        ...updated,
+        cedula: null,
+      },
+    });
   } catch (error) {
     console.error("Error updating profile:", error);
     return NextResponse.json({ error: "Error al actualizar el perfil" }, { status: 500 });

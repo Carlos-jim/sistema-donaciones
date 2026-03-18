@@ -85,9 +85,21 @@ export default function ProfilePage() {
           setCedulaTipo(tipo || "V");
           setCedulaNumero(numParts.join("-") || "");
           if (data.direccion) setLocationData(data.direccion);
+        } else {
+          const data = await res.json();
+          toast({
+            title: "No se pudo cargar el perfil",
+            description: data.error || "Intenta iniciar sesion de nuevo.",
+            variant: "destructive",
+          });
         }
       } catch (error) {
         console.error("Error fetching profile:", error);
+        toast({
+          title: "Error de conexion",
+          description: "No se pudo cargar tu perfil.",
+          variant: "destructive",
+        });
       } finally {
         setIsLoading(false);
       }
