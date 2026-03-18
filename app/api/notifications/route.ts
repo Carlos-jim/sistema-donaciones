@@ -29,7 +29,7 @@ export async function GET() {
     }
 
     const notifications = await prisma.notificacion.findMany({
-      where: { userId: user.id },
+      where: { userId: user.id, activo: true },
       orderBy: { createdAt: "desc" },
     });
 

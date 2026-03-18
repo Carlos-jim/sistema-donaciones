@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { getSolicitudByCodigo, updateStatus } from "../actions";
+import { useState, useEffect } from "react";
+import { getSolicitudByCodigo, updateStatus, getPendingPickups } from "../actions";
 import { EstadoSolicitud, EstadoDonacion } from "@prisma/client";
 import {
   CheckCircle,
@@ -11,9 +11,12 @@ import {
   HandHeart,
   AlertTriangle,
   Gift,
+  Bell,
+  User,
 } from "lucide-react";
 
 type ItemWithDetails = Awaited<ReturnType<typeof getSolicitudByCodigo>>["data"];
+type PendingPickup = Awaited<ReturnType<typeof getPendingPickups>>["data"][number];
 
 export default function PharmacyPage() {
   const [codigo, setCodigo] = useState("");
@@ -21,6 +24,14 @@ export default function PharmacyPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [actionLoading, setActionLoading] = useState(false);
+  const [pendingPickups, setPendingPickups] = useState<PendingPickup[]>([]);
+
+  // Load pending pickups on mount
+  // We get farmaciaId from the first search result or URL — for now use a polling approach
+  const loadPendingPickups = async (farmaciaId: string) => {
+    const result = await getPendingPickups(farmaciaId);
+    if (result.success) setPendingPickups(result.data);
+  };
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -31,6 +42,10 @@ export default function PharmacyPage() {
     const result = await getSolicitudByCodigo(codigo);
     if (result.success && result.data) {
       setItem(result.data);
+      // If solicitud, load pending pickups for this pharmacy
+      if (result.data.type === "SOLICITUD" && result.data.farmaciaEntregaId) {
+        loadPendingPickups(result.data.farmaciaEntregaId);
+      }
     } else {
       setError(result.error || "Código no encontrado");
     }
@@ -42,7 +57,6 @@ export default function PharmacyPage() {
     setActionLoading(true);
     const result = await updateStatus(item.id, item.type, newStatus);
     if (result.success) {
-      // Refresh local state to show updated status
       const updated = await getSolicitudByCodigo(item.codigo!);
       if (updated.success && updated.data) {
         setItem(updated.data);
@@ -66,6 +80,34 @@ export default function PharmacyPage() {
             solicitudes.
           </p>
         </div>
+
+        {/* Pending Pickups Notification */}
+        {pendingPickups.length > 0 && (
+          <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
+            <h3 className="text-sm font-semibold text-purple-800 flex items-center gap-2 mb-3">
+              <Bell className="h-4 w-4" />
+              Beneficiarios que vendrán a retirar ({pendingPickups.length})
+            </h3>
+            <div className="space-y-2">
+              {pendingPickups.map((pickup) => (
+                <div key={pickup.id} className="flex items-center justify-between bg-white rounded-lg p-3 border border-purple-100">
+                  <div className="flex items-center gap-2">
+                    <User className="h-4 w-4 text-purple-600" />
+                    <div>
+                      <p className="text-sm font-medium text-gray-900">{pickup.usuarioComun.nombre}</p>
+                      <p className="text-xs text-gray-500">
+                        {pickup.medicamentos.map(m => m.medicamento.nombre).join(", ")}
+                      </p>
+                    </div>
+                  </div>
+                  <span className="text-xs text-purple-600 font-medium">
+                    {pickup.codigoComprobante || pickup.codigo}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Search Section */}
         <div className="bg-white p-6 rounded-lg shadow-md">
@@ -128,8 +170,41 @@ export default function PharmacyPage() {
               {/* SOLICITUD LOGIC */}
               {item.type === "SOLICITUD" && (
                 <>
+                  {/* Donor delivery confirmation indicator */}
+                  {item.estado === "EN_PROCESO" && (
+                    <div className="space-y-4">
+                      {item.deliveryConfirmedAt ? (
+                        <div className="flex items-start gap-4 p-4 bg-blue-50 rounded-md border border-blue-200">
+                          <CheckCircle className="h-6 w-6 text-blue-600 mt-1" />
+                          <div>
+                            <h4 className="font-medium text-blue-900">
+                              El donante confirmó la entrega
+                            </h4>
+                            <p className="text-sm text-blue-700">
+                              El donante indica que entregó el medicamento en esta farmacia el {new Date(item.deliveryConfirmedAt).toLocaleDateString("es-ES", { day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" })}.
+                              Cuando lo recibas, marca como &quot;Recibido&quot;.
+                            </p>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="flex items-start gap-4 p-4 bg-yellow-50 rounded-md border border-yellow-200">
+                          <AlertTriangle className="h-6 w-6 text-yellow-600 mt-1" />
+                          <div>
+                            <h4 className="font-medium text-yellow-900">
+                              Esperando entrega del donante
+                            </h4>
+                            <p className="text-sm text-yellow-700">
+                              El donante aún no ha confirmado que entregó el medicamento.
+                            </p>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
                   {/* Step 1: Receive Package */}
-                  {(item.estado === "PENDIENTE" ||
+                  {(item.estado === "EN_PROCESO" ||
+                    item.estado === "PENDIENTE" ||
                     item.estado === "APROBADA") && (
                     <div className="space-y-4">
                       <div className="flex items-start gap-4 p-4 bg-yellow-50 rounded-md">
@@ -219,6 +294,34 @@ export default function PharmacyPage() {
                   {/* Step 3: Final Handover */}
                   {item.estado === "LISTA_PARA_RETIRO" && (
                     <div className="space-y-4">
+                      {/* Pickup notification from beneficiary */}
+                      {item.pickupConfirmedAt ? (
+                        <div className="flex items-start gap-4 p-4 bg-purple-50 rounded-md border border-purple-200">
+                          <Bell className="h-6 w-6 text-purple-600 mt-1" />
+                          <div>
+                            <h4 className="font-medium text-purple-900">
+                              El beneficiario confirmó que vendrá a retirar
+                            </h4>
+                            <p className="text-sm text-purple-700">
+                              {item.usuarioComun?.nombre} avisó que irá a la farmacia.
+                              Confirmado el {new Date(item.pickupConfirmedAt).toLocaleDateString("es-ES", { day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" })}.
+                            </p>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="flex items-start gap-4 p-4 bg-yellow-50 rounded-md border border-yellow-200">
+                          <AlertTriangle className="h-6 w-6 text-yellow-600 mt-1" />
+                          <div>
+                            <h4 className="font-medium text-yellow-900">
+                              Esperando confirmación del beneficiario
+                            </h4>
+                            <p className="text-sm text-yellow-700">
+                              El beneficiario aún no ha confirmado que vendrá a retirar.
+                            </p>
+                          </div>
+                        </div>
+                      )}
+
                       <div className="flex items-start gap-4 p-4 bg-green-50 rounded-md">
                         <CheckCircle className="h-6 w-6 text-green-600 mt-1" />
                         <div>
@@ -248,6 +351,15 @@ export default function PharmacyPage() {
                       <h3 className="mt-4 text-xl font-bold text-gray-900">
                         Solicitud Completada
                       </h3>
+                      {item.receptionConfirmedAt ? (
+                        <p className="text-green-600 mt-2 text-sm">
+                          El beneficiario confirmó la recepción el {new Date(item.receptionConfirmedAt).toLocaleDateString("es-ES")}.
+                        </p>
+                      ) : (
+                        <p className="text-yellow-600 mt-2 text-sm">
+                          Esperando confirmación de recepción por parte del beneficiario.
+                        </p>
+                      )}
                     </div>
                   )}
                 </>

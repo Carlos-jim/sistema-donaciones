@@ -1,0 +1,24 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(node -e \":*)",
+      "Bash(curl -s -X POST http://localhost:3000/api/auth/register -H \"Content-Type: application/json\" -d \"{\"\"nombre\"\":\"\"Carlos Prueba\"\",\"\"email\"\":\"\"prueba@test.com\"\",\"\"password\"\":\"\"Test1234!\"\",\"\"telefono\"\":\"\"0414-1234567\"\",\"\"cedula\"\":\"\"V-12345678\"\"}\")",
+      "Bash(npx tsx -e \":*)",
+      "Bash(echo \"EXIT: $?\")",
+      "Bash(curl -s -X POST http://localhost:3000/api/auth/register -H \"Content-Type: application/json\" -d \"{\"\"nombre\"\":\"\"Carlos Prueba\"\",\"\"email\"\":\"\"prueba2@test.com\"\",\"\"password\"\":\"\"Test1234!\"\",\"\"telefono\"\":\"\"0414-1234567\"\",\"\"cedula\"\":\"\"V-12345678\"\"}\")",
+      "Bash(curl -s -X POST http://localhost:3000/api/auth/login -H \"Content-Type: application/json\" -d \"{\"\"email\"\":\"\"prueba@test.com\"\",\"\"password\"\":\"\"Test1234!\"\"}\")",
+      "Bash(curl -s http://localhost:3000/api/auth/me)",
+      "Bash(curl -s -X POST http://localhost:3000/api/auth/login -H \"Content-Type: application/json\" -d \"{\"\"email\"\":\"\"maria@example.com\"\",\"\"password\"\":\"\"user123\"\"}\")",
+      "Bash(npx tsx:*)",
+      "Bash(pnpm add:*)",
+      "Bash(npx prisma:*)",
+      "Bash(node -e \"const n = require\\(''@neondatabase/serverless''\\); console.log\\(Object.keys\\(n\\)\\)\")",
+      "Bash(node -e \"const n = require\\(''@prisma/adapter-neon''\\); console.log\\(Object.keys\\(n\\)\\)\")",
+      "Bash(node -e \"const { PrismaNeonHttp } = require\\(''@prisma/adapter-neon''\\); console.log\\(PrismaNeonHttp.toString\\(\\).slice\\(0, 300\\)\\)\")",
+      "Bash(find /c/Users/carli/OneDrive/Documentos/donaciones/app/admin -type f -name *.tsx -o -name *.ts)",
+      "Bash(node -e \"const p = require\\(''./node_modules/@prisma/client/package.json''\\); console.log\\(p.version\\)\")",
+      "Bash(node -e \"require\\(''@prisma/adapter-neon''\\); console.log\\(''ok''\\)\")",
+      "Bash(npx dotenv-cli:*)"
+    ]
+  }
+}

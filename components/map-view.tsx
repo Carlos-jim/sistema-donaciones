@@ -103,6 +103,15 @@ function MapViewInner({
   } | null>(null);
 
   const [dbPharmacies, setDbPharmacies] = useState<MapLocation[]>([]);
+  const [allPharmacies, setAllPharmacies] = useState<
+    {
+      id: string;
+      nombre: string;
+      direccion: string;
+      latitude: number | null;
+      longitude: number | null;
+    }[]
+  >([]);
 
   const [isConfirmDialogOpen, setIsConfirmDialogOpen] = useState(false);
   const [pendingLocation, setPendingLocation] = useState<
@@ -120,13 +129,16 @@ function MapViewInner({
       const response = await fetch("/api/pharmacies");
       if (response.ok) {
         const data = await response.json();
+        // Store all pharmacies for the combobox
+        setAllPharmacies(data);
+        // Only pharmacies with coordinates go on the map
         const mappedPharmacies: MapLocation[] = data
           .filter((p: any) => p.latitude && p.longitude)
           .map((p: any) => ({
             id: p.id,
             lat: p.latitude,
             lng: p.longitude,
-            type: "pharmacy",
+            type: "pharmacy" as const,
             title: p.nombre,
           }));
         setDbPharmacies(mappedPharmacies);
@@ -196,13 +208,38 @@ function MapViewInner({
     const a =
       Math.sin(dLat / 2) * Math.sin(dLat / 2) +
       Math.cos(lat1 * (Math.PI / 180)) *
-      Math.cos(lat2 * (Math.PI / 180)) *
-      Math.sin(dLon / 2) *
-      Math.sin(dLon / 2);
+        Math.cos(lat2 * (Math.PI / 180)) *
+        Math.sin(dLon / 2) *
+        Math.sin(dLon / 2);
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     return R * c;
   };
 
+  // Sort ALL pharmacies for combobox (those with coords first, sorted by distance)
+  const sortedAllPharmacies = [...allPharmacies].sort((a, b) => {
+    if (!userLocation) return 0;
+    // Pharmacies with coordinates come first
+    const aHasCoords = a.latitude != null && a.longitude != null;
+    const bHasCoords = b.latitude != null && b.longitude != null;
+    if (aHasCoords && !bHasCoords) return -1;
+    if (!aHasCoords && bHasCoords) return 1;
+    if (!aHasCoords && !bHasCoords) return 0;
+    const distA = calculateDistance(
+      userLocation[0],
+      userLocation[1],
+      a.latitude!,
+      a.longitude!,
+    );
+    const distB = calculateDistance(
+      userLocation[0],
+      userLocation[1],
+      b.latitude!,
+      b.longitude!,
+    );
+    return distA - distB;
+  });
+
+  // Sort map pharmacies by distance for nearest pharmacy highlighting
   const sortedPharmacies = [...dbPharmacies].sort((a, b) => {
     if (!userLocation) return 0;
     const distA = calculateDistance(
@@ -224,19 +261,34 @@ function MapViewInner({
     setSelectedPharmacy(pharmacyId);
     if (!pharmacyId) return;
 
-    const pharmacy = dbPharmacies.find((p) => p.id === pharmacyId);
-    if (pharmacy && mapRef.current) {
-      try {
-        mapRef.current.flyTo([pharmacy.lat, pharmacy.lng], 18, {
-          duration: 1.5,
+    const pharmacy = allPharmacies.find((p) => p.id === pharmacyId);
+    if (pharmacy) {
+      // If pharmacy has coordinates, fly to it on the map
+      if (
+        pharmacy.latitude != null &&
+        pharmacy.longitude != null &&
+        mapRef.current
+      ) {
+        try {
+          mapRef.current.flyTo([pharmacy.latitude, pharmacy.longitude], 18, {
+            duration: 1.5,
+          });
+          setSelection({ lat: pharmacy.latitude, lng: pharmacy.longitude });
+          handleLocationUpdateAttempt(
+            pharmacy.latitude,
+            pharmacy.longitude,
+            pharmacy.nombre,
+          );
+        } catch (error) {
+          console.warn("Map not ready:", error);
+        }
+      } else {
+        // Pharmacy without coordinates — just notify with the name
+        onUserLocationChange?.({
+          lat: userLocation?.[0] ?? DEFAULT_CENTER.lat,
+          lng: userLocation?.[1] ?? DEFAULT_CENTER.lng,
+          address: pharmacy.nombre,
         });
-        setSelection({ lat: pharmacy.lat, lng: pharmacy.lng });
-
-        // Update the effective location to be the pharmacy
-        // We allow this even if locked, as it's a specific selection action
-        handleLocationUpdateAttempt(pharmacy.lat, pharmacy.lng, pharmacy.title);
-      } catch (error) {
-        console.warn("Map not ready:", error);
       }
     }
   };
@@ -266,7 +318,7 @@ function MapViewInner({
             }
           }
         },
-        () => { },
+        () => {},
         {
           enableHighAccuracy: true,
           timeout: 15000,
@@ -511,21 +563,25 @@ function MapViewInner({
       <div className="absolute left-4 right-4 top-4 flex gap-2 z-[1000]">
         <div className="relative flex-1">
           <Combobox
-            options={sortedPharmacies.map((pharmacy) => {
+            options={sortedAllPharmacies.map((pharmacy) => {
               let distanceLabel = "";
-              if (userLocation) {
+              if (
+                userLocation &&
+                pharmacy.latitude != null &&
+                pharmacy.longitude != null
+              ) {
                 const dist = calculateDistance(
                   userLocation[0],
                   userLocation[1],
-                  pharmacy.lat,
-                  pharmacy.lng,
+                  pharmacy.latitude,
+                  pharmacy.longitude,
                 );
                 distanceLabel = `${dist.toFixed(1)} km de distancia`;
               }
               return {
                 value: pharmacy.id,
-                label: pharmacy.title,
-                description: distanceLabel || "Farmacia",
+                label: pharmacy.nombre,
+                description: distanceLabel || pharmacy.direccion || "Farmacia",
               };
             })}
             value={selectedPharmacy}

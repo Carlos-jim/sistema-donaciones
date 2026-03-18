@@ -1,359 +1,715 @@
 "use strict";
-// Seed script to populate the database with test data
-// Run with: pnpm tsx prisma/seed.ts
+// Run with: npx tsx prisma/seed.ts
 
+import { PrismaNeonHttp } from "@prisma/adapter-neon";
 import { PrismaClient } from "@prisma/client";
 import { hash } from "bcryptjs";
 
-const prisma = new PrismaClient();
+const adapter = new PrismaNeonHttp(process.env.DATABASE_URL!);
+const prisma = new PrismaClient({ adapter } as any);
 
 async function main() {
-    console.log("🌱 Starting seed...");
+  console.log("🌱 Starting seed...");
 
-    // Clean existing data (optional - comment out if you want to keep existing data)
-    console.log("🧹 Cleaning existing data...");
-    await prisma.solicitudMedicamento.deleteMany();
-    await prisma.donacionMedicamento.deleteMany();
-    await prisma.notificacion.deleteMany();
-    await prisma.solicitud.deleteMany();
-    await prisma.donacion.deleteMany();
-    await prisma.medicamento.deleteMany();
-    await prisma.usuarioComun.deleteMany();
-    await prisma.enteSalud.deleteMany();
-    await prisma.farmacia.deleteMany();
-    await prisma.administrador.deleteMany();
+  // ── Clean ──────────────────────────────────────────────────────────────────
+  console.log("🧹 Cleaning existing data...");
+  await prisma.solicitudMedicamento.deleteMany();
+  await prisma.donacionMedicamento.deleteMany();
+  await prisma.notificacion.deleteMany();
+  await prisma.solicitud.deleteMany();
+  await prisma.donacion.deleteMany();
+  await prisma.medicamento.deleteMany();
+  await prisma.usuarioComun.deleteMany();
+  await prisma.enteSalud.deleteMany();
+  await prisma.farmacia.deleteMany();
+  await prisma.administrador.deleteMany();
 
-    // Create Administrator
-    console.log("👤 Creating administrator...");
-    const admin = await prisma.administrador.create({
-        data: {
-            nombre: "Admin Principal",
-            email: "admin@medishare.com",
-            password: await hash("admin123", 12),
-            rol: "SUPER_ADMIN",
-        },
-    });
+  // ── Admin ──────────────────────────────────────────────────────────────────
+  console.log("👤 Creating administrator...");
+  const admin = await prisma.administrador.create({
+    data: {
+      nombre: "Admin Principal",
+      email: "admin@medishare.com",
+      password: await hash("admin123", 12),
+      rol: "SUPER_ADMIN",
+    },
+  });
 
-    // Create Health Entity (EnteSalud / Supervisor)
-    console.log("🏥 Creating health entities...");
-    const enteSalud = await prisma.enteSalud.create({
-        data: {
-            nombre: "Hospital Central de Caracas",
-            direccion: "Av. Panteón, San Bernardino, Caracas",
-            telefono: "0212-5551234",
-            email: "supervisor@hospitalcentral.com",
-            password: await hash("supervisor123", 12),
-            aprobado: true,
-            aprobadoPorId: admin.id,
-        },
-    });
+  // ── Entes de salud / Supervisors ───────────────────────────────────────────
+  console.log("🏥 Creating health entities...");
+  const ente1 = await prisma.enteSalud.create({
+    data: {
+      nombre: "Hospital Central de Caracas",
+      direccion: "Av. Panteón, San Bernardino, Caracas",
+      telefono: "0212-5551234",
+      email: "supervisor@hospitalcentral.com",
+      password: await hash("supervisor123", 12),
+      aprobado: true,
+      aprobadoPorId: admin.id,
+    },
+  });
 
-    const enteSalud2 = await prisma.enteSalud.create({
-        data: {
-            nombre: "Clínica Santa María",
-            direccion: "Av. Francisco de Miranda, Chacao, Caracas",
-            telefono: "0212-5559876",
-            email: "supervisor@clinicasantamaria.com",
-            password: await hash("supervisor123", 12),
-            aprobado: true,
-            aprobadoPorId: admin.id,
-        },
-    });
+  await prisma.enteSalud.create({
+    data: {
+      nombre: "Clínica Santa María",
+      direccion: "Av. Francisco de Miranda, Chacao, Caracas",
+      telefono: "0212-5559876",
+      email: "supervisor@clinicasantamaria.com",
+      password: await hash("supervisor123", 12),
+      aprobado: true,
+      aprobadoPorId: admin.id,
+    },
+  });
 
-    // Create Pharmacy
-    console.log("💊 Creating pharmacies...");
-    const farmacia = await prisma.farmacia.create({
-        data: {
-            nombre: "Farmacia Central",
-            direccion: "Av. Libertador, Caracas",
-            telefono: "0212-5554321",
-            horario: "Lunes a Sábado 8:00 AM - 8:00 PM",
-            email: "farmacia@farmacentral.com",
-            password: await hash("farmacia123", 12),
-        },
-    });
+  // ── Farmacias ──────────────────────────────────────────────────────────────
+  console.log("💊 Creating pharmacies...");
+  const farmacia1 = await prisma.farmacia.create({
+    data: {
+      nombre: "Farmacia Central",
+      direccion: "Av. Libertador, Caracas",
+      telefono: "0212-5554321",
+      horario: "Lun-Sáb 8AM-8PM",
+      email: "farmacia@farmacentral.com",
+      password: await hash("farmacia123", 12),
+      latitude: 10.4806,
+      longitude: -66.9036,
+    },
+  });
 
-    // Create Common Users
-    console.log("👥 Creating common users...");
-    const usuario1 = await prisma.usuarioComun.create({
-        data: {
-            nombre: "María García",
-            email: "maria@example.com",
-            password: await hash("user123", 12),
-            telefono: "0414-1234567",
-            cedula: "V-12345678",
-            direccion: { lat: 10.4806, lng: -66.9036 },
-        },
-    });
+  const farmacia2 = await prisma.farmacia.create({
+    data: {
+      nombre: "Farmacia Bello Monte",
+      direccion: "Calle La Joya, Bello Monte, Caracas",
+      telefono: "0212-7623498",
+      horario: "Lun-Dom 7AM-10PM",
+      email: "farmacia@bellomonte.com",
+      password: await hash("farmacia123", 12),
+      latitude: 10.4696,
+      longitude: -66.8796,
+    },
+  });
 
-    const usuario2 = await prisma.usuarioComun.create({
-        data: {
-            nombre: "Carlos Rodríguez",
-            email: "carlos@example.com",
-            password: await hash("user123", 12),
-            telefono: "0424-7654321",
-            cedula: "V-87654321",
-            direccion: { lat: 10.4696, lng: -66.8796 },
-        },
-    });
+  await prisma.farmacia.create({
+    data: {
+      nombre: "Farmacia Los Palos Grandes",
+      direccion: "Av. Andrés Bello, Los Palos Grandes, Caracas",
+      telefono: "0212-2843201",
+      horario: "Lun-Sáb 8AM-7PM",
+      email: "farmacia@palograndes.com",
+      password: await hash("farmacia123", 12),
+      latitude: 10.5,
+      longitude: -66.8500,
+    },
+  });
 
-    const usuario3 = await prisma.usuarioComun.create({
-        data: {
-            nombre: "Ana Martínez",
-            email: "ana@example.com",
-            password: await hash("user123", 12),
-            telefono: "0412-9876543",
-            cedula: "V-11223344",
-            direccion: { lat: 10.5000, lng: -66.9167 },
-        },
-    });
+  await prisma.farmacia.create({
+    data: {
+      nombre: "Farmacia El Marqués",
+      direccion: "Centro Comercial El Marqués, Caracas",
+      telefono: "0212-2395671",
+      horario: "Lun-Dom 9AM-9PM",
+      email: "farmacia@elmarques.com",
+      password: await hash("farmacia123", 12),
+      latitude: 10.4950,
+      longitude: -66.8720,
+    },
+  });
 
-    // Create Medications
-    console.log("💉 Creating medications...");
-    const medicamentos = await Promise.all([
-        prisma.medicamento.create({
-            data: {
-                nombre: "Paracetamol",
-                descripcion: "Analgésico y antipirético",
-                principioActivo: "Paracetamol",
-                presentacion: "Tabletas",
-                concentracion: "500mg",
-            },
-        }),
-        prisma.medicamento.create({
-            data: {
-                nombre: "Ibuprofeno",
-                descripcion: "Antiinflamatorio no esteroideo",
-                principioActivo: "Ibuprofeno",
-                presentacion: "Tabletas",
-                concentracion: "400mg",
-            },
-        }),
-        prisma.medicamento.create({
-            data: {
-                nombre: "Amoxicilina",
-                descripcion: "Antibiótico de amplio espectro",
-                principioActivo: "Amoxicilina",
-                presentacion: "Cápsulas",
-                concentracion: "500mg",
-            },
-        }),
-        prisma.medicamento.create({
-            data: {
-                nombre: "Losartán",
-                descripcion: "Antihipertensivo",
-                principioActivo: "Losartán potásico",
-                presentacion: "Tabletas",
-                concentracion: "50mg",
-            },
-        }),
-        prisma.medicamento.create({
-            data: {
-                nombre: "Metformina",
-                descripcion: "Antidiabético oral",
-                principioActivo: "Metformina",
-                presentacion: "Tabletas",
-                concentracion: "850mg",
-            },
-        }),
-        prisma.medicamento.create({
-            data: {
-                nombre: "Omeprazol",
-                descripcion: "Inhibidor de bomba de protones",
-                principioActivo: "Omeprazol",
-                presentacion: "Cápsulas",
-                concentracion: "20mg",
-            },
-        }),
-        prisma.medicamento.create({
-            data: {
-                nombre: "Loratadina",
-                descripcion: "Antihistamínico",
-                principioActivo: "Loratadina",
-                presentacion: "Tabletas",
-                concentracion: "10mg",
-            },
-        }),
-        prisma.medicamento.create({
-            data: {
-                nombre: "Insulina Lantus",
-                descripcion: "Insulina de acción prolongada",
-                principioActivo: "Insulina glargina",
-                presentacion: "Inyectable",
-                concentracion: "100 UI/ml",
-            },
-        }),
-    ]);
+  await prisma.farmacia.create({
+    data: {
+      nombre: "Farmacia La Trinidad",
+      direccion: "Av. Principal La Trinidad, Caracas",
+      telefono: "0212-9435612",
+      horario: "Lun-Sáb 8AM-6PM",
+      email: "farmacia@latrinidad.com",
+      password: await hash("farmacia123", 12),
+      latitude: 10.4450,
+      longitude: -66.8600,
+    },
+  });
 
-    // Create Pending Requests (Solicitudes)
-    console.log("📋 Creating pending requests...");
-    const solicitud1 = await prisma.solicitud.create({
-        data: {
-            codigo: "SOL-001",
-            motivo: "Paciente con dolor crónico, necesita medicamento urgente",
-            estado: "PENDIENTE",
-            tiempoEspera: "ALTO",
-            direccion: { lat: 10.4806, lng: -66.9036 },
-            requiresPrescription: true,
-            usuarioComunId: usuario1.id,
-            farmaciaId: farmacia.id,
-            medicamentos: {
-                create: [
-                    { medicamentoId: medicamentos[0].id, cantidad: 2, prioridad: 3 },
-                    { medicamentoId: medicamentos[1].id, cantidad: 1, prioridad: 2 },
-                ],
-            },
-        },
-    });
+  // ── Usuarios ───────────────────────────────────────────────────────────────
+  console.log("👥 Creating users...");
 
-    const solicitud2 = await prisma.solicitud.create({
-        data: {
-            codigo: "SOL-002",
-            motivo: "Tratamiento de hipertensión en curso",
-            estado: "PENDIENTE",
-            tiempoEspera: "MEDIO",
-            direccion: { lat: 10.4696, lng: -66.8796 },
-            requiresPrescription: true,
-            usuarioComunId: usuario2.id,
-            medicamentos: {
-                create: [
-                    { medicamentoId: medicamentos[3].id, cantidad: 1, prioridad: 2 },
-                ],
-            },
-        },
-    });
+  // TEST USER — the one the user specified
+  const testUser = await prisma.usuarioComun.create({
+    data: {
+      nombre: "Usuario de Prueba",
+      email: "test@example.com",
+      password: await hash("test123", 12),
+      telefono: "0414-5550000",
+      cedula: "V-20000001",
+      direccion: { lat: 10.4806, lng: -66.9036, address: "Av. Libertador, Caracas" },
+    },
+  });
 
-    const solicitud3 = await prisma.solicitud.create({
-        data: {
-            codigo: "SOL-003",
-            motivo: "Necesito medicamento para diabetes",
-            estado: "PENDIENTE",
-            tiempoEspera: "ALTO",
-            direccion: { lat: 10.5000, lng: -66.9167 },
-            requiresPrescription: true,
-            usuarioComunId: usuario3.id,
-            medicamentos: {
-                create: [
-                    { medicamentoId: medicamentos[4].id, cantidad: 2, prioridad: 3 },
-                    { medicamentoId: medicamentos[7].id, cantidad: 1, prioridad: 3 },
-                ],
-            },
-        },
-    });
+  const usuario2 = await prisma.usuarioComun.create({
+    data: {
+      nombre: "María García",
+      email: "maria@example.com",
+      password: await hash("user123", 12),
+      telefono: "0414-1234567",
+      cedula: "V-12345678",
+      direccion: { lat: 10.4806, lng: -66.9036 },
+    },
+  });
 
-    // Create an approved request
-    await prisma.solicitud.create({
-        data: {
-            codigo: "SOL-004",
-            motivo: "Alergia estacional",
-            estado: "APROBADA",
-            tiempoEspera: "BAJO",
-            direccion: { lat: 10.4850, lng: -66.8900 },
-            requiresPrescription: false,
-            usuarioComunId: usuario1.id,
-            aprobadoPorEnteId: enteSalud.id,
-            approvalDate: new Date(),
-            approvalInstitution: enteSalud.nombre,
-            medicamentos: {
-                create: [
-                    { medicamentoId: medicamentos[6].id, cantidad: 1, prioridad: 1 },
-                ],
-            },
-        },
-    });
+  const usuario3 = await prisma.usuarioComun.create({
+    data: {
+      nombre: "Carlos Rodríguez",
+      email: "carlos@example.com",
+      password: await hash("user123", 12),
+      telefono: "0424-7654321",
+      cedula: "V-87654321",
+      direccion: { lat: 10.4696, lng: -66.8796 },
+    },
+  });
 
-    // Create Donations
-    console.log("🎁 Creating donations...");
-    await prisma.donacion.create({
-        data: {
-            codigo: "DON-001",
-            descripcion: "Donación de medicamentos excedentes",
-            estado: "DISPONIBLE",
-            direccion: { lat: 10.4900, lng: -66.8800 },
-            usuarioComunId: usuario2.id,
-            medicamentos: {
-                create: [
-                    {
-                        medicamentoId: medicamentos[0].id,
-                        cantidad: 10,
-                        fechaExpiracion: new Date("2027-06-15"),
-                        lote: "LOT-2024-001",
-                    },
-                    {
-                        medicamentoId: medicamentos[5].id,
-                        cantidad: 5,
-                        fechaExpiracion: new Date("2027-03-20"),
-                        lote: "LOT-2024-002",
-                    },
-                ],
-            },
-        },
-    });
+  const usuario4 = await prisma.usuarioComun.create({
+    data: {
+      nombre: "Ana Martínez",
+      email: "ana@example.com",
+      password: await hash("user123", 12),
+      telefono: "0412-9876543",
+      cedula: "V-11223344",
+      direccion: { lat: 10.5, lng: -66.9167 },
+    },
+  });
 
-    await prisma.donacion.create({
-        data: {
-            codigo: "DON-002",
-            descripcion: "Medicamentos de tratamiento finalizado",
-            estado: "DISPONIBLE",
-            direccion: { lat: 10.4750, lng: -66.9100 },
-            enteSaludId: enteSalud.id,
-            medicamentos: {
-                create: [
-                    {
-                        medicamentoId: medicamentos[2].id,
-                        cantidad: 20,
-                        fechaExpiracion: new Date("2026-12-31"),
-                        lote: "LOT-2024-003",
-                    },
-                ],
-            },
-        },
-    });
+  const usuario5 = await prisma.usuarioComun.create({
+    data: {
+      nombre: "Luis Pérez",
+      email: "luis@example.com",
+      password: await hash("user123", 12),
+      telefono: "0416-3334444",
+      cedula: "V-15678901",
+      direccion: { lat: 10.488, lng: -66.893 },
+    },
+  });
 
-    // Create Notifications
-    console.log("🔔 Creating notifications...");
-    await prisma.notificacion.create({
-        data: {
-            userId: usuario1.id,
-            type: "SYSTEM",
-            title: "Bienvenido a MediShareNE",
-            message: "Tu cuenta ha sido creada exitosamente. ¡Comienza a solicitar o donar medicamentos!",
-            read: false,
-        },
-    });
+  // ── Medicamentos ───────────────────────────────────────────────────────────
+  console.log("💉 Creating medications...");
+  const [
+    paracetamol, ibuprofeno, amoxicilina, losartan, metformina,
+    omeprazol, loratadina, insulina, atorvastatina, enalapril,
+    aspirina, azitromicina,
+  ] = await Promise.all([
+    prisma.medicamento.create({ data: { nombre: "Paracetamol", descripcion: "Analgésico y antipirético", principioActivo: "Paracetamol", presentacion: "Tabletas", concentracion: "500mg" } }),
+    prisma.medicamento.create({ data: { nombre: "Ibuprofeno", descripcion: "Antiinflamatorio no esteroideo", principioActivo: "Ibuprofeno", presentacion: "Tabletas", concentracion: "400mg" } }),
+    prisma.medicamento.create({ data: { nombre: "Amoxicilina", descripcion: "Antibiótico de amplio espectro", principioActivo: "Amoxicilina", presentacion: "Cápsulas", concentracion: "500mg" } }),
+    prisma.medicamento.create({ data: { nombre: "Losartán", descripcion: "Antihipertensivo", principioActivo: "Losartán potásico", presentacion: "Tabletas", concentracion: "50mg" } }),
+    prisma.medicamento.create({ data: { nombre: "Metformina", descripcion: "Antidiabético oral", principioActivo: "Metformina", presentacion: "Tabletas", concentracion: "850mg" } }),
+    prisma.medicamento.create({ data: { nombre: "Omeprazol", descripcion: "Inhibidor de bomba de protones", principioActivo: "Omeprazol", presentacion: "Cápsulas", concentracion: "20mg" } }),
+    prisma.medicamento.create({ data: { nombre: "Loratadina", descripcion: "Antihistamínico", principioActivo: "Loratadina", presentacion: "Tabletas", concentracion: "10mg" } }),
+    prisma.medicamento.create({ data: { nombre: "Insulina Lantus", descripcion: "Insulina de acción prolongada", principioActivo: "Insulina glargina", presentacion: "Inyectable", concentracion: "100 UI/ml" } }),
+    prisma.medicamento.create({ data: { nombre: "Atorvastatina", descripcion: "Reduce el colesterol", principioActivo: "Atorvastatina cálcica", presentacion: "Tabletas", concentracion: "20mg" } }),
+    prisma.medicamento.create({ data: { nombre: "Enalapril", descripcion: "Antihipertensivo IECA", principioActivo: "Maleato de enalapril", presentacion: "Tabletas", concentracion: "10mg" } }),
+    prisma.medicamento.create({ data: { nombre: "Aspirina", descripcion: "Antiagregante plaquetario", principioActivo: "Ácido acetilsalicílico", presentacion: "Tabletas", concentracion: "100mg" } }),
+    prisma.medicamento.create({ data: { nombre: "Azitromicina", descripcion: "Antibiótico macrólido", principioActivo: "Azitromicina", presentacion: "Cápsulas", concentracion: "500mg" } }),
+  ]);
 
-    await prisma.notificacion.create({
-        data: {
-            userId: usuario1.id,
-            type: "MATCH_DONATION",
-            title: "¡Nueva donación disponible!",
-            message: "Hay Paracetamol disponible cerca de tu ubicación.",
-            read: false,
-            link: "/dashboard/donations",
-        },
-    });
+  // ── Solicitudes para TEST USER (todos los estados) ─────────────────────────
+  console.log("📋 Creating requests for test user...");
 
-    console.log("✅ Seed completed successfully!");
-    console.log("\n📊 Summary:");
-    console.log(`   - 1 Administrator`);
-    console.log(`   - 2 Health Entities (Supervisors)`);
-    console.log(`   - 1 Pharmacy`);
-    console.log(`   - 3 Common Users`);
-    console.log(`   - 8 Medications`);
-    console.log(`   - 4 Requests (3 pending, 1 approved)`);
-    console.log(`   - 2 Donations`);
-    console.log(`   - 2 Notifications`);
-    console.log("\n🔑 Test credentials:");
-    console.log("   Admin: admin@medishare.com / admin123");
-    console.log("   Supervisor: supervisor@hospitalcentral.com / supervisor123");
-    console.log("   User: maria@example.com / user123");
+  // 1. PENDIENTE
+  await prisma.solicitud.create({
+    data: {
+      codigo: "SOL-T001",
+      motivo: "Necesito Paracetamol para dolor crónico de columna",
+      estado: "PENDIENTE",
+      tiempoEspera: "ALTO",
+      direccion: { lat: 10.4806, lng: -66.9036, calle: "Av. Libertador, Caracas" },
+      requiresPrescription: false,
+      usuarioComunId: testUser.id,
+      medicamentos: {
+        create: [
+          { medicamentoId: paracetamol.id, cantidad: 30, prioridad: 3 },
+          { medicamentoId: ibuprofeno.id, cantidad: 20, prioridad: 2 },
+        ],
+      },
+    },
+  });
+
+  // 2. PENDIENTE (con receta)
+  await prisma.solicitud.create({
+    data: {
+      codigo: "SOL-T002",
+      motivo: "Tratamiento de hipertensión arterial — tercer mes de terapia",
+      estado: "PENDIENTE",
+      tiempoEspera: "MEDIO",
+      direccion: { lat: 10.4806, lng: -66.9036, calle: "Av. Libertador, Caracas" },
+      requiresPrescription: true,
+      usuarioComunId: testUser.id,
+      medicamentos: {
+        create: [
+          { medicamentoId: losartan.id, cantidad: 30, prioridad: 3 },
+          { medicamentoId: enalapril.id, cantidad: 30, prioridad: 2 },
+        ],
+      },
+    },
+  });
+
+  // 3. APROBADA
+  await prisma.solicitud.create({
+    data: {
+      codigo: "SOL-T003",
+      motivo: "Control de diabetes tipo 2",
+      estado: "APROBADA",
+      tiempoEspera: "ALTO",
+      direccion: { lat: 10.4806, lng: -66.9036, calle: "Av. Libertador, Caracas" },
+      requiresPrescription: true,
+      usuarioComunId: testUser.id,
+      aprobadoPorEnteId: ente1.id,
+      approvalDate: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
+      approvalInstitution: ente1.nombre,
+      medicamentos: {
+        create: [
+          { medicamentoId: metformina.id, cantidad: 60, prioridad: 3 },
+          { medicamentoId: insulina.id, cantidad: 2, prioridad: 3 },
+        ],
+      },
+    },
+  });
+
+  // 4. EN_PROCESO — farmacia propuesta, esperando confirmación del beneficiario
+  await prisma.solicitud.create({
+    data: {
+      codigo: "SOL-T004",
+      motivo: "Alergia estacional severa",
+      estado: "EN_PROCESO",
+      tiempoEspera: "MEDIO",
+      direccion: { lat: 10.4806, lng: -66.9036, calle: "Av. Libertador, Caracas" },
+      requiresPrescription: false,
+      usuarioComunId: testUser.id,
+      aprobadoPorEnteId: ente1.id,
+      approvalDate: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000),
+      approvalInstitution: ente1.nombre,
+      donanteAsignadoId: usuario2.id,
+      assignedDate: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000),
+      farmaciaEntregaId: farmacia1.id,
+      farmaciaConfirmada: null,           // pendiente de confirmar
+      codigoComprobante: "COMP-T004-XK9",
+      medicamentos: {
+        create: [
+          { medicamentoId: loratadina.id, cantidad: 20, prioridad: 2 },
+        ],
+      },
+    },
+  });
+
+  // 5. EN_PROCESO — farmacia rechazada por el beneficiario
+  await prisma.solicitud.create({
+    data: {
+      codigo: "SOL-T005",
+      motivo: "Dolor de estómago recurrente",
+      estado: "EN_PROCESO",
+      tiempoEspera: "BAJO",
+      direccion: { lat: 10.4806, lng: -66.9036, calle: "Av. Libertador, Caracas" },
+      requiresPrescription: false,
+      usuarioComunId: testUser.id,
+      aprobadoPorEnteId: ente1.id,
+      approvalDate: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
+      approvalInstitution: ente1.nombre,
+      donanteAsignadoId: usuario3.id,
+      assignedDate: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000),
+      farmaciaEntregaId: farmacia2.id,
+      farmaciaConfirmada: false,
+      motivoRechazoFarmacia: "Me queda muy lejos, no tengo transporte hasta allá",
+      codigoComprobante: "COMP-T005-ZM2",
+      medicamentos: {
+        create: [
+          { medicamentoId: omeprazol.id, cantidad: 30, prioridad: 1 },
+        ],
+      },
+    },
+  });
+
+  // 6. LISTA_PARA_RETIRO
+  await prisma.solicitud.create({
+    data: {
+      codigo: "SOL-T006",
+      motivo: "Prevención cardiovascular — tomo Aspirina diaria",
+      estado: "LISTA_PARA_RETIRO",
+      tiempoEspera: "BAJO",
+      direccion: { lat: 10.4806, lng: -66.9036, calle: "Av. Libertador, Caracas" },
+      requiresPrescription: false,
+      usuarioComunId: testUser.id,
+      aprobadoPorEnteId: ente1.id,
+      approvalDate: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000),
+      approvalInstitution: ente1.nombre,
+      donanteAsignadoId: usuario4.id,
+      assignedDate: new Date(Date.now() - 8 * 24 * 60 * 60 * 1000),
+      farmaciaEntregaId: farmacia1.id,
+      farmaciaConfirmada: true,
+      codigoComprobante: "COMP-T006-AB3",
+      deliveryConfirmedAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000),
+      medicamentos: {
+        create: [
+          { medicamentoId: aspirina.id, cantidad: 60, prioridad: 1 },
+          { medicamentoId: atorvastatina.id, cantidad: 30, prioridad: 2 },
+        ],
+      },
+    },
+  });
+
+  // 7. COMPLETADA
+  await prisma.solicitud.create({
+    data: {
+      codigo: "SOL-T007",
+      motivo: "Infección respiratoria",
+      estado: "COMPLETADA",
+      tiempoEspera: "ALTO",
+      direccion: { lat: 10.4806, lng: -66.9036, calle: "Av. Libertador, Caracas" },
+      requiresPrescription: true,
+      usuarioComunId: testUser.id,
+      aprobadoPorEnteId: ente1.id,
+      approvalDate: new Date(Date.now() - 20 * 24 * 60 * 60 * 1000),
+      approvalInstitution: ente1.nombre,
+      donanteAsignadoId: usuario5.id,
+      assignedDate: new Date(Date.now() - 18 * 24 * 60 * 60 * 1000),
+      farmaciaEntregaId: farmacia1.id,
+      farmaciaConfirmada: true,
+      codigoComprobante: "COMP-T007-CD5",
+      deliveryConfirmedAt: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000),
+      pickupConfirmedAt: new Date(Date.now() - 13 * 24 * 60 * 60 * 1000),
+      receptionConfirmedAt: new Date(Date.now() - 13 * 24 * 60 * 60 * 1000),
+      medicamentos: {
+        create: [
+          { medicamentoId: amoxicilina.id, cantidad: 15, prioridad: 3 },
+          { medicamentoId: azitromicina.id, cantidad: 3, prioridad: 3 },
+        ],
+      },
+    },
+  });
+
+  // 8. RECHAZADA
+  await prisma.solicitud.create({
+    data: {
+      codigo: "SOL-T008",
+      motivo: "Necesito insulina sin récipe",
+      estado: "RECHAZADA",
+      tiempoEspera: "ALTO",
+      direccion: { lat: 10.4806, lng: -66.9036, calle: "Av. Libertador, Caracas" },
+      requiresPrescription: true,
+      usuarioComunId: testUser.id,
+      aprobadoPorEnteId: ente1.id,
+      approvalDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
+      rejectionReason: "La solicitud de Insulina Lantus requiere récipe médico vigente. Por favor adjunte la prescripción de su médico tratante.",
+      medicamentos: {
+        create: [
+          { medicamentoId: insulina.id, cantidad: 3, prioridad: 3 },
+        ],
+      },
+    },
+  });
+
+  // 9. CANCELADA
+  await prisma.solicitud.create({
+    data: {
+      codigo: "SOL-T009",
+      motivo: "Ya conseguí el medicamento por otra vía",
+      estado: "CANCELADA",
+      tiempoEspera: "BAJO",
+      direccion: { lat: 10.4806, lng: -66.9036, calle: "Av. Libertador, Caracas" },
+      requiresPrescription: false,
+      usuarioComunId: testUser.id,
+      medicamentos: {
+        create: [
+          { medicamentoId: paracetamol.id, cantidad: 10, prioridad: 1 },
+        ],
+      },
+    },
+  });
+
+  // ── Donaciones para TEST USER ──────────────────────────────────────────────
+  console.log("🎁 Creating donations for test user...");
+
+  await prisma.donacion.create({
+    data: {
+      codigo: "DON-T001",
+      descripcion: "Medicamentos que me sobraron del tratamiento",
+      estado: "DISPONIBLE",
+      direccion: { lat: 10.4806, lng: -66.9036 },
+      usuarioComunId: testUser.id,
+      medicamentos: {
+        create: [
+          { medicamentoId: paracetamol.id, cantidad: 20, fechaExpiracion: new Date("2027-06-15"), lote: "LOT-T-001" },
+          { medicamentoId: omeprazol.id, cantidad: 10, fechaExpiracion: new Date("2027-01-30"), lote: "LOT-T-002" },
+        ],
+      },
+    },
+  });
+
+  await prisma.donacion.create({
+    data: {
+      codigo: "DON-T002",
+      descripcion: "Losartán — ya no lo necesito tras cambio de tratamiento",
+      estado: "RESERVADA",
+      direccion: { lat: 10.4806, lng: -66.9036 },
+      usuarioComunId: testUser.id,
+      medicamentos: {
+        create: [
+          { medicamentoId: losartan.id, cantidad: 30, fechaExpiracion: new Date("2026-09-30"), lote: "LOT-T-003" },
+        ],
+      },
+    },
+  });
+
+  await prisma.donacion.create({
+    data: {
+      codigo: "DON-T003",
+      descripcion: "Antibióticos sobrantes en perfecto estado",
+      estado: "ENTREGADA",
+      direccion: { lat: 10.4806, lng: -66.9036 },
+      usuarioComunId: testUser.id,
+      medicamentos: {
+        create: [
+          { medicamentoId: amoxicilina.id, cantidad: 8, fechaExpiracion: new Date("2026-03-01"), lote: "LOT-T-004" },
+        ],
+      },
+    },
+  });
+
+  // ── Donaciones de otros usuarios (para que se vean en el browse) ───────────
+  console.log("🎁 Creating general donations...");
+
+  await prisma.donacion.create({
+    data: {
+      codigo: "DON-001",
+      descripcion: "Donación de medicamentos excedentes del hogar",
+      estado: "DISPONIBLE",
+      direccion: { lat: 10.49, lng: -66.88 },
+      usuarioComunId: usuario2.id,
+      medicamentos: {
+        create: [
+          { medicamentoId: ibuprofeno.id, cantidad: 15, fechaExpiracion: new Date("2027-06-15"), lote: "LOT-001" },
+          { medicamentoId: loratadina.id, cantidad: 10, fechaExpiracion: new Date("2027-03-20"), lote: "LOT-002" },
+        ],
+      },
+    },
+  });
+
+  await prisma.donacion.create({
+    data: {
+      codigo: "DON-002",
+      descripcion: "Medicamentos de tratamiento finalizado",
+      estado: "DISPONIBLE",
+      direccion: { lat: 10.475, lng: -66.91 },
+      enteSaludId: ente1.id,
+      medicamentos: {
+        create: [
+          { medicamentoId: amoxicilina.id, cantidad: 20, fechaExpiracion: new Date("2026-12-31"), lote: "LOT-003" },
+          { medicamentoId: azitromicina.id, cantidad: 6, fechaExpiracion: new Date("2026-10-15"), lote: "LOT-004" },
+        ],
+      },
+    },
+  });
+
+  await prisma.donacion.create({
+    data: {
+      codigo: "DON-003",
+      descripcion: "Medicamentos cardíacos excedentes",
+      estado: "DISPONIBLE",
+      direccion: { lat: 10.50, lng: -66.87 },
+      usuarioComunId: usuario3.id,
+      medicamentos: {
+        create: [
+          { medicamentoId: atorvastatina.id, cantidad: 25, fechaExpiracion: new Date("2027-08-30"), lote: "LOT-005" },
+          { medicamentoId: aspirina.id, cantidad: 50, fechaExpiracion: new Date("2027-12-31"), lote: "LOT-006" },
+        ],
+      },
+    },
+  });
+
+  await prisma.donacion.create({
+    data: {
+      codigo: "DON-004",
+      descripcion: "Antidiabéticos — cambio de tratamiento",
+      estado: "DISPONIBLE",
+      direccion: { lat: 10.495, lng: -66.895 },
+      usuarioComunId: usuario4.id,
+      medicamentos: {
+        create: [
+          { medicamentoId: metformina.id, cantidad: 60, fechaExpiracion: new Date("2026-11-30"), lote: "LOT-007" },
+        ],
+      },
+    },
+  });
+
+  // ── Solicitudes pendientes de otros usuarios (para supervisor panel) ────────
+  console.log("📋 Creating general pending requests...");
+
+  await prisma.solicitud.create({
+    data: {
+      codigo: "SOL-001",
+      motivo: "Paciente con dolor crónico, necesita medicamento urgente",
+      estado: "PENDIENTE",
+      tiempoEspera: "ALTO",
+      direccion: { lat: 10.4806, lng: -66.9036, calle: "San Bernardino, Caracas" },
+      requiresPrescription: true,
+      usuarioComunId: usuario2.id,
+      medicamentos: {
+        create: [
+          { medicamentoId: paracetamol.id, cantidad: 2, prioridad: 3 },
+          { medicamentoId: ibuprofeno.id, cantidad: 1, prioridad: 2 },
+        ],
+      },
+    },
+  });
+
+  await prisma.solicitud.create({
+    data: {
+      codigo: "SOL-002",
+      motivo: "Tratamiento de hipertensión en curso",
+      estado: "PENDIENTE",
+      tiempoEspera: "MEDIO",
+      direccion: { lat: 10.4696, lng: -66.8796, calle: "Chacao, Caracas" },
+      requiresPrescription: true,
+      usuarioComunId: usuario3.id,
+      medicamentos: {
+        create: [
+          { medicamentoId: losartan.id, cantidad: 1, prioridad: 2 },
+          { medicamentoId: enalapril.id, cantidad: 1, prioridad: 2 },
+        ],
+      },
+    },
+  });
+
+  await prisma.solicitud.create({
+    data: {
+      codigo: "SOL-003",
+      motivo: "Necesito Insulina urgente — paciente diabético tipo 1",
+      estado: "PENDIENTE",
+      tiempoEspera: "ALTO",
+      direccion: { lat: 10.5, lng: -66.9167, calle: "Los Chaguaramos, Caracas" },
+      requiresPrescription: true,
+      usuarioComunId: usuario4.id,
+      medicamentos: {
+        create: [
+          { medicamentoId: insulina.id, cantidad: 2, prioridad: 3 },
+          { medicamentoId: metformina.id, cantidad: 2, prioridad: 2 },
+        ],
+      },
+    },
+  });
+
+  await prisma.solicitud.create({
+    data: {
+      codigo: "SOL-004",
+      motivo: "Alergia estacional — inicio de temporada de lluvia",
+      estado: "PENDIENTE",
+      tiempoEspera: "BAJO",
+      direccion: { lat: 10.485, lng: -66.89, calle: "Bello Campo, Caracas" },
+      requiresPrescription: false,
+      usuarioComunId: usuario5.id,
+      medicamentos: {
+        create: [
+          { medicamentoId: loratadina.id, cantidad: 1, prioridad: 1 },
+        ],
+      },
+    },
+  });
+
+  // ── Notificaciones para TEST USER ──────────────────────────────────────────
+  console.log("🔔 Creating notifications for test user...");
+
+  await prisma.notificacion.createMany({
+    data: [
+      {
+        userId: testUser.id,
+        type: "SYSTEM",
+        title: "¡Bienvenido a MediShareNE!",
+        message: "Tu cuenta fue creada exitosamente. Puedes solicitar o donar medicamentos desde tu panel.",
+        read: true,
+      },
+      {
+        userId: testUser.id,
+        type: "MATCH_DONATION",
+        title: "Nueva donación de Paracetamol disponible",
+        message: "Carlos Rodríguez donó 15 tabletas de Ibuprofeno cerca de tu ubicación.",
+        read: false,
+        link: "/dashboard/browse",
+      },
+      {
+        userId: testUser.id,
+        type: "MATCH_REQUEST",
+        title: "Tu solicitud SOL-T003 fue aprobada",
+        message: "El Hospital Central de Caracas aprobó tu solicitud de Metformina e Insulina.",
+        read: false,
+        link: "/dashboard/requests",
+      },
+      {
+        userId: testUser.id,
+        type: "MATCH_DONATION",
+        title: "Donante asignado a SOL-T004",
+        message: "María García aceptó donar Loratadina para tu solicitud. Revisa la farmacia propuesta.",
+        read: false,
+        link: "/dashboard/requests",
+      },
+      {
+        userId: testUser.id,
+        type: "SYSTEM",
+        title: "Tu medicamento está listo para retiro",
+        message: "La solicitud SOL-T006 está lista. Puedes retirar tu Aspirina en Farmacia Central.",
+        read: false,
+        link: "/dashboard/requests",
+      },
+      {
+        userId: testUser.id,
+        type: "SYSTEM",
+        title: "Solicitud SOL-T008 rechazada",
+        message: "Tu solicitud de Insulina Lantus fue rechazada por falta de récipe médico.",
+        read: true,
+        link: "/dashboard/requests",
+      },
+    ],
+  });
+
+  // ── Notificaciones para otros usuarios ─────────────────────────────────────
+  await prisma.notificacion.createMany({
+    data: [
+      {
+        userId: usuario2.id,
+        type: "SYSTEM",
+        title: "Bienvenido a MediShareNE",
+        message: "Tu cuenta fue creada exitosamente.",
+        read: false,
+      },
+      {
+        userId: usuario2.id,
+        type: "MATCH_REQUEST",
+        title: "¡Alguien necesita tu medicamento!",
+        message: "Hay una solicitud de Paracetamol cerca de ti. ¡Considera donar!",
+        read: false,
+        link: "/dashboard/browse",
+      },
+    ],
+  });
+
+  // ── Summary ────────────────────────────────────────────────────────────────
+  console.log("\n✅ Seed completed successfully!");
+  console.log("\n📊 Summary:");
+  console.log("   - 1 Administrator");
+  console.log("   - 2 Health Entities (Supervisors)");
+  console.log("   - 5 Pharmacies (4 active, 1 inactive)");
+  console.log("   - 5 Common Users");
+  console.log("   - 12 Medications");
+  console.log("   - 13 Requests (9 for test user in all states + 4 others pending)");
+  console.log("   - 7 Donations (3 for test user + 4 others)");
+  console.log("   - 8 Notifications");
+  console.log("\n🔑 Credentials:");
+  console.log("   Admin:       admin@medishare.com       / admin123");
+  console.log("   Supervisor:  supervisor@hospitalcentral.com / supervisor123");
+  console.log("   Test user:   test@example.com          / test123");
+  console.log("   Other users: maria@example.com         / user123");
+  console.log("   Pharmacy:    farmacia@farmacentral.com / farmacia123");
 }
 
 main()
-    .catch((e) => {
-        console.error("❌ Seed failed:", e);
-        process.exit(1);
-    })
-    .finally(async () => {
-        await prisma.$disconnect();
-    });
+  .catch((e) => {
+    console.error("❌ Seed failed:", e);
+    process.exit(1);
+  })
+  .finally(async () => {
+    await prisma.$disconnect();
+  });

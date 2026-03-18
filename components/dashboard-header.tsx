@@ -243,6 +243,15 @@ export function DashboardHeader() {
                   </div>
                 )}
               </ScrollArea>
+              <div className="p-2 border-t">
+                <Link
+                  href="/dashboard/notifications"
+                  onClick={() => setIsOpen(false)}
+                  className="block text-center text-xs text-teal-600 hover:text-teal-700 py-1 font-medium"
+                >
+                  Ver todas las notificaciones
+                </Link>
+              </div>
             </PopoverContent>
           </Popover>
 

@@ -167,6 +167,20 @@ export async function GET() {
             medicamento: true,
           },
         },
+        farmaciaEntrega: {
+          select: {
+            id: true,
+            nombre: true,
+            direccion: true,
+            telefono: true,
+          },
+        },
+        donanteAsignado: {
+          select: {
+            id: true,
+            nombre: true,
+          },
+        },
       },
       orderBy: {
         createdAt: "desc",

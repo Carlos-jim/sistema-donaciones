@@ -59,10 +59,10 @@ export async function GET() {
       })),
       ...solicitudesAceptadas.map((s) => ({
         id: s.id,
-        codigo: s.codigoComprobante || s.codigo, // Use receipt code if available
+        codigo: s.codigoComprobante || s.codigo,
         descripcion: s.motivo,
-        donationPhotoUrl: null, // Requests don't have donation photos usually
-        recipePhotoUrl: s.recipePhotoUrl, // Important: Include recipe photo
+        donationPhotoUrl: null,
+        recipePhotoUrl: s.recipePhotoUrl,
         estado: s.estado,
         direccion: s.farmaciaEntrega
           ? {
@@ -70,15 +70,21 @@ export async function GET() {
             lat: s.farmaciaEntrega.latitude || 0,
             long: s.farmaciaEntrega.longitude || 0,
           }
-          : null, // Or user location if needed
+          : null,
         createdAt: s.assignedDate || s.createdAt,
         type: "ACCEPTED_REQUEST",
+        farmaciaConfirmada: s.farmaciaConfirmada,
+        motivoRechazoFarmacia: s.motivoRechazoFarmacia,
+        deliveryConfirmedAt: s.deliveryConfirmedAt,
+        farmaciaEntrega: s.farmaciaEntrega
+          ? { id: s.farmaciaEntrega.id, nombre: s.farmaciaEntrega.nombre, direccion: s.farmaciaEntrega.direccion }
+          : null,
         medicamentos: s.medicamentos.map((sm) => ({
           cantidad: sm.cantidad,
-          fechaExpiracion: null, // Requests usually don't have this info until donation
+          fechaExpiracion: null,
           medicamento: sm.medicamento
         })),
-        requesterName: "Beneficiario Anónimo" // Or fetch user name
+        requesterName: "Beneficiario Anónimo"
       })),
     ].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 

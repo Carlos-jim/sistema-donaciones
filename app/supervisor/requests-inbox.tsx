@@ -1,14 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -20,10 +12,10 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea"; // Assuming Textarea exists or use Input
+import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/components/ui/use-toast";
 import { approveRequest, rejectRequest, updateMedicamentoPriority } from "./actions";
-import { Eye, CheckCircle, XCircle, FileText, Edit, Save, X } from "lucide-react";
+import { Eye, CheckCircle, XCircle, FileText, Edit, Save, X, Clock, Pill, ClipboardList } from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 
@@ -53,6 +45,7 @@ type RequestItem = {
   }[];
   recipePhotoUrl: string | null;
   motivo: string | null;
+  tiempoEspera: string;
 };
 
 export default function RequestsInbox({
@@ -72,10 +65,16 @@ export default function RequestsInbox({
   const { toast } = useToast();
   const router = useRouter();
 
-  const priorityLabels = {
-    1: { label: "Baja", color: "bg-green-100 text-green-800" },
-    2: { label: "Media", color: "bg-yellow-100 text-yellow-800" },
-    3: { label: "Alta", color: "bg-red-100 text-red-800" },
+  const priorityConfig = {
+    1: { label: "Baja",  bg: "bg-green-100  text-green-800  border-green-200",  activeBg: "bg-green-500  text-white border-green-500"  },
+    2: { label: "Media", bg: "bg-yellow-100 text-yellow-800 border-yellow-200", activeBg: "bg-yellow-500 text-white border-yellow-500" },
+    3: { label: "Alta",  bg: "bg-red-100    text-red-800    border-red-200",    activeBg: "bg-red-500    text-white border-red-500"    },
+  };
+
+  const urgencyConfig: Record<string, { label: string; dot: string; badge: string }> = {
+    ALTO:  { label: "Urgente",  dot: "bg-red-500",    badge: "bg-red-50 text-red-700 border-red-200"    },
+    MEDIO: { label: "Media",    dot: "bg-yellow-500", badge: "bg-yellow-50 text-yellow-700 border-yellow-200" },
+    BAJO:  { label: "Baja",     dot: "bg-green-500",  badge: "bg-green-50 text-green-700 border-green-200"   },
   };
 
   const handlePriorityEdit = (medicamentoId: string, currentPriority: number) => {
@@ -181,64 +180,92 @@ export default function RequestsInbox({
 
   return (
     <div className="space-y-4">
-      <div className="bg-white rounded-xl border-0 shadow-xl shadow-gray-200/50 overflow-hidden">
-        <div className="bg-gradient-to-r from-gray-50 to-white px-6 py-4 border-b">
-          <h2 className="text-xl font-semibold">
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+        <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+          <h2 className="font-semibold text-gray-800 flex items-center gap-2">
+            <ClipboardList className="w-4 h-4 text-teal-600" />
             Solicitudes Pendientes
           </h2>
+          <span className="text-xs text-gray-400">{requests.length} solicitud{requests.length !== 1 ? "es" : ""}</span>
         </div>
-        <div className="p-4">
-          {requests.length === 0 ? (
-            <p className="text-muted-foreground text-center py-8">
-              No hay solicitudes pendientes por revisar.
-            </p>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Fecha</TableHead>
-                  <TableHead>Beneficiario</TableHead>
-                  <TableHead>Medicamentos</TableHead>
-                  <TableHead className="text-right">Acciones</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {requests.map((req) => (
-                  <TableRow key={req.id}>
-                    <TableCell>
-                      {new Date(req.createdAt).toLocaleDateString()}
-                    </TableCell>
-                    <TableCell>
-                      <div className="font-medium">{req.usuarioComun.nombre}</div>
-                      <div className="text-xs text-gray-500">
-                        {req.usuarioComun.cedula || "S/C"}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      {req.medicamentos.map((m, i) => (
-                        <div key={i} className="text-sm">
-                          {m.medicamento.nombre} ({m.cantidad})
-                        </div>
+
+        {requests.length === 0 ? (
+          <div className="py-20 flex flex-col items-center gap-4 text-center px-6">
+            <div className="w-16 h-16 bg-teal-50 rounded-2xl flex items-center justify-center">
+              <ClipboardList className="w-8 h-8 text-teal-300" />
+            </div>
+            <div>
+              <p className="font-semibold text-gray-700">Sin solicitudes pendientes</p>
+              <p className="text-sm text-gray-400 mt-1">Todas las solicitudes han sido revisadas.</p>
+            </div>
+          </div>
+        ) : (
+          <div className="divide-y divide-gray-50">
+            {requests.map((req) => {
+              const urgency = urgencyConfig[req.tiempoEspera] ?? urgencyConfig.BAJO;
+              const medNames = req.medicamentos.map((m) => m.medicamento.nombre);
+              return (
+                <div
+                  key={req.id}
+                  className="flex items-center gap-4 px-6 py-4 hover:bg-gray-50/60 transition-colors group"
+                >
+                  {/* Urgency dot */}
+                  <div className="shrink-0 flex flex-col items-center gap-1.5">
+                    <span className={`w-2.5 h-2.5 rounded-full ${urgency.dot}`} />
+                  </div>
+
+                  {/* Beneficiary */}
+                  <div className="flex items-center gap-3 w-48 shrink-0">
+                    <div className="w-9 h-9 rounded-xl bg-teal-50 flex items-center justify-center text-teal-700 font-bold text-sm shrink-0">
+                      {req.usuarioComun.nombre.charAt(0).toUpperCase()}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="font-medium text-sm text-gray-900 truncate">{req.usuarioComun.nombre}</p>
+                      <p className="text-xs text-gray-400">{req.usuarioComun.cedula || "Sin cédula"}</p>
+                    </div>
+                  </div>
+
+                  {/* Meds */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex flex-wrap gap-1.5">
+                      {medNames.slice(0, 3).map((name, i) => (
+                        <span key={i} className="inline-flex items-center gap-1 text-xs bg-gray-100 text-gray-700 px-2 py-0.5 rounded-full">
+                          <Pill className="w-2.5 h-2.5 text-teal-500" />
+                          {name}
+                        </span>
                       ))}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => {
-                          setSelectedRequest(req);
-                          setIsRejecting(false);
-                        }}
-                      >
-                        <Eye className="w-4 h-4 mr-2" /> Revisar
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}
-        </div>
+                      {medNames.length > 3 && (
+                        <span className="text-xs text-gray-400 px-1 py-0.5">+{medNames.length - 3} más</span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Urgency badge */}
+                  <span className={`hidden sm:inline-flex items-center gap-1 text-xs font-medium px-2.5 py-1 rounded-full border shrink-0 ${urgency.badge}`}>
+                    <Clock className="w-3 h-3" />
+                    {urgency.label}
+                  </span>
+
+                  {/* Date */}
+                  <span className="text-xs text-gray-400 shrink-0 hidden md:block">
+                    {new Date(req.createdAt).toLocaleDateString("es-ES", { day: "numeric", month: "short" })}
+                  </span>
+
+                  {/* Action */}
+                  <Button
+                    size="sm"
+                    className="shrink-0 bg-teal-600 hover:bg-teal-700 text-white shadow-sm shadow-teal-500/20 opacity-80 group-hover:opacity-100 transition-opacity"
+                    onClick={() => { setSelectedRequest(req); setIsRejecting(false); }}
+                  >
+                    <Eye className="w-3.5 h-3.5 mr-1.5" />
+                    Revisar
+                  </Button>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
 
         {/* Detail Dialog */}
         <Dialog
@@ -281,89 +308,109 @@ export default function RequestsInbox({
                   </div>
 
                   <div className="bg-gradient-to-r from-gray-50 to-white p-4 rounded-xl border">
-                    <h3 className="font-semibold mb-2">
-                      Medicamentos Solicitados
-                    </h3>
-                    <ul className="space-y-2">
-                      {selectedRequest.medicamentos.map((m, i) => (
-                        <li key={m.id} className="flex items-center justify-between p-2 rounded border bg-white">
-                          <div className="flex-1">
-                            <div className="font-medium text-sm">
-                              {m.medicamento.nombre} - {m.medicamento.presentacion}
-                            </div>
-                            <div className="text-xs text-gray-600">
-                              Cantidad: {m.cantidad}
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            {editingPriority === m.id ? (
-                              <div className="flex items-center gap-2">
-                                <select
-                                  value={tempPriorities[m.id] || m.prioridad}
-                                  onChange={(e) => 
-                                    setTempPriorities({ ...tempPriorities, [m.id]: parseInt(e.target.value) })
-                                  }
-                                  className="text-xs border rounded px-2 py-1"
-                                  disabled={isUpdatingPriority}
-                                >
-                                  <option value={1}>Baja (1)</option>
-                                  <option value={2}>Media (2)</option>
-                                  <option value={3}>Alta (3)</option>
-                                </select>
-                                <Button
-                                  size="sm"
-                                  variant="ghost"
-                                  onClick={() => handlePrioritySave(m.id)}
-                                  disabled={isUpdatingPriority}
-                                >
-                                  <Save className="w-3 h-3" />
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  variant="ghost"
-                                  onClick={() => handlePriorityCancel(m.id)}
-                                  disabled={isUpdatingPriority}
-                                >
-                                  <X className="w-3 h-3" />
-                                </Button>
+                    <h3 className="font-semibold mb-3">Medicamentos Solicitados</h3>
+                    <ul className="space-y-3">
+                      {selectedRequest.medicamentos.map((m) => {
+                        const isEditing = editingPriority === m.id;
+                        const currentPriority = (isEditing ? tempPriorities[m.id] : m.prioridad) as 1 | 2 | 3;
+                        const cfg = priorityConfig[currentPriority] ?? priorityConfig[1];
+                        return (
+                          <li key={m.id} className="rounded-xl border border-gray-100 bg-white overflow-hidden shadow-sm">
+                            {/* Top row: name + quantity */}
+                            <div className="px-4 pt-3 pb-2 flex items-start justify-between gap-2">
+                              <div>
+                                <p className="font-semibold text-sm text-gray-900">
+                                  {m.medicamento.nombre}
+                                  {m.medicamento.presentacion && (
+                                    <span className="font-normal text-gray-500"> — {m.medicamento.presentacion}</span>
+                                  )}
+                                </p>
+                                <p className="text-xs text-gray-500 mt-0.5">Cantidad: <strong>{m.cantidad}</strong></p>
                               </div>
-                            ) : (
-                              <div className="flex items-center gap-2">
-                                <span className={`text-xs px-2 py-1 rounded-full font-medium ${priorityLabels[m.prioridad as keyof typeof priorityLabels].color}`}>
-                                  {priorityLabels[m.prioridad as keyof typeof priorityLabels].label}
+                              {!isEditing && (
+                                <span className={`shrink-0 text-xs font-semibold px-2.5 py-1 rounded-full border ${cfg.bg}`}>
+                                  {cfg.label}
                                 </span>
-                                <Button
-                                  size="sm"
-                                  variant="ghost"
+                              )}
+                            </div>
+
+                            {/* Priority editor / edit trigger */}
+                            <div className={`px-4 pb-3 ${isEditing ? "pt-1" : ""}`}>
+                              {isEditing ? (
+                                <div className="space-y-2.5">
+                                  <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Prioridad</p>
+                                  <div className="flex gap-2">
+                                    {([1, 2, 3] as const).map((val) => {
+                                      const c = priorityConfig[val];
+                                      const selected = (tempPriorities[m.id] ?? m.prioridad) === val;
+                                      return (
+                                        <button
+                                          key={val}
+                                          type="button"
+                                          disabled={isUpdatingPriority}
+                                          onClick={() => setTempPriorities({ ...tempPriorities, [m.id]: val })}
+                                          className={`flex-1 py-2 rounded-lg border text-sm font-semibold transition-all ${
+                                            selected ? c.activeBg : `${c.bg} hover:opacity-80`
+                                          }`}
+                                        >
+                                          {c.label}
+                                        </button>
+                                      );
+                                    })}
+                                  </div>
+                                  <div className="flex gap-2 pt-1">
+                                    <Button
+                                      size="sm"
+                                      className="flex-1 bg-teal-600 hover:bg-teal-700 text-white h-8"
+                                      onClick={() => handlePrioritySave(m.id)}
+                                      disabled={isUpdatingPriority}
+                                    >
+                                      <Save className="w-3.5 h-3.5 mr-1" />
+                                      {isUpdatingPriority ? "Guardando..." : "Guardar"}
+                                    </Button>
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      className="h-8 px-3"
+                                      onClick={() => handlePriorityCancel(m.id)}
+                                      disabled={isUpdatingPriority}
+                                    >
+                                      <X className="w-3.5 h-3.5" />
+                                    </Button>
+                                  </div>
+                                </div>
+                              ) : (
+                                <button
+                                  type="button"
                                   onClick={() => handlePriorityEdit(m.id, m.prioridad)}
                                   disabled={isLoading || isRejecting}
+                                  className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-teal-600 transition-colors disabled:opacity-40"
                                 >
                                   <Edit className="w-3 h-3" />
-                                </Button>
+                                  Cambiar prioridad
+                                </button>
+                              )}
+                            </div>
+
+                            {/* Modification history */}
+                            {m.fechaModificacionPrioridad && (
+                              <div className="px-4 pb-3 pt-0">
+                                <p className="text-[11px] text-blue-600 bg-blue-50 rounded-lg px-2 py-1 border border-blue-100">
+                                  Modificada: {m.prioridadOriginal} → {m.prioridad}
+                                  {m.prioridadModificadaPor && ` · por ${m.prioridadModificadaPor.nombre}`}
+                                  {` · ${new Date(m.fechaModificacionPrioridad).toLocaleDateString()}`}
+                                </p>
                               </div>
                             )}
-                          </div>
-                        </li>
-                      ))}
+                          </li>
+                        );
+                      })}
                     </ul>
-                    {selectedRequest.medicamentos.some(m => m.fechaModificacionPrioridad) && (
-                      <div className="mt-3 p-2 bg-blue-50 rounded border border-blue-200">
-                        <div className="text-xs text-blue-800 font-medium mb-1">Historial de modificaciones:</div>
-                        {selectedRequest.medicamentos
-                          .filter(m => m.fechaModificacionPrioridad)
-                          .map(m => (
-                            <div key={m.id} className="text-xs text-blue-700">
-                              {m.medicamento.nombre}: Prioridad cambiada de {m.prioridadOriginal} a {m.prioridad} 
-                              {m.prioridadModificadaPor && ` por ${m.prioridadModificadaPor.nombre}`}
-                              {' '}{m.fechaModificacionPrioridad && `el ${new Date(m.fechaModificacionPrioridad).toLocaleDateString()}`}
-                            </div>
-                          ))}
-                      </div>
-                    )}
+
                     {selectedRequest.motivo && (
-                      <div className="mt-2 text-sm">
-                        <span className="font-medium">Motivo:</span>{" "}
-                        {selectedRequest.motivo}
+                      <div className="mt-4 text-sm bg-white border border-gray-100 rounded-xl p-3">
+                        <span className="font-medium text-gray-700">Motivo: </span>
+                        <span className="text-gray-600">{selectedRequest.motivo}</span>
                       </div>
                     )}
                   </div>

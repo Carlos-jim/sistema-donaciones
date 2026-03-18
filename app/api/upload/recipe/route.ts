@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { writeFile, mkdir } from "fs/promises";
+import path from "path";
+import { existsSync } from "fs";
 
 export async function POST(request: NextRequest) {
   try {
@@ -34,39 +36,28 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Generar nombre único para el archivo
-    const fileExt = file.name.split(".").pop();
-    const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
-    const filePath = `recipes/${fileName}`;
-
-    // Convertir el archivo a ArrayBuffer
-    const arrayBuffer = await file.arrayBuffer();
-    const buffer = new Uint8Array(arrayBuffer);
-
-    // Subir a Supabase Storage
-    const { data, error } = await supabase.storage
-      .from("recipes")
-      .upload(fileName, buffer, {
-        contentType: file.type,
-        upsert: false,
-      });
-
-    if (error) {
-      console.error("Error uploading to Supabase:", error);
-      return NextResponse.json(
-        { error: "Error al subir el archivo" },
-        { status: 500 },
-      );
+    // Ensure upload directory exists
+    const uploadDir = path.join(process.cwd(), "public", "uploads", "recipes");
+    if (!existsSync(uploadDir)) {
+      await mkdir(uploadDir, { recursive: true });
     }
 
-    // Obtener URL pública
-    const { data: urlData } = supabase.storage
-      .from("recipes")
-      .getPublicUrl(fileName);
+    // Generar nombre único para el archivo
+    const fileExt = file.name.split(".").pop() || "jpg";
+    const fileName = `recipe_${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+    const filePath = path.join(uploadDir, fileName);
+
+    // Write file to disk
+    const arrayBuffer = await file.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
+    await writeFile(filePath, buffer);
+
+    // Return the public URL
+    const publicUrl = `/uploads/recipes/${fileName}`;
 
     return NextResponse.json({
       success: true,
-      url: urlData.publicUrl,
+      url: publicUrl,
       fileName: fileName,
     });
   } catch (error) {

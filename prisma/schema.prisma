@@ -32,6 +32,7 @@ enum EstadoSolicitud {
   LISTA_PARA_RETIRO
   RECHAZADA
   COMPLETADA
+  CANCELADA
 }
 
 enum EstadoDonacion {
@@ -100,6 +101,7 @@ model UsuarioComun {
   telefono  String?
   cedula    String?
   direccion Json?
+  activo    Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -123,6 +125,7 @@ model Notificacion {
   title     String
   message   String
   read      Boolean  @default(false)
+  activo    Boolean  @default(true)
   link      String?
   createdAt DateTime @default(now())
 
@@ -206,6 +209,17 @@ model Solicitud {
   // Código de comprobante único (vincula Donante-Farmacia-Solicitud)
   codigoComprobante String?   @unique
 
+  // Confirmación de farmacia por el beneficiario (null=pendiente, true=confirmada, false=rechazada)
+  farmaciaConfirmada      Boolean?
+  motivoRechazoFarmacia   String?
+
+  // Flujo de entrega: donante confirma que entregó en farmacia
+  deliveryConfirmedAt     DateTime?  // Donante confirma que entregó el medicamento en la farmacia
+
+  // Flujo de retiro: beneficiario confirma que irá y que recibió
+  pickupConfirmedAt       DateTime?  // Beneficiario confirma que va a retirar
+  receptionConfirmedAt    DateTime?  // Beneficiario confirma que recibió el medicamento
+
   // Relación: contiene medicamentos
   medicamentos SolicitudMedicamento[]
 
@@ -220,6 +234,7 @@ model Medicamento {
   principioActivo String?
   presentacion    String? // Ej: tabletas, jarabe, inyectable
   concentracion   String? // Ej: 500mg, 10ml
+  activo          Boolean  @default(true)
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
@@ -241,6 +256,7 @@ model Farmacia {
   password  String
   latitude  Float?
   longitude Float?
+  activo    Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

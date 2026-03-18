@@ -5,7 +5,7 @@ import type { IUserRepository, UserEntity, CreateUserData } from "./types";
 export class UserRepository implements IUserRepository {
   async findByEmail(email: string): Promise<UserEntity | null> {
     return prisma.usuarioComun.findUnique({
-      where: { email },
+      where: { email, activo: true },
     });
   }
 
