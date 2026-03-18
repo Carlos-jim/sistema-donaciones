@@ -1,413 +1,356 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { getSolicitudByCodigo, updateStatus, getPendingPickups } from "../actions";
-import { EstadoSolicitud, EstadoDonacion } from "@prisma/client";
+import { useState } from "react";
 import {
   AlertTriangle,
-  CheckCircle,
-  ClipboardCheck,
-  Gift,
-  HandHeart,
-  AlertTriangle,
-  Gift,
   Bell,
+  CheckCircle,
+  HandHeart,
+  Search,
   User,
 } from "lucide-react";
+import {
+  getPendingPickups,
+  lookupByValidationCode,
+  updateStatus,
+} from "../actions";
 
-type ItemWithDetails = Awaited<ReturnType<typeof getSolicitudByCodigo>>["data"];
+type LookupResult = Awaited<ReturnType<typeof lookupByValidationCode>>;
+type LookupItem = LookupResult extends { data: infer T } ? T : never;
 type PendingPickup = Awaited<ReturnType<typeof getPendingPickups>>["data"][number];
+
+function statusLabel(status: string) {
+  return status.replace(/_/g, " ");
+}
+
+function roleLabel(role?: string) {
+  switch (role) {
+    case "DONOR_DELIVERY":
+      return "Entrega del donante";
+    case "REQUESTER_PICKUP":
+      return "Retiro del beneficiario";
+    case "DONATION":
+      return "Donacion";
+    default:
+      return "Validacion general";
+  }
+}
+
+function statusClass(status: string) {
+  switch (status) {
+    case "COMPLETADA":
+      return "bg-green-100 text-green-800";
+    case "RECIBIDA":
+    case "LISTA_PARA_RETIRO":
+      return "bg-blue-100 text-blue-800";
+    case "EN_PROCESO":
+    case "APROBADA":
+      return "bg-amber-100 text-amber-800";
+    default:
+      return "bg-gray-100 text-gray-700";
+  }
+}
 
 export default function PharmacyReceptionPage() {
   const [inputCode, setInputCode] = useState("");
-  const [item, setItem] = useState<ItemWithDetails>(null);
+  const [item, setItem] = useState<LookupItem | null>(null);
+  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
+  const [rejectionReason, setRejectionReason] = useState("");
   const [pendingPickups, setPendingPickups] = useState<PendingPickup[]>([]);
 
-  // Load pending pickups on mount
-  // We get farmaciaId from the first search result or URL — for now use a polling approach
   const loadPendingPickups = async (farmaciaId: string) => {
     const result = await getPendingPickups(farmaciaId);
-    if (result.success) setPendingPickups(result.data);
+    if (result.success) {
+      setPendingPickups(result.data);
+    }
   };
 
-  const fetchCode = async (code: string) => {
+  const fetchCode = async (rawCode: string) => {
     setLoading(true);
     setError("");
-    const result = await lookupByValidationCode(code);
+
+    const result = await lookupByValidationCode(rawCode);
+
     if (result.success && result.data) {
       setItem(result.data);
-      // If solicitud, load pending pickups for this pharmacy
-      if (result.data.type === "SOLICITUD" && result.data.farmaciaEntregaId) {
-        loadPendingPickups(result.data.farmaciaEntregaId);
+      setRejectionReason("");
+
+      if (
+        result.data.type === "SOLICITUD" &&
+        result.data.farmaciaEntregaId
+      ) {
+        await loadPendingPickups(result.data.farmaciaEntregaId);
       }
     } else {
       setItem(null);
-      setError(result.error || "Código no encontrado");
+      setError(result.error || "Codigo no encontrado");
     }
+
     setLoading(false);
   };
 
-  const handleSearch = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSearch = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
     await fetchCode(inputCode);
   };
 
-  const runAction = async (
-    handler: () => Promise<{ success: boolean; error?: string }>,
+  const handleStatusUpdate = async (
+    nextStatus: "RECIBIDA" | "LISTA_PARA_RETIRO" | "COMPLETADA" | "RECHAZADA",
   ) => {
+    if (!item) return;
+
     setActionLoading(true);
-    const result = await handler();
+
+    const result = await updateStatus(
+      item.id,
+      item.type,
+      nextStatus,
+      rejectionReason,
+    );
+
     if (result.success) {
-      const updated = await getSolicitudByCodigo(item.codigo!);
-      if (updated.success && updated.data) {
-        setItem(updated.data);
-      }
+      await fetchCode(inputCode);
     } else {
-      setError(result.error || "No se pudo completar la operación");
+      setError(result.error || "No se pudo actualizar el estado");
     }
+
     setActionLoading(false);
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 py-10 px-4">
+    <div className="min-h-screen bg-gray-50 px-4 py-10">
       <div className="mx-auto max-w-4xl space-y-6">
         <div className="text-center">
           <HandHeart className="mx-auto h-12 w-12 text-teal-600" />
-          <h2 className="mt-4 text-3xl font-bold text-gray-900">
-            Recepción y Entrega en Farmacia
-          </h2>
-          <p className="text-sm text-gray-600 mt-2">
-            Ingresa código manual o token QR para validar la operación.
+          <h1 className="mt-4 text-3xl font-bold text-gray-900">
+            Recepcion de farmacia
+          </h1>
+          <p className="mt-2 text-sm text-gray-600">
+            Valida codigos de entrega y retiro desde un solo panel.
           </p>
         </div>
 
-        {/* Pending Pickups Notification */}
         {pendingPickups.length > 0 && (
-          <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
-            <h3 className="text-sm font-semibold text-purple-800 flex items-center gap-2 mb-3">
+          <section className="rounded-xl border border-purple-200 bg-purple-50 p-4">
+            <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-purple-800">
               <Bell className="h-4 w-4" />
-              Beneficiarios que vendrán a retirar ({pendingPickups.length})
-            </h3>
+              Beneficiarios por retirar ({pendingPickups.length})
+            </div>
             <div className="space-y-2">
               {pendingPickups.map((pickup) => (
-                <div key={pickup.id} className="flex items-center justify-between bg-white rounded-lg p-3 border border-purple-100">
-                  <div className="flex items-center gap-2">
+                <div
+                  key={pickup.id}
+                  className="flex items-center justify-between rounded-lg border border-purple-100 bg-white p-3"
+                >
+                  <div className="flex items-center gap-3">
                     <User className="h-4 w-4 text-purple-600" />
                     <div>
-                      <p className="text-sm font-medium text-gray-900">{pickup.usuarioComun.nombre}</p>
+                      <p className="text-sm font-medium text-gray-900">
+                        {pickup.usuarioComun.nombre}
+                      </p>
                       <p className="text-xs text-gray-500">
-                        {pickup.medicamentos.map(m => m.medicamento.nombre).join(", ")}
+                        {pickup.medicamentos
+                          .map((med) => med.medicamento.nombre)
+                          .join(", ")}
                       </p>
                     </div>
                   </div>
-                  <span className="text-xs text-purple-600 font-medium">
-                    {pickup.codigoComprobante || pickup.codigo}
+                  <span className="text-xs font-medium text-purple-700">
+                    {pickup.codigoRetiroSolicitante ||
+                      pickup.codigoComprobante ||
+                      pickup.codigo ||
+                      "Sin codigo"}
                   </span>
                 </div>
               ))}
             </div>
-          </div>
+          </section>
         )}
 
-        {/* Search Section */}
-        <div className="bg-white p-6 rounded-lg shadow-md">
-          <form onSubmit={handleSearch} className="flex gap-4">
-            <div className="relative flex-grow">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <Search className="h-5 w-5 text-gray-400" />
-              </div>
+        <section className="rounded-xl border bg-white p-6 shadow-sm">
+          <form onSubmit={handleSearch} className="flex gap-3">
+            <div className="relative flex-1">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
               <input
-                className="w-full border rounded-md pl-9 pr-3 py-2 text-sm"
-                placeholder="Ingresa código DON-... / RET-... o token QR"
+                className="w-full rounded-lg border border-gray-200 py-2 pl-9 pr-3 text-sm outline-none transition focus:border-teal-500"
+                placeholder="Ingresa codigo o QR"
                 value={inputCode}
-                onChange={(e) => setInputCode(e.target.value)}
+                onChange={(event) => setInputCode(event.target.value)}
               />
             </div>
             <button
-              className="px-4 py-2 rounded-md bg-teal-600 text-white text-sm disabled:opacity-50"
-              disabled={loading || !inputCode.trim()}
               type="submit"
+              disabled={loading || !inputCode.trim()}
+              className="rounded-lg bg-teal-600 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
             >
               {loading ? "Buscando..." : "Validar"}
             </button>
           </form>
-          {error && <p className="text-sm text-red-600 mt-3">{error}</p>}
-        </div>
+
+          {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
+        </section>
 
         {item && (
-          <div className="bg-white rounded-xl border shadow-sm overflow-hidden">
-            <div className="p-5 border-b">
+          <section className="overflow-hidden rounded-xl border bg-white shadow-sm">
+            <div className="border-b px-5 py-4">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
                   <p className="text-sm text-gray-500">
-                    {item.type === "SOLICITUD" ? "Solicitud" : "Donación"}
+                    {item.type === "SOLICITUD" ? "Solicitud" : "Donacion"}
                   </p>
-                  <h3 className="text-xl font-semibold text-gray-900">
-                    {item.type === "SOLICITUD"
-                      ? item.codigoRetiroSolicitante ||
-                        item.codigoEntregaDonante ||
-                        item.codigo ||
-                        item.codigoComprobante
-                      : item.codigo}
-                  </h3>
-                  <p className="text-xs text-gray-500 mt-1">
-                    {roleLabel(
-                      "validationRole" in item ? item.validationRole : undefined,
-                    )}
+                  <h2 className="text-xl font-semibold text-gray-900">
+                    {item.enteredCode ||
+                      item.codigoRetiroSolicitante ||
+                      item.codigoEntregaDonante ||
+                      item.codigoComprobante ||
+                      item.codigo ||
+                      "Sin codigo"}
+                  </h2>
+                  <p className="mt-1 text-xs text-gray-500">
+                    {roleLabel(item.validationRole)}
                   </p>
                 </div>
                 <span
-                  className={`px-3 py-1 rounded-full text-xs font-semibold ${statusClass(item.estado)}`}
+                  className={`rounded-full px-3 py-1 text-xs font-semibold ${statusClass(item.estado)}`}
                 >
-                  {item.estado.replace(/_/g, " ")}
+                  {statusLabel(item.estado)}
                 </span>
               </div>
             </div>
 
-            <div className="p-5 space-y-5">
+            <div className="space-y-5 p-5">
+              {"usuarioComun" in item && item.usuarioComun && (
+                <div className="rounded-lg border bg-gray-50 p-4">
+                  <p className="text-xs uppercase tracking-wide text-gray-500">
+                    Beneficiario
+                  </p>
+                  <p className="mt-1 font-medium text-gray-900">
+                    {item.usuarioComun.nombre}
+                  </p>
+                  <p className="text-sm text-gray-600">
+                    {item.usuarioComun.email}
+                  </p>
+                </div>
+              )}
+
+              {"farmaciaEntrega" in item && item.farmaciaEntrega && (
+                <div className="rounded-lg border bg-gray-50 p-4">
+                  <p className="text-xs uppercase tracking-wide text-gray-500">
+                    Farmacia
+                  </p>
+                  <p className="mt-1 font-medium text-gray-900">
+                    {item.farmaciaEntrega.nombre}
+                  </p>
+                  <p className="text-sm text-gray-600">
+                    {item.farmaciaEntrega.direccion}
+                  </p>
+                </div>
+              )}
+
+              <div className="space-y-3">
+                <p className="text-sm font-semibold text-gray-900">
+                  Medicamentos
+                </p>
+                {item.medicamentos.map((med) => (
+                  <div
+                    key={med.id}
+                    className="rounded-lg border border-gray-100 bg-gray-50 p-4"
+                  >
+                    <p className="font-medium text-gray-900">
+                      {med.medicamento.nombre}
+                    </p>
+                    <p className="text-sm text-gray-600">
+                      Cantidad: {med.cantidad}
+                      {med.medicamento.presentacion
+                        ? ` ${med.medicamento.presentacion}`
+                        : ""}
+                    </p>
+                  </div>
+                ))}
+              </div>
+
+              {item.type === "SOLICITUD" && item.deliveryConfirmedAt && (
+                <div className="rounded-lg border border-blue-200 bg-blue-50 p-4 text-sm text-blue-800">
+                  El donante ya confirmo la entrega en farmacia.
+                </div>
+              )}
+
               {item.type === "SOLICITUD" && (
-                <>
-                  {/* Donor delivery confirmation indicator */}
-                  {item.estado === "EN_PROCESO" && (
-                    <div className="space-y-4">
-                      {item.deliveryConfirmedAt ? (
-                        <div className="flex items-start gap-4 p-4 bg-blue-50 rounded-md border border-blue-200">
-                          <CheckCircle className="h-6 w-6 text-blue-600 mt-1" />
-                          <div>
-                            <h4 className="font-medium text-blue-900">
-                              El donante confirmó la entrega
-                            </h4>
-                            <p className="text-sm text-blue-700">
-                              El donante indica que entregó el medicamento en esta farmacia el {new Date(item.deliveryConfirmedAt).toLocaleDateString("es-ES", { day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" })}.
-                              Cuando lo recibas, marca como &quot;Recibido&quot;.
-                            </p>
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="flex items-start gap-4 p-4 bg-yellow-50 rounded-md border border-yellow-200">
-                          <AlertTriangle className="h-6 w-6 text-yellow-600 mt-1" />
-                          <div>
-                            <h4 className="font-medium text-yellow-900">
-                              Esperando entrega del donante
-                            </h4>
-                            <p className="text-sm text-yellow-700">
-                              El donante aún no ha confirmado que entregó el medicamento.
-                            </p>
-                          </div>
-                        </div>
-                      )}
-                    </div>
+                <div className="space-y-3">
+                  {(item.estado === "APROBADA" ||
+                    item.estado === "EN_PROCESO" ||
+                    item.estado === "PENDIENTE") && (
+                    <button
+                      type="button"
+                      onClick={() => handleStatusUpdate("RECIBIDA")}
+                      disabled={actionLoading}
+                      className="w-full rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
+                    >
+                      {actionLoading
+                        ? "Procesando..."
+                        : "Marcar como recibida en farmacia"}
+                    </button>
                   )}
 
-                  {/* Step 1: Receive Package */}
-                  {(item.estado === "EN_PROCESO" ||
-                    item.estado === "PENDIENTE" ||
-                    item.estado === "APROBADA") && (
-                    <div className="space-y-4">
-                      <div className="flex items-start gap-4 p-4 bg-yellow-50 rounded-md">
-                        <Package className="h-6 w-6 text-yellow-600 mt-1" />
-                        <div>
-                          <h4 className="font-medium text-yellow-900">
-                            Confirmar Recepción
-                          </h4>
-                          <p className="text-sm text-yellow-700">
-                            Verifica que el paquete ha llegado físicamente a la
-                            farmacia.
-                          </p>
-                        </div>
-                      </div>
+                  {item.estado === "RECIBIDA" && (
+                    <>
                       <button
-                        onClick={() => handleStatusUpdate("RECIBIDA")}
+                        type="button"
+                        onClick={() => handleStatusUpdate("LISTA_PARA_RETIRO")}
                         disabled={actionLoading}
-                        className="w-full flex justify-center items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
+                        className="w-full rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
                       >
                         {actionLoading
                           ? "Procesando..."
-                          : "Marcar como Recibido en Farmacia"}
+                          : "Marcar lista para retiro"}
                       </button>
-                    </div>
-                    <div className="rounded-lg bg-gray-50 border p-3">
-                      <p className="text-xs text-gray-500">Donante asignado</p>
-                      <p className="font-medium text-gray-900">
-                        {item.donanteAsignado?.nombre || "No asignado"}
-                      </p>
-                    </div>
-                  </div>
 
-                  {(item.validationRole === "DONOR_DELIVERY" ||
-                    item.validationRole === "LEGACY") && (
-                    <div className="space-y-3">
-                      <h4 className="font-semibold text-gray-900">
-                        Flujo de Entrega del Donante
-                      </h4>
-
-                      {(item.estado === "EN_PROCESO" ||
-                        item.estado === "APROBADA") && (
-                        <button
-                          className="w-full py-2 rounded-md bg-blue-600 text-white text-sm disabled:opacity-50"
-                          disabled={actionLoading}
-                          onClick={() =>
-                            runAction(() => markDonorReceived(item.id))
+                      <div className="rounded-lg border border-red-200 bg-red-50 p-4">
+                        <div className="mb-2 flex items-center gap-2 text-sm font-medium text-red-700">
+                          <AlertTriangle className="h-4 w-4" />
+                          Rechazo sanitario
+                        </div>
+                        <textarea
+                          value={rejectionReason}
+                          onChange={(event) =>
+                            setRejectionReason(event.target.value)
                           }
+                          placeholder="Motivo del rechazo en farmacia"
+                          className="min-h-24 w-full rounded-lg border border-red-200 bg-white p-3 text-sm"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => handleStatusUpdate("RECHAZADA")}
+                          disabled={
+                            actionLoading || rejectionReason.trim().length === 0
+                          }
+                          className="mt-3 w-full rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
                         >
-                          Confirmar recepción del donante
+                          Rechazar y reactivar solicitud
                         </button>
-                      )}
-
-                      {item.estado === "RECIBIDA" && (
-                        <div className="space-y-3">
-                          <button
-                            className="w-full py-2 rounded-md bg-green-600 text-white text-sm disabled:opacity-50"
-                            disabled={actionLoading}
-                            onClick={() =>
-                              runAction(() => markReadyForPickup(item.id))
-                            }
-                          >
-                            Marcar como lista para retiro
-                          </button>
-
-                          <div className="rounded-lg border border-red-200 bg-red-50 p-3 space-y-2">
-                            <div className="flex items-center gap-2 text-red-700">
-                              <ShieldAlert className="h-4 w-4" />
-                              <p className="font-medium text-sm">
-                                Rechazo sanitario (vencido/dañado)
-                              </p>
-                            </div>
-                            <textarea
-                              className="w-full rounded-md border border-red-200 bg-white text-sm p-2"
-                              placeholder="Motivo obligatorio del rechazo en farmacia"
-                              value={rejectionReason}
-                              onChange={(e) => setRejectionReason(e.target.value)}
-                            />
-                            <button
-                              className="w-full py-2 rounded-md bg-red-600 text-white text-sm disabled:opacity-50"
-                              disabled={actionLoading || !rejectionReason.trim()}
-                              onClick={() =>
-                                runAction(() =>
-                                  rejectByPharmacy(item.id, rejectionReason),
-                                )
-                              }
-                            >
-                              Rechazar y cerrar caso
-                            </button>
-                          </div>
-                        </div>
-                      )}
-                    </div>
+                      </div>
+                    </>
                   )}
 
-                  {/* Step 3: Final Handover */}
                   {item.estado === "LISTA_PARA_RETIRO" && (
-                    <div className="space-y-4">
-                      {/* Pickup notification from beneficiary */}
-                      {item.pickupConfirmedAt ? (
-                        <div className="flex items-start gap-4 p-4 bg-purple-50 rounded-md border border-purple-200">
-                          <Bell className="h-6 w-6 text-purple-600 mt-1" />
-                          <div>
-                            <h4 className="font-medium text-purple-900">
-                              El beneficiario confirmó que vendrá a retirar
-                            </h4>
-                            <p className="text-sm text-purple-700">
-                              {item.usuarioComun?.nombre} avisó que irá a la farmacia.
-                              Confirmado el {new Date(item.pickupConfirmedAt).toLocaleDateString("es-ES", { day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" })}.
-                            </p>
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="flex items-start gap-4 p-4 bg-yellow-50 rounded-md border border-yellow-200">
-                          <AlertTriangle className="h-6 w-6 text-yellow-600 mt-1" />
-                          <div>
-                            <h4 className="font-medium text-yellow-900">
-                              Esperando confirmación del beneficiario
-                            </h4>
-                            <p className="text-sm text-yellow-700">
-                              El beneficiario aún no ha confirmado que vendrá a retirar.
-                            </p>
-                          </div>
-                        </div>
-                      )}
-
-                      <div className="flex items-start gap-4 p-4 bg-green-50 rounded-md">
-                        <CheckCircle className="h-6 w-6 text-green-600 mt-1" />
-                        <div>
-                          <h4 className="font-medium text-green-900">
-                            Entrega Final
-                          </h4>
-                          <p className="text-sm text-green-700">
-                            Verifica el récipe y la identidad del beneficiario.
-                          </p>
-                        </div>
-                      )}
-                    </div>
-                  )}
-
-                  {item.estado === "COMPLETADA" && (
-                    <div className="text-center py-8">
-                      <CheckCircle className="mx-auto h-16 w-16 text-green-500" />
-                      <h3 className="mt-4 text-xl font-bold text-gray-900">
-                        Solicitud Completada
-                      </h3>
-                      {item.receptionConfirmedAt ? (
-                        <p className="text-green-600 mt-2 text-sm">
-                          El beneficiario confirmó la recepción el {new Date(item.receptionConfirmedAt).toLocaleDateString("es-ES")}.
-                        </p>
-                      ) : (
-                        <p className="text-yellow-600 mt-2 text-sm">
-                          Esperando confirmación de recepción por parte del beneficiario.
-                        </p>
-                      )}
-                    </div>
-                  )}
-                </>
-              )}
-
-              {item.type === "DONACION" && (
-                <div className="space-y-3">
-                  <div className="rounded-md border bg-teal-50 p-3 text-sm text-teal-800 flex items-center gap-2">
-                    <Gift className="h-4 w-4" />
-                    Donación directa registrada en farmacia.
-                  </div>
-                  {["DISPONIBLE", "RESERVADA"].includes(item.estado) ? (
                     <button
-                      className="w-full py-2 rounded-md bg-teal-600 text-white text-sm disabled:opacity-50"
+                      type="button"
+                      onClick={() => handleStatusUpdate("COMPLETADA")}
                       disabled={actionLoading}
-                      onClick={() =>
-                        runAction(() => markDonationReceived(item.id))
-                      }
+                      className="flex w-full items-center justify-center gap-2 rounded-lg bg-teal-600 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
                     >
-                      Confirmar recepción de donación
+                      <CheckCircle className="h-4 w-4" />
+                      {actionLoading
+                        ? "Procesando..."
+                        : "Confirmar entrega final"}
                     </button>
-                  ) : (
-                    <div className="rounded-md border bg-gray-50 text-gray-700 p-3 text-sm">
-                      La donación ya fue procesada.
-                    </div>
                   )}
                 </div>
               )}
-
-              <div>
-                <h4 className="font-semibold text-gray-900 mb-2 flex items-center gap-2">
-                  <ClipboardCheck className="h-4 w-4" />
-                  Medicamentos
-                </h4>
-                <div className="space-y-2">
-                  {item.medicamentos?.map((med) => (
-                    <div
-                      key={med.id}
-                      className="rounded-md border bg-gray-50 p-3 text-sm flex items-center justify-between"
-                    >
-                      <span className="font-medium text-gray-900">
-                        {med.medicamento.nombre}
-                      </span>
-                      <span className="text-gray-600">{med.cantidad}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
             </div>
-          </div>
+          </section>
         )}
       </div>
     </div>

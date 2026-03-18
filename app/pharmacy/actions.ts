@@ -1,8 +1,9 @@
 "use server";
 
+import { EstadoDonacion, EstadoSolicitud } from "@prisma/client";
+import { revalidatePath } from "next/cache";
 import prisma from "@/lib/prisma";
 import { normalizeCodeInput } from "@/lib/delivery-codes";
-import { revalidatePath } from "next/cache";
 
 const RETRIEVAL_WINDOW_DAYS = 7;
 
@@ -20,13 +21,43 @@ type ValidationRole =
 
 export async function lookupByValidationCode(input: string) {
   try {
-    // Try to find Solicitud first by codigo OR codigoComprobante
+    const { code, tokenPayload } = await normalizeCodeInput(input);
+
+    if (!code) {
+      return { success: false, error: "Ingresa un codigo valido" };
+    }
+
     const solicitud = await prisma.solicitud.findFirst({
       where: {
-        OR: [{ codigo: codigo }, { codigoComprobante: codigo }],
+        OR: [
+          { codigo: code },
+          { codigoComprobante: code },
+          { codigoEntregaDonante: code },
+          { codigoRetiroSolicitante: code },
+        ],
       },
       include: {
-        usuarioComun: true,
+        usuarioComun: {
+          select: {
+            nombre: true,
+            email: true,
+            telefono: true,
+            cedula: true,
+          },
+        },
+        donanteAsignado: {
+          select: {
+            nombre: true,
+            email: true,
+          },
+        },
+        farmaciaEntrega: {
+          select: {
+            id: true,
+            nombre: true,
+            direccion: true,
+          },
+        },
         medicamentos: {
           include: {
             medicamento: true,
@@ -43,7 +74,7 @@ export async function lookupByValidationCode(input: string) {
       ) {
         return {
           success: false,
-          error: "Token QR inválido para esta solicitud",
+          error: "El QR no corresponde a esta farmacia",
         };
       }
 
@@ -51,37 +82,38 @@ export async function lookupByValidationCode(input: string) {
 
       if (tokenPayload) {
         validationRole = tokenPayload.role;
-      } else if (
-        solicitud.codigoEntregaDonante &&
-        code === solicitud.codigoEntregaDonante
-      ) {
+      } else if (code === solicitud.codigoEntregaDonante) {
         validationRole = "DONOR_DELIVERY";
-      } else if (
-        solicitud.codigoRetiroSolicitante &&
-        code === solicitud.codigoRetiroSolicitante
-      ) {
+      } else if (code === solicitud.codigoRetiroSolicitante) {
         validationRole = "REQUESTER_PICKUP";
       }
 
       return {
         success: true,
         data: {
-          type: "SOLICITUD" as const,
           ...solicitud,
-          // Ensure we have a code to display, preferring the one searched for or the comprobante
-          codigo: solicitud.codigo || solicitud.codigoComprobante || "N/A",
+          type: "SOLICITUD" as const,
+          validationRole,
+          enteredCode: code,
         },
       };
     }
 
-    const donacion = await prisma.donacion.findUnique({
+    const donacion = await prisma.donacion.findFirst({
       where: { codigo: code },
       include: {
         usuarioComun: {
-          select: { id: true, nombre: true, email: true },
+          select: {
+            nombre: true,
+            email: true,
+          },
         },
         farmacia: {
-          select: { id: true, nombre: true, direccion: true },
+          select: {
+            id: true,
+            nombre: true,
+            direccion: true,
+          },
         },
         medicamentos: {
           include: {
@@ -95,18 +127,18 @@ export async function lookupByValidationCode(input: string) {
       return {
         success: true,
         data: {
+          ...donacion,
           type: "DONACION" as const,
           validationRole: "DONATION" as const,
           enteredCode: code,
-          ...donacion,
         },
       };
     }
 
-    return { success: false, error: "Código no encontrado" };
+    return { success: false, error: "Codigo no encontrado" };
   } catch (error) {
     console.error("Error fetching code:", error);
-    return { success: false, error: "Error al buscar el código" };
+    return { success: false, error: "Error al buscar el codigo" };
   }
 }
 
@@ -119,17 +151,31 @@ export async function getPendingPickups(farmaciaId: string) {
         pickupConfirmedAt: { not: null },
       },
       include: {
-        usuarioComun: { select: { nombre: true, cedula: true } },
+        usuarioComun: {
+          select: {
+            nombre: true,
+            cedula: true,
+          },
+        },
         medicamentos: {
-          include: { medicamento: { select: { nombre: true } } },
+          include: {
+            medicamento: {
+              select: {
+                nombre: true,
+              },
+            },
+          },
         },
       },
-      orderBy: { pickupConfirmedAt: "asc" },
+      orderBy: {
+        pickupConfirmedAt: "asc",
+      },
     });
+
     return { success: true, data: solicitudes };
   } catch (error) {
     console.error("Error fetching pending pickups:", error);
-    return { success: false, data: [] };
+    return { success: false, data: [] as Awaited<ReturnType<typeof prisma.solicitud.findMany>> };
   }
 }
 
@@ -137,115 +183,69 @@ export async function updateStatus(
   id: string,
   type: "SOLICITUD" | "DONACION",
   newStatus: string,
+  rejectionReason?: string,
 ) {
   try {
     if (type === "SOLICITUD") {
-      // Si la farmacia rechaza → reactivar la solicitud para otros donantes
+      const now = new Date();
+      const data: any = {};
+
       if (newStatus === "RECHAZADA") {
-        const solicitud = await prisma.solicitud.update({
-          where: { id },
-          data: {
-            estado: "APROBADA",
-            donanteAsignadoId: null,
-            assignedDate: null,
-            farmaciaEntregaId: null,
-            codigoComprobante: null,
-            farmaciaConfirmada: null,
-            motivoRechazoFarmacia: null,
-            deliveryConfirmedAt: null,
-            pickupConfirmedAt: null,
-            receptionConfirmedAt: null,
-          },
-          select: {
-            usuarioComunId: true,
-            donanteAsignadoId: true,
-          },
-        });
+        data.estado = EstadoSolicitud.APROBADA;
+        data.donanteAsignadoId = null;
+        data.assignedDate = null;
+        data.farmaciaEntregaId = null;
+        data.codigoComprobante = null;
+        data.codigoEntregaDonante = null;
+        data.codigoRetiroSolicitante = null;
+        data.farmaciaConfirmada = null;
+        data.motivoRechazoFarmacia = rejectionReason?.trim() || null;
+        data.tipoRechazo = "FARMACIA";
+        data.deliveryConfirmedAt = null;
+        data.pickupConfirmedAt = null;
+        data.receptionConfirmedAt = null;
+        data.fechaRecepcionFarmacia = null;
+        data.fechaListaRetiro = null;
+        data.fechaLimiteRetiro = null;
+        data.fechaRetiro = null;
+      } else {
+        data.estado = newStatus as EstadoSolicitud;
 
-        // Notificar al beneficiario
-        await prisma.notificacion.create({
-          data: {
-            userId: solicitud.usuarioComunId,
-            type: "SYSTEM",
-            title: "Medicamento rechazado por la farmacia",
-            message:
-              "La farmacia no aceptó el medicamento (mal estado o no coincide con la solicitud). Tu solicitud ha sido reactivada para que otro donante pueda ayudarte.",
-            link: `/dashboard/requests`,
-          },
-        });
+        if (newStatus === "RECIBIDA") {
+          data.fechaRecepcionFarmacia = now;
+        }
 
-        revalidatePath("/pharmacy");
-        return { success: true };
+        if (newStatus === "LISTA_PARA_RETIRO") {
+          data.fechaListaRetiro = now;
+          data.fechaLimiteRetiro = addDays(now, RETRIEVAL_WINDOW_DAYS);
+        }
+
+        if (newStatus === "COMPLETADA") {
+          data.fechaRetiro = now;
+        }
       }
 
-      const solicitud = await prisma.solicitud.update({
+      await prisma.solicitud.update({
         where: { id },
-        data: { estado: newStatus as EstadoSolicitud },
-        select: {
-          usuarioComunId: true,
-          donanteAsignadoId: true,
-          farmaciaEntrega: { select: { nombre: true } },
-          codigoComprobante: true,
-        },
+        data,
       });
-
-      // Notificar según el cambio de estado
-      if (newStatus === "RECIBIDA") {
-        // Farmacia confirma recepción → notificar al donante ("OK")
-        if (solicitud.donanteAsignadoId) {
-          await prisma.notificacion.create({
-            data: {
-              userId: solicitud.donanteAsignadoId,
-              type: "SYSTEM",
-              title: "Farmacia recibió tu entrega",
-              message: `La farmacia ${solicitud.farmaciaEntrega?.nombre} ha confirmado la recepción de tu medicamento. Está siendo validado.`,
-              link: `/dashboard/donations`,
-            },
-          });
-        }
-      } else if (newStatus === "LISTA_PARA_RETIRO") {
-        // Farmacia acepta medicamento → notificar al donante ("OK") y al beneficiario
-        if (solicitud.donanteAsignadoId) {
-          await prisma.notificacion.create({
-            data: {
-              userId: solicitud.donanteAsignadoId,
-              type: "SYSTEM",
-              title: "Medicamento aceptado por la farmacia",
-              message: `La farmacia ${solicitud.farmaciaEntrega?.nombre} ha validado y aceptado tu medicamento. ¡Gracias por tu donación!`,
-              link: `/dashboard/donations`,
-            },
-          });
-        }
-        await prisma.notificacion.create({
-          data: {
-            userId: solicitud.usuarioComunId,
-            type: "SYSTEM",
-            title: "Tu medicamento está listo para retiro",
-            message: `La farmacia ${solicitud.farmaciaEntrega?.nombre} ha validado tu medicamento. Ya puedes ir a retirarlo. Código: ${solicitud.codigoComprobante || "N/A"}.`,
-            link: `/dashboard/requests`,
-          },
-        });
-      } else if (newStatus === "COMPLETADA") {
-        await prisma.notificacion.create({
-          data: {
-            userId: solicitud.usuarioComunId,
-            type: "SYSTEM",
-            title: "Entrega confirmada por la farmacia",
-            message: `La farmacia ${solicitud.farmaciaEntrega?.nombre} ha confirmado la entrega. Por favor confirma que recibiste tu medicamento.`,
-            link: `/dashboard/requests`,
-          },
-        });
-      }
     } else {
       await prisma.donacion.update({
         where: { id },
-        data: { estado: newStatus as any },
+        data: {
+          estado: newStatus as EstadoDonacion,
+        },
       });
     }
+
     revalidatePath("/pharmacy");
+    revalidatePath("/pharmacy/reception");
+    revalidatePath("/dashboard/requests");
+    revalidatePath("/dashboard/donations");
+
     return { success: true };
   } catch (error) {
-    console.error("Error updating donation state:", error);
-    return { success: false, error: "Error al actualizar la donación" };
+    console.error("Error updating status:", error);
+    return { success: false, error: "No se pudo actualizar el estado" };
   }
 }

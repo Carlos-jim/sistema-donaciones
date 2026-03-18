@@ -1,5 +1,5 @@
-import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
+import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { tokenService } from "@/lib/auth/token.service";
 import { signDeliveryQrPayload } from "@/lib/delivery-codes";
@@ -24,8 +24,8 @@ export async function GET() {
 
     const payload = await tokenService.verify(token);
 
-    if (!payload || !payload.userId) {
-      return NextResponse.json({ error: "Token inválido" }, { status: 401 });
+    if (!payload?.userId) {
+      return NextResponse.json({ error: "Token invalido" }, { status: 401 });
     }
 
     const ownOffers = await prisma.donacion.findMany({
@@ -59,21 +59,17 @@ export async function GET() {
       },
       select: {
         id: true,
+        createdAt: true,
         estado: true,
         motivo: true,
         assignedDate: true,
-        fechaRecepcionFarmacia: true,
-        fechaListaRetiro: true,
-        fechaLimiteRetiro: true,
-        fechaRetiro: true,
+        codigoComprobante: true,
         codigoEntregaDonante: true,
         codigoRetiroSolicitante: true,
+        farmaciaConfirmada: true,
+        motivoRechazoFarmacia: true,
+        deliveryConfirmedAt: true,
         farmaciaEntregaId: true,
-        medicamentos: {
-          include: {
-            medicamento: true,
-          },
-        },
         farmaciaEntrega: {
           select: {
             id: true,
@@ -83,55 +79,45 @@ export async function GET() {
             longitude: true,
           },
         },
+        medicamentos: {
+          include: {
+            medicamento: true,
+          },
+        },
       },
       orderBy: {
         assignedDate: "desc",
       },
     });
 
-    // Normalize and combine
-    const united = [
-      ...donacionesPropia.map((d) => ({
-        ...d,
-        type: "DONATION_OFFER",
-        // Map fields to a common structure if needed, or keep as is
-      })),
-      ...solicitudesAceptadas.map((s) => ({
-        id: s.id,
-        codigo: s.codigoComprobante || s.codigo,
-        descripcion: s.motivo,
-        donationPhotoUrl: null,
-        recipePhotoUrl: s.recipePhotoUrl,
-        estado: s.estado,
-        direccion: s.farmaciaEntrega
-          ? {
-              calle: s.farmaciaEntrega.direccion,
-              lat: s.farmaciaEntrega.latitude || 0,
-              long: s.farmaciaEntrega.longitude || 0,
-            }
-          : null,
-        createdAt: s.assignedDate || s.createdAt,
-        type: "ACCEPTED_REQUEST",
-        farmaciaConfirmada: s.farmaciaConfirmada,
-        motivoRechazoFarmacia: s.motivoRechazoFarmacia,
-        deliveryConfirmedAt: s.deliveryConfirmedAt,
-        farmaciaEntrega: s.farmaciaEntrega
-          ? {
-              id: s.farmaciaEntrega.id,
-              nombre: s.farmaciaEntrega.nombre,
-              direccion: s.farmaciaEntrega.direccion,
-            }
-          : null,
-        medicamentos: s.medicamentos.map((sm) => ({
-          cantidad: sm.cantidad,
-          fechaExpiracion: null,
-          medicamento: sm.medicamento,
-        })),
-        requesterName: "Beneficiario Anónimo",
-      })),
-    ].sort(
-      (a, b) =>
-        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+    const deliveriesWithQr = await Promise.all(
+      acceptedDeliveries.map(async (delivery) => {
+        const donorQrPayload =
+          delivery.codigoEntregaDonante && delivery.farmaciaEntregaId
+            ? await signDeliveryQrPayload({
+                solicitudId: delivery.id,
+                pharmacyId: delivery.farmaciaEntregaId,
+                code: delivery.codigoEntregaDonante,
+                role: "DONOR_DELIVERY",
+              })
+            : null;
+
+        const requesterQrPayload =
+          delivery.codigoRetiroSolicitante && delivery.farmaciaEntregaId
+            ? await signDeliveryQrPayload({
+                solicitudId: delivery.id,
+                pharmacyId: delivery.farmaciaEntregaId,
+                code: delivery.codigoRetiroSolicitante,
+                role: "REQUESTER_PICKUP",
+              })
+            : null;
+
+        return {
+          ...delivery,
+          donorQrPayload,
+          requesterQrPayload,
+        };
+      }),
     );
 
     return NextResponse.json({

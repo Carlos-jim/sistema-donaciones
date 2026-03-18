@@ -33,6 +33,7 @@ enum EstadoSolicitud {
   RECHAZADA
   COMPLETADA
   CANCELADA
+  ABANDONADA
 }
 
 enum EstadoDonacion {
@@ -228,19 +229,29 @@ model Solicitud {
   
   // Código de comprobante único (vincula Donante-Farmacia-Solicitud)
   codigoComprobante String?   @unique
+  codigoEntregaDonante String? @unique
+  codigoRetiroSolicitante String? @unique
 
   // Confirmación de farmacia por el beneficiario (null=pendiente, true=confirmada, false=rechazada)
   farmaciaConfirmada      Boolean?
   motivoRechazoFarmacia   String?
+  tipoRechazo             TipoRechazoSolicitud?
 
   // Flujo de entrega: donante confirma que entregó en farmacia
   deliveryConfirmedAt     DateTime?  // Donante confirma que entregó el medicamento en la farmacia
+  fechaRecepcionFarmacia  DateTime?
+  fechaListaRetiro        DateTime?
+  fechaLimiteRetiro       DateTime?
+  fechaRetiro             DateTime?
 
   // Flujo de retiro: beneficiario confirma que irá y que recibió
   pickupConfirmedAt       DateTime?  // Beneficiario confirma que va a retirar
   receptionConfirmedAt    DateTime?  // Beneficiario confirma que recibió el medicamento
 
   // Relación: contiene medicamentos
+  // Relacion: donacion flotante creada por abandono de retiro
+  donacionPorAbandono Donacion? @relation("AbandonedPickupDonation")
+
   medicamentos SolicitudMedicamento[]
 
   @@map("solicitudes")
