@@ -73,6 +73,14 @@ export async function POST(request: Request) {
 
     const userId = payload.userId;
 
+    // Verify user type - only COMUN users can donate through this endpoint
+    if (payload.tipo === "ENTE_SALUD") {
+      return NextResponse.json(
+        { error: "Los entes de salud deben usar su endpoint dedicado para donaciones" },
+        { status: 403 },
+      );
+    }
+
     // Construct description with metadata since schema doesn't support specific columns yet
     // Construct description without location (stored separately now)
     const metadataString = `
@@ -86,93 +94,85 @@ Requiere Receta: ${prescription === "yes" ? "Sí" : "No"}
       ? `${description}\n\n${metadataString}`
       : metadataString;
 
-    // Transaction to ensure atomicity
-    const donacion = await prisma.$transaction(async (tx) => {
-      // Generate a unique code
-      const generateCode = () => {
-        const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-        let code = "";
-        for (let i = 0; i < 6; i++) {
-          code += chars.charAt(Math.floor(Math.random() * chars.length));
-        }
-        return code;
-      };
-
-      let codigo = generateCode();
-
-      // 1. Create Donation Record
-      const newDonacion = await tx.donacion.create({
-        data: {
-          codigo: codigo,
-          descripcion: fullDescription,
-          donationPhotoUrl: donationPhotoUrl || null,
-          estado: "DISPONIBLE",
-          direccion: location
-            ? {
-                calle: location.address || "Ubicación seleccionada en mapa",
-                lat: location.lat,
-                long: location.lng,
-              }
-            : undefined,
-          usuarioComunId: userId,
-        },
-      });
-
-      // 2. Find or Create Medication
-      // Case insensitive search ideally, but Prisma findFirst is case-sensitive by default depends on DB.
-      // We'll trust exact match or create new for now to match SOLID/Separation.
-      let dbMedicamento = await tx.medicamento.findFirst({
-        where: { nombre: medication },
-      });
-
-      if (!dbMedicamento) {
-        dbMedicamento = await tx.medicamento.create({
-          data: {
-            nombre: medication,
-            presentacion: unit, // Storing unit as presentacion
-          },
-        });
+    // Generate a unique code with retry logic
+    const generateCode = () => {
+      const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+      let code = "";
+      for (let i = 0; i < 8; i++) {
+        code += chars.charAt(Math.floor(Math.random() * chars.length));
       }
+      return code;
+    };
 
-      // 3. Link Medication to Donation
-      await tx.donacionMedicamento.create({
-        data: {
-          donacionId: newDonacion.id,
-          medicamentoId: dbMedicamento.id,
-          cantidad: quantity,
-          fechaExpiracion: new Date(expiration),
-        },
-      });
-
-      // 4. Find matching Requests and Notify Users
-      // Find active requests for this medication
-      const matchingRequests = await tx.solicitudMedicamento.findMany({
-        where: {
-          medicamentoId: dbMedicamento.id,
-          solicitud: {
-            estado: "PENDIENTE",
-          },
-        },
-        include: {
-          solicitud: true,
-        },
-      });
-
-      // Create notifications for each matching request
-      for (const req of matchingRequests) {
-        await tx.notificacion.create({
-          data: {
-            userId: req.solicitud.usuarioComunId,
-            type: "MATCH_DONATION",
-            title: "¡Medicamento Disponible!",
-            message: `Alguien ha donado ${medication}, que estabas solicitando. Revisa los detalles.`,
-            link: `/dashboard/donations/${newDonacion.id}`, // Assuming we have a details page
-          },
-        });
-      }
-
-      return newDonacion;
+    // 1. Create Donation Record
+    const newDonacion = await prisma.donacion.create({
+      data: {
+        codigo: generateCode(),
+        descripcion: fullDescription,
+        donationPhotoUrl: donationPhotoUrl || null,
+        estado: "DISPONIBLE",
+        direccion: location
+          ? {
+              calle: location.address || "Ubicación seleccionada en mapa",
+              lat: location.lat,
+              long: location.lng,
+            }
+          : undefined,
+        usuarioComunId: userId,
+      },
     });
+
+    // 2. Find or Create Medication
+    let dbMedicamento = await prisma.medicamento.findFirst({
+      where: { nombre: medication },
+    });
+
+    if (!dbMedicamento) {
+      dbMedicamento = await prisma.medicamento.create({
+        data: {
+          nombre: medication,
+          presentacion: unit,
+        },
+      });
+    }
+
+    // 3. Link Medication to Donation
+    await prisma.donacionMedicamento.create({
+      data: {
+        donacionId: newDonacion.id,
+        medicamentoId: dbMedicamento.id,
+        cantidad: quantity,
+        fechaExpiracion: new Date(expiration),
+      },
+    });
+
+    // 4. Find matching Requests and Notify Users
+    const matchingRequests = await prisma.solicitudMedicamento.findMany({
+      where: {
+        medicamentoId: dbMedicamento.id,
+        solicitud: {
+          estado: "PENDIENTE",
+        },
+      },
+      include: {
+        solicitud: true,
+      },
+    });
+
+    // Create notifications for each matching request
+    for (const req of matchingRequests) {
+      await prisma.notificacion.create({
+        data: {
+          userId: req.solicitud.usuarioComunId,
+          type: "MATCH_DONATION",
+          title: "¡Medicamento Disponible!",
+          message: `Alguien ha donado ${medication}, que estabas solicitando. Revisa los detalles.`,
+          link: `/dashboard/donations/${newDonacion.id}`,
+        },
+      });
+    }
+
+    const donacion = newDonacion;
 
     return NextResponse.json(
       {
@@ -184,8 +184,13 @@ Requiere Receta: ${prescription === "yes" ? "Sí" : "No"}
     );
   } catch (error) {
     console.error("Error processing donation:", error);
+    const errorMessage =
+      error instanceof Error ? error.message : "Error desconocido";
     return NextResponse.json(
-      { error: "Error interno del servidor al procesar la donación" },
+      {
+        error: "Error interno del servidor al procesar la donación",
+        details: errorMessage,
+      },
       { status: 500 },
     );
   }
