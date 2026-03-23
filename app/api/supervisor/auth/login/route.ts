@@ -47,6 +47,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    if (!ente.aprobado) {
+      return NextResponse.json(
+        { success: false, error: "Esta cuenta ha sido desactivada. Contacta al administrador." },
+        { status: 403 },
+      );
+    }
+
     // Generar Token
     const token = await tokenService.generate({
       userId: ente.id,

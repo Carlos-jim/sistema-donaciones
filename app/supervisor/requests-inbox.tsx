@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import {
@@ -12,8 +12,11 @@ import {
   FileText,
   Pill,
   Save,
+  Search,
   X,
   XCircle,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -100,6 +103,9 @@ const urgencyConfig: Record<
   },
 };
 
+const PAGE_SIZES = [5, 10, 20] as const;
+type UrgencyFilter = "ALL" | "ALTO" | "MEDIO" | "BAJO";
+
 export default function RequestsInbox({
   requests,
 }: {
@@ -108,6 +114,13 @@ export default function RequestsInbox({
   const router = useRouter();
   const { toast } = useToast();
 
+  // ── Filter & pagination state ────────────────────────────
+  const [searchQuery, setSearchQuery] = useState("");
+  const [urgencyFilter, setUrgencyFilter] = useState<UrgencyFilter>("ALL");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState<(typeof PAGE_SIZES)[number]>(5);
+
+  // ── Dialog state ─────────────────────────────────────────
   const [selectedRequest, setSelectedRequest] = useState<RequestItem | null>(
     null,
   );
@@ -119,6 +132,29 @@ export default function RequestsInbox({
     {},
   );
   const [isUpdatingPriority, setIsUpdatingPriority] = useState(false);
+
+  // ── Filtered & paginated data ────────────────────────────
+  const filtered = useMemo(() => {
+    const q = searchQuery.toLowerCase().trim();
+    return requests.filter((r) => {
+      const matchesUrgency = urgencyFilter === "ALL" || r.tiempoEspera === urgencyFilter;
+      const matchesSearch =
+        !q ||
+        r.usuarioComun.nombre.toLowerCase().includes(q) ||
+        (r.usuarioComun.cedula ?? "").toLowerCase().includes(q) ||
+        r.medicamentos.some((m) => m.medicamento.nombre.toLowerCase().includes(q));
+      return matchesUrgency && matchesSearch;
+    });
+  }, [requests, searchQuery, urgencyFilter]);
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+  const safePage = Math.min(currentPage, totalPages);
+  const paginated = filtered.slice((safePage - 1) * pageSize, safePage * pageSize);
+
+  const resetPage = () => setCurrentPage(1);
+
+  const handleSearchChange = (v: string) => { setSearchQuery(v); resetPage(); };
+  const handleUrgencyChange = (v: UrgencyFilter) => { setUrgencyFilter(v); resetPage(); };
 
   const handleApprove = async () => {
     if (!selectedRequest) return;
@@ -219,19 +255,64 @@ export default function RequestsInbox({
   const urgencyBadge = (tiempoEspera: string) =>
     urgencyConfig[tiempoEspera] ?? urgencyConfig.BAJO;
 
+  const urgencyButtons: { key: UrgencyFilter; label: string; dot?: string }[] = [
+    { key: "ALL", label: "Todas" },
+    { key: "ALTO", label: "Alta", dot: "bg-red-500" },
+    { key: "MEDIO", label: "Media", dot: "bg-yellow-500" },
+    { key: "BAJO", label: "Baja", dot: "bg-green-500" },
+  ];
+
   return (
     <div className="space-y-4">
       <div className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
+        {/* Header */}
         <div className="flex items-center justify-between border-b border-gray-100 px-6 py-4">
           <h2 className="flex items-center gap-2 font-semibold text-gray-800">
             <ClipboardList className="h-4 w-4 text-teal-600" />
             Solicitudes pendientes
           </h2>
           <span className="text-xs text-gray-400">
-            {requests.length} solicitud{requests.length === 1 ? "" : "es"}
+            {filtered.length !== requests.length
+              ? `${filtered.length} de ${requests.length} solicitud${requests.length === 1 ? "" : "es"}`
+              : `${requests.length} solicitud${requests.length === 1 ? "" : "es"}`}
           </span>
         </div>
 
+        {/* Filters toolbar */}
+        <div className="flex flex-col gap-3 border-b border-gray-50 px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
+          {/* Search */}
+          <div className="relative w-full sm:w-72">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400 pointer-events-none" />
+            <Input
+              placeholder="Buscar por paciente o medicamento..."
+              value={searchQuery}
+              onChange={(e) => handleSearchChange(e.target.value)}
+              className="h-9 rounded-xl border-gray-200 pl-9 text-sm focus:border-teal-400 focus:ring-teal-400/20"
+            />
+          </div>
+
+          {/* Urgency filter pills */}
+          <div className="flex items-center gap-1.5">
+            {urgencyButtons.map(({ key, label, dot }) => (
+              <button
+                key={key}
+                onClick={() => handleUrgencyChange(key)}
+                className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
+                  urgencyFilter === key
+                    ? "border-teal-500 bg-teal-600 text-white"
+                    : "border-gray-200 bg-white text-gray-600 hover:border-gray-300 hover:bg-gray-50"
+                }`}
+              >
+                {dot && (
+                  <span className={`h-1.5 w-1.5 rounded-full ${urgencyFilter === key ? "bg-white" : dot}`} />
+                )}
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* List */}
         {requests.length === 0 ? (
           <div className="flex flex-col items-center gap-3 px-6 py-16 text-center">
             <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-teal-50">
@@ -246,9 +327,21 @@ export default function RequestsInbox({
               </p>
             </div>
           </div>
+        ) : filtered.length === 0 ? (
+          <div className="flex flex-col items-center gap-3 px-6 py-12 text-center">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gray-100">
+              <Search className="h-6 w-6 text-gray-300" />
+            </div>
+            <div>
+              <p className="font-semibold text-gray-600">Sin resultados</p>
+              <p className="mt-1 text-sm text-gray-400">
+                Intenta con otro término o quita los filtros.
+              </p>
+            </div>
+          </div>
         ) : (
           <div className="divide-y divide-gray-50">
-            {requests.map((request) => {
+            {paginated.map((request) => {
               const urgency = urgencyBadge(request.tiempoEspera);
               const medicationNames = request.medicamentos.map(
                 (item) => item.medicamento.nombre,
@@ -326,6 +419,80 @@ export default function RequestsInbox({
                 </div>
               );
             })}
+          </div>
+        )}
+
+        {/* Pagination footer */}
+        {filtered.length > 0 && (
+          <div className="flex items-center justify-between border-t border-gray-100 px-6 py-3">
+            {/* Left: page size selector + info */}
+            <div className="flex items-center gap-3">
+              <span className="text-xs text-gray-400">Mostrar</span>
+              <div className="flex gap-1">
+                {PAGE_SIZES.map((size) => (
+                  <button
+                    key={size}
+                    onClick={() => { setPageSize(size); resetPage(); }}
+                    className={`h-7 w-8 rounded-lg text-xs font-medium transition-colors ${
+                      pageSize === size
+                        ? "bg-teal-600 text-white"
+                        : "bg-gray-100 text-gray-500 hover:bg-gray-200"
+                    }`}
+                  >
+                    {size}
+                  </button>
+                ))}
+              </div>
+              <span className="text-xs text-gray-400">
+                {filtered.length === 0
+                  ? "0 resultados"
+                  : `${(safePage - 1) * pageSize + 1}–${Math.min(safePage * pageSize, filtered.length)} de ${filtered.length}`}
+              </span>
+            </div>
+
+            {/* Right: page nav */}
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                disabled={safePage === 1}
+                className="flex h-8 w-8 items-center justify-center rounded-lg text-gray-400 transition-colors hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </button>
+
+              {Array.from({ length: totalPages }, (_, i) => i + 1)
+                .filter((p) => p === 1 || p === totalPages || Math.abs(p - safePage) <= 1)
+                .reduce<(number | "...")[]>((acc, p, idx, arr) => {
+                  if (idx > 0 && p - (arr[idx - 1] as number) > 1) acc.push("...");
+                  acc.push(p);
+                  return acc;
+                }, [])
+                .map((item, idx) =>
+                  item === "..." ? (
+                    <span key={`ellipsis-${idx}`} className="px-1 text-xs text-gray-400">…</span>
+                  ) : (
+                    <button
+                      key={item}
+                      onClick={() => setCurrentPage(item as number)}
+                      className={`h-8 min-w-[2rem] rounded-lg px-2 text-xs font-medium transition-colors ${
+                        safePage === item
+                          ? "bg-teal-600 text-white"
+                          : "text-gray-600 hover:bg-gray-100"
+                      }`}
+                    >
+                      {item}
+                    </button>
+                  )
+                )}
+
+              <button
+                onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                disabled={safePage === totalPages}
+                className="flex h-8 w-8 items-center justify-center rounded-lg text-gray-400 transition-colors hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                <ChevronRight className="h-4 w-4" />
+              </button>
+            </div>
           </div>
         )}
       </div>

@@ -2,19 +2,23 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Shield, Mail, Lock, Loader2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Shield, Loader2, HeartHandshake } from "lucide-react";
 
 export default function AdminLoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
     setError("");
+    setLoading(true);
+
     try {
       const res = await fetch("/api/admin/auth/login", {
         method: "POST",
@@ -22,68 +26,101 @@ export default function AdminLoginPage() {
         body: JSON.stringify({ email, password }),
       });
       const data = await res.json();
-      if (!res.ok) { setError(data.error); return; }
-      router.push("/admin/farmacias");
+
+      if (!res.ok) {
+        setError(data.error || "Credenciales inválidas");
+        return;
+      }
+
+      router.push("/admin");
     } catch {
-      setError("Error de conexión");
+      setError("Error de conexión. Intenta de nuevo.");
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 flex items-center justify-center px-4">
+    <div className="min-h-screen bg-gradient-to-br from-teal-50 via-white to-cyan-50 flex items-center justify-center px-4">
       <div className="w-full max-w-md">
+        {/* Logo */}
         <div className="text-center mb-8">
-          <div className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-tr from-violet-600 to-indigo-500 shadow-lg shadow-violet-500/30 mb-4">
-            <Shield className="h-7 w-7 text-white" />
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-teal-600 to-cyan-600 rounded-2xl shadow-lg mb-4">
+            <HeartHandshake className="w-8 h-8 text-white" />
           </div>
-          <h1 className="text-2xl font-bold text-white">Panel de Administración</h1>
-          <p className="text-gray-400 text-sm mt-1">Acceso restringido al personal autorizado</p>
+          <h1 className="text-2xl font-bold text-gray-800">MediShareNE</h1>
+          <p className="text-gray-500 text-sm mt-1">Sistema de Donaciones</p>
         </div>
 
-        <div className="bg-white/5 backdrop-blur-xl rounded-3xl border border-white/10 shadow-2xl overflow-hidden">
-          <div className="p-8">
-            <form onSubmit={handleSubmit} className="space-y-5">
-              {error && (
-                <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-3 text-sm text-red-400">
-                  {error}
-                </div>
-              )}
-              <div className="space-y-2">
-                <label className="text-sm text-gray-300 flex items-center gap-2">
-                  <Mail className="w-3.5 h-3.5 text-violet-400" /> Correo electrónico
-                </label>
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white placeholder-gray-500 focus:outline-none focus:border-violet-500 focus:ring-1 focus:ring-violet-500/50"
-                  placeholder="admin@medishare.com"
-                />
+        {/* Card */}
+        <div className="bg-white rounded-3xl shadow-xl border border-gray-100 overflow-hidden">
+          {/* Card header */}
+          <div className="bg-gradient-to-r from-teal-600 to-cyan-600 px-8 py-6">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
+                <Shield className="w-5 h-5 text-white" />
               </div>
-              <div className="space-y-2">
-                <label className="text-sm text-gray-300 flex items-center gap-2">
-                  <Lock className="w-3.5 h-3.5 text-violet-400" /> Contraseña
-                </label>
-                <input
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white placeholder-gray-500 focus:outline-none focus:border-violet-500 focus:ring-1 focus:ring-violet-500/50"
-                />
+              <div>
+                <h2 className="text-white font-bold text-lg">Acceso Administrativo</h2>
+                <p className="text-teal-100 text-xs">Solo para administradores del sistema</p>
               </div>
-              <button
-                type="submit"
-                disabled={isLoading}
-                className="w-full h-11 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white font-medium transition-all shadow-lg shadow-violet-500/20 flex items-center justify-center gap-2 disabled:opacity-50"
-              >
-                {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Iniciar sesión"}
-              </button>
-            </form>
+            </div>
           </div>
+
+          {/* Form */}
+          <form onSubmit={handleSubmit} className="px-8 py-7 space-y-5">
+            <div className="space-y-2">
+              <Label htmlFor="email" className="text-sm font-semibold text-gray-700">
+                Correo electrónico
+              </Label>
+              <Input
+                id="email"
+                type="email"
+                required
+                autoFocus
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="admin@medishare.com"
+                className="h-11 rounded-xl border-gray-200 focus:border-teal-500 focus:ring-teal-500/20"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="password" className="text-sm font-semibold text-gray-700">
+                Contraseña
+              </Label>
+              <Input
+                id="password"
+                type="password"
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="••••••••"
+                className="h-11 rounded-xl border-gray-200 focus:border-teal-500 focus:ring-teal-500/20"
+              />
+            </div>
+
+            {error && (
+              <div className="bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3 rounded-xl">
+                {error}
+              </div>
+            )}
+
+            <Button
+              type="submit"
+              disabled={loading}
+              className="w-full h-11 bg-gradient-to-r from-teal-600 to-cyan-600 hover:from-teal-700 hover:to-cyan-700 text-white rounded-xl font-semibold transition-all"
+            >
+              {loading ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Ingresando...
+                </>
+              ) : (
+                "Ingresar al panel"
+              )}
+            </Button>
+          </form>
         </div>
       </div>
     </div>

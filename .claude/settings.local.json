@@ -18,7 +18,10 @@
       "Bash(find /c/Users/carli/OneDrive/Documentos/donaciones/app/admin -type f -name *.tsx -o -name *.ts)",
       "Bash(node -e \"const p = require\\(''./node_modules/@prisma/client/package.json''\\); console.log\\(p.version\\)\")",
       "Bash(node -e \"require\\(''@prisma/adapter-neon''\\); console.log\\(''ok''\\)\")",
-      "Bash(npx dotenv-cli:*)"
+      "Bash(npx dotenv-cli:*)",
+      "Bash(find c:/Users/carli/OneDrive/Documentos/donaciones -name *admin* -type f)",
+      "Bash(find c:/Users/carli/OneDrive/Documentos/donaciones/app -name admin -o -name *admin*)",
+      "Bash(find c:/Users/carli/OneDrive/Documentos/donaciones/app -path */pharmacy/* -o -path */supervisor/*)"
     ]
   }
 }
