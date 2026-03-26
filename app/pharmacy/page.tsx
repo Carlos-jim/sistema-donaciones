@@ -1,166 +1,390 @@
-import { prisma } from "@/lib/prisma";
 import {
-  Package,
-  Clock,
-  Activity,
   ArrowRight,
   CheckCircle2,
-  TrendingUp,
-  Inbox,
+  ClipboardList,
+  Clock3,
+  MapPin,
+  Package,
+  Phone,
+  Pill,
+  ScanLine,
+  Store,
 } from "lucide-react";
 import Link from "next/link";
+import { getPharmacyDashboardData, type PharmacyActiveRequest } from "@/app/pharmacy/data";
+
+function formatDate(date: Date | null) {
+  if (!date) {
+    return "Sin registros";
+  }
+
+  return new Intl.DateTimeFormat("es-VE", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  }).format(date);
+}
+
+function requestStatusStyles(status: PharmacyActiveRequest["estado"]) {
+  switch (status) {
+    case "RECIBIDA":
+      return "bg-blue-100 text-blue-700 border-blue-200";
+    case "LISTA_PARA_RETIRO":
+      return "bg-emerald-100 text-emerald-700 border-emerald-200";
+    case "EN_PROCESO":
+      return "bg-amber-100 text-amber-700 border-amber-200";
+    default:
+      return "bg-slate-100 text-slate-700 border-slate-200";
+  }
+}
+
+function requestStatusLabel(status: PharmacyActiveRequest["estado"]) {
+  switch (status) {
+    case "RECIBIDA":
+      return "Recibida";
+    case "LISTA_PARA_RETIRO":
+      return "Lista para retiro";
+    case "EN_PROCESO":
+      return "En proceso";
+    default:
+      return status;
+  }
+}
+
+function getNextStepLabel(request: PharmacyActiveRequest) {
+  if (request.estado === "RECIBIDA") {
+    return "Validar y marcar lista para retiro";
+  }
+
+  if (request.estado === "LISTA_PARA_RETIRO") {
+    return request.pickupConfirmedAt
+      ? "El beneficiario aviso que retirara pronto"
+      : "Esperando confirmacion de retiro del beneficiario";
+  }
+
+  if (request.deliveryConfirmedAt) {
+    return "El donante ya marco la entrega, falta recepcion";
+  }
+
+  if (request.farmaciaConfirmada !== true) {
+    return "Esperando confirmacion del beneficiario";
+  }
+
+  return "Esperando entrega del donante";
+}
 
 export default async function PharmacyDashboardPage() {
-  const [receivedDonationsCount, pendingRequestsCount, readyForPickupCount] =
-    await Promise.all([
-      prisma.donacion.count({ where: { estado: "RECIBIDA" } }),
-      prisma.solicitud.count({ where: { estado: "RECIBIDA" } }),
-      prisma.solicitud.count({ where: { estado: "LISTA_PARA_RETIRO" } }),
-    ]);
-
-  const stats = [
-    {
-      label: "En Inventario",
-      value: receivedDonationsCount,
-      description: "Donaciones recibidas físicamente",
-      icon: Package,
-      colorClass: "text-teal-600",
-      bgClass: "bg-teal-50",
-      borderClass: "border-teal-100",
-      accentClass: "bg-teal-500",
-    },
-    {
-      label: "En Proceso",
-      value: pendingRequestsCount,
-      description: "Solicitudes recibidas, pendientes de entrega",
-      icon: Clock,
-      colorClass: "text-amber-600",
-      bgClass: "bg-amber-50",
-      borderClass: "border-amber-100",
-      accentClass: "bg-amber-500",
-    },
-    {
-      label: "Listas para Retiro",
-      value: readyForPickupCount,
-      description: "Solicitudes listas para que el paciente retire",
-      icon: CheckCircle2,
-      colorClass: "text-emerald-600",
-      bgClass: "bg-emerald-50",
-      borderClass: "border-emerald-100",
-      accentClass: "bg-emerald-500",
-    },
-    {
-      label: "Total Activas",
-      value: pendingRequestsCount + readyForPickupCount,
-      description: "Solicitudes en curso en total",
-      icon: TrendingUp,
-      colorClass: "text-cyan-600",
-      bgClass: "bg-cyan-50",
-      borderClass: "border-cyan-100",
-      accentClass: "bg-cyan-500",
-    },
-  ];
+  const { pharmacy, inventory, requests } = await getPharmacyDashboardData();
 
   const quickLinks = [
     {
       href: "/pharmacy/reception",
-      icon: Activity,
-      title: "Procesar Recepción",
-      description: "Ingresar código de donación o solicitud",
-      iconBg: "bg-teal-100 group-hover:bg-teal-200",
-      iconColor: "text-teal-700",
+      icon: ScanLine,
+      title: "Procesar recepcion",
+      description: "Valida codigos de donacion y retiro desde el portal.",
       badge: null,
+      iconClass: "bg-teal-100 text-teal-700",
     },
     {
       href: "/pharmacy/requests",
-      icon: Inbox,
-      title: "Ver Solicitudes",
-      description: "Gestionar solicitudes activas en la farmacia",
-      iconBg: "bg-amber-100 group-hover:bg-amber-200",
-      iconColor: "text-amber-700",
-      badge: pendingRequestsCount + readyForPickupCount > 0
-        ? pendingRequestsCount + readyForPickupCount
-        : null,
+      icon: ClipboardList,
+      title: "Solicitudes activas",
+      description: "Consulta lo que esta en proceso, recibido o listo para retiro.",
+      badge: requests.summary.totalActiveCount > 0 ? requests.summary.totalActiveCount : null,
+      iconClass: "bg-amber-100 text-amber-700",
     },
     {
       href: "/pharmacy/inventory",
       icon: Package,
-      title: "Inventario",
-      description: "Ver donaciones recibidas físicamente",
-      iconBg: "bg-cyan-100 group-hover:bg-cyan-200",
-      iconColor: "text-cyan-700",
-      badge: null,
+      title: "Inventario recibido",
+      description: "Revisa los medicamentos fisicos registrados en esta farmacia.",
+      badge: inventory.summary.receivedDonationsCount > 0
+        ? inventory.summary.receivedDonationsCount
+        : null,
+      iconClass: "bg-cyan-100 text-cyan-700",
+    },
+  ];
+
+  const stats = [
+    {
+      label: "Donaciones en inventario",
+      value: inventory.summary.receivedDonationsCount,
+      description: "Recepciones fisicas registradas en esta farmacia",
+      icon: Package,
+      iconClass: "bg-teal-50 text-teal-700",
+      borderClass: "border-teal-100",
+    },
+    {
+      label: "Medicamentos recibidos",
+      value: inventory.summary.totalUnits,
+      description: `${inventory.summary.uniqueMedicationCount} tipos de medicamento distintos`,
+      icon: Pill,
+      iconClass: "bg-cyan-50 text-cyan-700",
+      borderClass: "border-cyan-100",
+    },
+    {
+      label: "Solicitudes activas",
+      value: requests.summary.totalActiveCount,
+      description: `${requests.summary.inProcessCount} en proceso y ${requests.summary.receivedCount} recibidas`,
+      icon: Clock3,
+      iconClass: "bg-amber-50 text-amber-700",
+      borderClass: "border-amber-100",
+    },
+    {
+      label: "Listas para retiro",
+      value: requests.summary.readyForPickupCount,
+      description:
+        requests.summary.pickupConfirmedCount > 0
+          ? `${requests.summary.pickupConfirmedCount} beneficiarios ya avisaron que retiraran`
+          : "Pendientes de entrega al beneficiario",
+      icon: CheckCircle2,
+      iconClass: "bg-emerald-50 text-emerald-700",
+      borderClass: "border-emerald-100",
     },
   ];
 
   return (
-    <div className="space-y-8 max-w-5xl mx-auto">
-      {/* Header */}
-      <div className="bg-gradient-to-r from-teal-600 to-cyan-600 rounded-2xl p-6 text-white shadow-md">
-        <div className="flex items-center gap-3 mb-1">
-          <div className="w-9 h-9 bg-white/20 rounded-xl flex items-center justify-center">
-            <Package className="w-5 h-5 text-white" />
+    <div className="mx-auto max-w-6xl space-y-8">
+      <section className="rounded-3xl bg-gradient-to-r from-teal-600 via-teal-600 to-cyan-600 p-6 text-white shadow-lg">
+        <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+          <div className="space-y-4">
+            <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-white/15">
+              <Store className="h-6 w-6" />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-teal-100">Portal Farmacia</p>
+              <h2 className="text-3xl font-bold tracking-tight">{pharmacy.nombre}</h2>
+              <p className="mt-2 max-w-2xl text-sm text-teal-50">
+                Resumen de recepcion, solicitudes activas e inventario registrado en esta farmacia.
+              </p>
+            </div>
           </div>
-          <div>
-            <h2 className="text-xl font-bold leading-tight">Dashboard Farmacia</h2>
-            <p className="text-teal-100 text-sm">Resumen de actividad e inventario</p>
+
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div className="rounded-2xl border border-white/15 bg-white/10 px-4 py-3 backdrop-blur">
+              <div className="flex items-start gap-3">
+                <MapPin className="mt-0.5 h-4 w-4 text-teal-100" />
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-teal-100">
+                    Direccion
+                  </p>
+                  <p className="mt-1 text-sm text-white">{pharmacy.direccion}</p>
+                </div>
+              </div>
+            </div>
+            <div className="rounded-2xl border border-white/15 bg-white/10 px-4 py-3 backdrop-blur">
+              <div className="flex items-start gap-3">
+                <Phone className="mt-0.5 h-4 w-4 text-teal-100" />
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-teal-100">
+                    Contacto
+                  </p>
+                  <p className="mt-1 text-sm text-white">
+                    {pharmacy.telefono || "Sin telefono registrado"}
+                  </p>
+                  <p className="mt-1 text-xs text-teal-100">
+                    {pharmacy.horario || "Horario no configurado"}
+                  </p>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
-      </div>
+      </section>
 
-      {/* KPI Cards */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {stats.map((s) => (
-          <div
-            key={s.label}
-            className={`bg-white rounded-2xl p-5 border ${s.borderClass} shadow-sm flex items-start gap-4`}
+      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        {stats.map((stat) => (
+          <article
+            key={stat.label}
+            className={`rounded-2xl border bg-white p-5 shadow-sm ${stat.borderClass}`}
           >
-            <div className={`w-11 h-11 ${s.bgClass} rounded-xl flex items-center justify-center flex-shrink-0`}>
-              <s.icon className={`w-5 h-5 ${s.colorClass}`} />
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-3xl font-bold text-slate-900">{stat.value}</p>
+                <p className="mt-1 text-sm font-semibold text-slate-700">{stat.label}</p>
+                <p className="mt-1 text-xs leading-5 text-slate-500">{stat.description}</p>
+              </div>
+              <div className={`flex h-11 w-11 items-center justify-center rounded-2xl ${stat.iconClass}`}>
+                <stat.icon className="h-5 w-5" />
+              </div>
             </div>
-            <div className="min-w-0">
-              <p className="text-2xl font-bold text-gray-900">{s.value}</p>
-              <p className="text-xs font-semibold text-gray-600 mt-0.5">{s.label}</p>
-              <p className="text-xs text-gray-400 mt-0.5 leading-snug">{s.description}</p>
-            </div>
-          </div>
+          </article>
         ))}
-      </div>
+      </section>
 
-      {/* Quick Actions */}
-      <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-100 bg-gray-50/60">
-          <h3 className="text-sm font-semibold text-gray-700">Accesos Rápidos</h3>
-          <p className="text-xs text-gray-400 mt-0.5">Acciones frecuentes del portal</p>
+      <section className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
+        <article className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
+          <div className="flex items-center justify-between border-b border-slate-100 px-6 py-5">
+            <div>
+              <h3 className="text-lg font-semibold text-slate-900">
+                Medicamentos recibidos recientemente
+              </h3>
+              <p className="mt-1 text-sm text-slate-500">
+                Resumen del inventario fisico registrado en esta farmacia.
+              </p>
+            </div>
+            <Link
+              href="/pharmacy/inventory"
+              className="inline-flex items-center gap-2 text-sm font-semibold text-teal-700 transition hover:text-teal-800"
+            >
+              Ver inventario
+              <ArrowRight className="h-4 w-4" />
+            </Link>
+          </div>
+
+          <div className="p-6">
+            {inventory.medications.length === 0 ? (
+              <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-6 py-10 text-center">
+                <p className="text-sm font-semibold text-slate-700">
+                  Aun no hay medicamentos recibidos en inventario
+                </p>
+                <p className="mt-2 text-sm text-slate-500">
+                  Cuando una donacion quede recibida en esta farmacia aparecera aqui.
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {inventory.medications.slice(0, 5).map((medication) => (
+                  <div
+                    key={medication.medicamentoId}
+                    className="rounded-2xl border border-slate-100 bg-slate-50/70 p-4"
+                  >
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                      <div>
+                        <p className="text-base font-semibold text-slate-900">
+                          {medication.nombre}
+                        </p>
+                        <p className="mt-1 text-sm text-slate-500">
+                          {medication.presentacion || "Presentacion no registrada"}
+                          {medication.concentracion ? ` · ${medication.concentracion}` : ""}
+                        </p>
+                      </div>
+                      <div className="rounded-xl bg-white px-3 py-2 text-right shadow-sm">
+                        <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                          Cantidad
+                        </p>
+                        <p className="text-lg font-bold text-slate-900">
+                          {medication.totalCantidad}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-slate-500">
+                      <span>{medication.donationCount} recepciones</span>
+                      <span className="h-1 w-1 rounded-full bg-slate-300" />
+                      <span>Ultimo ingreso: {formatDate(medication.lastReceivedAt)}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </article>
+
+        <article className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
+          <div className="flex items-center justify-between border-b border-slate-100 px-6 py-5">
+            <div>
+              <h3 className="text-lg font-semibold text-slate-900">
+                Solicitudes activas en esta farmacia
+              </h3>
+              <p className="mt-1 text-sm text-slate-500">
+                Lo que esta esperando recepcion, validacion o retiro.
+              </p>
+            </div>
+            <Link
+              href="/pharmacy/requests"
+              className="inline-flex items-center gap-2 text-sm font-semibold text-teal-700 transition hover:text-teal-800"
+            >
+              Ver solicitudes
+              <ArrowRight className="h-4 w-4" />
+            </Link>
+          </div>
+
+          <div className="p-6">
+            {requests.requests.length === 0 ? (
+              <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-6 py-10 text-center">
+                <p className="text-sm font-semibold text-slate-700">
+                  No hay solicitudes activas en esta farmacia
+                </p>
+                <p className="mt-2 text-sm text-slate-500">
+                  Las solicitudes asignadas a esta farmacia apareceran aqui.
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {requests.requests.slice(0, 4).map((request) => (
+                  <div
+                    key={request.id}
+                    className="rounded-2xl border border-slate-100 bg-slate-50/70 p-4"
+                  >
+                    <div className="flex flex-wrap items-start justify-between gap-3">
+                      <div>
+                        <p className="text-base font-semibold text-slate-900">
+                          {request.usuarioComun.nombre}
+                        </p>
+                        <p className="mt-1 text-sm text-slate-500">
+                          {request.medicamentos
+                            .map((item) => item.medicamento.nombre)
+                            .join(", ")}
+                        </p>
+                      </div>
+                      <span
+                        className={`inline-flex rounded-full border px-3 py-1 text-xs font-semibold ${requestStatusStyles(request.estado)}`}
+                      >
+                        {requestStatusLabel(request.estado)}
+                      </span>
+                    </div>
+                    <p className="mt-3 text-sm text-slate-600">{getNextStepLabel(request)}</p>
+                    <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-slate-500">
+                      <span>Creada: {formatDate(request.createdAt)}</span>
+                      {request.fechaLimiteRetiro && (
+                        <>
+                          <span className="h-1 w-1 rounded-full bg-slate-300" />
+                          <span>Limite de retiro: {formatDate(request.fechaLimiteRetiro)}</span>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </article>
+      </section>
+
+      <section className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
+        <div className="border-b border-slate-100 px-6 py-5">
+          <h3 className="text-lg font-semibold text-slate-900">Accesos rapidos</h3>
+          <p className="mt-1 text-sm text-slate-500">
+            Navega directo a las tareas mas comunes del portal de farmacia.
+          </p>
         </div>
-        <div className="p-4 grid gap-3">
+        <div className="grid gap-4 p-6 lg:grid-cols-3">
           {quickLinks.map((link) => (
             <Link
               key={link.href}
               href={link.href}
-              className="flex items-center justify-between p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors group"
+              className="group rounded-2xl border border-slate-200 bg-slate-50 p-5 transition hover:border-teal-200 hover:bg-teal-50/40"
             >
-              <div className="flex items-center gap-4">
-                <div className={`w-10 h-10 ${link.iconBg} rounded-xl flex items-center justify-center transition-colors`}>
-                  <link.icon className={`w-5 h-5 ${link.iconColor}`} />
+              <div className="flex items-start justify-between gap-4">
+                <div className={`flex h-11 w-11 items-center justify-center rounded-2xl ${link.iconClass}`}>
+                  <link.icon className="h-5 w-5" />
                 </div>
-                <div>
-                  <p className="font-medium text-gray-900 text-sm">{link.title}</p>
-                  <p className="text-xs text-gray-500 mt-0.5">{link.description}</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
                 {link.badge != null && (
-                  <span className="text-xs font-semibold bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full">
+                  <span className="rounded-full bg-amber-100 px-2.5 py-1 text-xs font-semibold text-amber-700">
                     {link.badge}
                   </span>
                 )}
-                <ArrowRight className="w-4 h-4 text-gray-400 group-hover:text-gray-600 transition-colors" />
+              </div>
+              <p className="mt-4 text-base font-semibold text-slate-900">{link.title}</p>
+              <p className="mt-2 text-sm leading-6 text-slate-500">{link.description}</p>
+              <div className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-teal-700">
+                Abrir
+                <ArrowRight className="h-4 w-4 transition group-hover:translate-x-0.5" />
               </div>
             </Link>
           ))}
         </div>
-      </div>
+      </section>
     </div>
   );
 }

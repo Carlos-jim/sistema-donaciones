@@ -4,7 +4,7 @@ import { EstadoDonacion, EstadoSolicitud, Prisma } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 import prisma from "@/lib/prisma";
 import { normalizeCodeInput } from "@/lib/delivery-codes";
-import { getSessionForRole } from "@/lib/auth/server-session";
+import { getAuthenticatedPharmacy } from "@/app/pharmacy/data";
 
 const RETRIEVAL_WINDOW_DAYS = 7;
 
@@ -135,30 +135,6 @@ type PendingPickupsResult =
       error?: string;
       data: PendingPickupItem[];
     };
-
-async function getAuthenticatedPharmacy() {
-  const session = await getSessionForRole("FARMACIA");
-  const pharmacyId = session?.farmaciaId ?? session?.userId;
-
-  if (!session || !pharmacyId) {
-    throw new Error("No autorizado");
-  }
-
-  const pharmacy = await prisma.farmacia.findUnique({
-    where: { id: pharmacyId },
-    select: {
-      id: true,
-      nombre: true,
-      activo: true,
-    },
-  });
-
-  if (!pharmacy || !pharmacy.activo) {
-    throw new Error("Farmacia no autorizada");
-  }
-
-  return pharmacy;
-}
 
 export async function lookupByValidationCode(
   input: string,
@@ -437,6 +413,8 @@ export async function updateStatus(
 
     revalidatePath("/pharmacy");
     revalidatePath("/pharmacy/reception");
+    revalidatePath("/pharmacy/inventory");
+    revalidatePath("/pharmacy/requests");
     revalidatePath("/dashboard/requests");
     revalidatePath("/dashboard/donations");
 

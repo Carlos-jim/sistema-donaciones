@@ -264,6 +264,8 @@ export default function DashboardClient({
       return {
         id: don.id,
         name: don.medicamentos[0]?.medicamento?.nombre || "Medicamento",
+        unit: don.medicamentos[0]?.medicamento?.presentacion || "unidades",
+        quantity: don.medicamentos[0]?.cantidad ?? 1,
         donor: don.usuarioComun?.nombre || "Donante",
         location: "Ubicación",
         distance: distance !== null ? formatDistance(distance) : "N/A",
