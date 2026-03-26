@@ -392,10 +392,21 @@ export function MedicationRequestForm({
                     required
                     value={formData.medication}
                     onChange={(e) =>
+                      !initialMedication &&
                       setFormData({ ...formData, medication: e.target.value })
                     }
-                    className="h-12 rounded-xl border-gray-200 focus:border-teal-500 focus:ring-teal-500/20 transition-all"
+                    readOnly={!!initialMedication}
+                    className={`h-12 rounded-xl border-gray-200 transition-all ${
+                      initialMedication
+                        ? "bg-gray-50 text-gray-500 cursor-not-allowed"
+                        : "focus:border-teal-500 focus:ring-teal-500/20"
+                    }`}
                   />
+                  {initialMedication && (
+                    <p className="text-xs text-teal-600 mt-1">
+                      Medicamento de la donación seleccionada (no editable)
+                    </p>
+                  )}
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
