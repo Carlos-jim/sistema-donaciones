@@ -27,8 +27,11 @@ import {
   Clock,
   MapPin,
   Phone,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { LocationPickerMap } from "@/components/location-picker-map";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 type Farmacia = {
@@ -61,7 +64,11 @@ type FarmaciaForm = {
   direccion: string;
   telefono: string;
   horario: string;
+  latitude: number | null;
+  longitude: number | null;
 };
+
+const PAGE_SIZE = 6;
 
 type SupervisorForm = {
   nombre: string;
@@ -86,6 +93,8 @@ const emptyFarmaciaForm: FarmaciaForm = {
   direccion: "",
   telefono: "",
   horario: "",
+  latitude: null,
+  longitude: null,
 };
 
 const emptySupervisorForm: SupervisorForm = {
@@ -333,6 +342,8 @@ export default function AdminDashboardClient() {
   const [submitting, setSubmitting] = useState(false);
   const [farmaciaForm, setFarmaciaForm] = useState<FarmaciaForm>(emptyFarmaciaForm);
   const [supervisorForm, setSupervisorForm] = useState<SupervisorForm>(emptySupervisorForm);
+  const [farmaciaPage, setFarmaciaPage] = useState(1);
+  const [supervisorPage, setSupervisorPage] = useState(1);
 
   // ── Data ──────────────────────────────────────────────────────────────────────
   const loadData = useCallback(async () => {
@@ -367,6 +378,8 @@ export default function AdminDashboardClient() {
       direccion: item.direccion,
       telefono: item.telefono ?? "",
       horario: item.horario ?? "",
+      latitude: item.latitude,
+      longitude: item.longitude,
     });
     setModal({ type: "farmacia-edit", item });
   };
@@ -405,6 +418,8 @@ export default function AdminDashboardClient() {
         ...(farmaciaForm.telefono && { telefono: farmaciaForm.telefono }),
         ...(farmaciaForm.horario && { horario: farmaciaForm.horario }),
         ...(farmaciaForm.password && { password: farmaciaForm.password }),
+        ...(farmaciaForm.latitude != null && { latitude: farmaciaForm.latitude }),
+        ...(farmaciaForm.longitude != null && { longitude: farmaciaForm.longitude }),
       };
 
       const res = await fetch(url, {
@@ -513,7 +528,7 @@ export default function AdminDashboardClient() {
     }
   };
 
-  // ── Filtered data ─────────────────────────────────────────────────────────────
+  // ── Filtered + paginated data ──────────────────────────────────────────────────
   const q = search.toLowerCase();
   const filteredFarmacias = farmacias.filter(
     (f) => f.nombre.toLowerCase().includes(q) || f.email.toLowerCase().includes(q) || f.direccion.toLowerCase().includes(q)
@@ -521,6 +536,11 @@ export default function AdminDashboardClient() {
   const filteredSupervisores = supervisores.filter(
     (s) => s.nombre.toLowerCase().includes(q) || s.email.toLowerCase().includes(q) || s.direccion.toLowerCase().includes(q)
   );
+
+  const farmaciaPages = Math.max(1, Math.ceil(filteredFarmacias.length / PAGE_SIZE));
+  const supervisorPages = Math.max(1, Math.ceil(filteredSupervisores.length / PAGE_SIZE));
+  const pagedFarmacias = filteredFarmacias.slice((farmaciaPage - 1) * PAGE_SIZE, farmaciaPage * PAGE_SIZE);
+  const pagedSupervisores = filteredSupervisores.slice((supervisorPage - 1) * PAGE_SIZE, supervisorPage * PAGE_SIZE);
 
   // ── Derived state ─────────────────────────────────────────────────────────────
   const isFarmaciaModal = modal.type === "farmacia-create" || modal.type === "farmacia-edit";
@@ -579,7 +599,7 @@ export default function AdminDashboardClient() {
             ).map(({ key, label, icon: Icon, count }) => (
               <button
                 key={key}
-                onClick={() => { setActiveTab(key); setSearch(""); }}
+                onClick={() => { setActiveTab(key); setSearch(""); setFarmaciaPage(1); setSupervisorPage(1); }}
                 className={`flex items-center gap-2 px-5 py-4 text-sm font-medium border-b-2 transition-colors ${
                   activeTab === key
                     ? "border-teal-600 text-teal-700"
@@ -615,7 +635,7 @@ export default function AdminDashboardClient() {
             <Input
               placeholder={activeTab === "farmacias" ? "Buscar farmacia..." : "Buscar supervisor..."}
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={(e) => { setSearch(e.target.value); setFarmaciaPage(1); setSupervisorPage(1); }}
               className="pl-9 h-9 border-gray-200 rounded-xl text-sm focus:border-teal-400"
             />
           </div>
@@ -636,17 +656,94 @@ export default function AdminDashboardClient() {
               <span className="text-sm">Cargando datos...</span>
             </div>
           ) : activeTab === "farmacias" ? (
-            <FarmaciasTable farmacias={filteredFarmacias} onEdit={openEditFarmacia} onToggle={toggleFarmacia} />
+            <FarmaciasTable farmacias={pagedFarmacias} onEdit={openEditFarmacia} onToggle={toggleFarmacia} />
           ) : (
-            <SupervisoresTable supervisores={filteredSupervisores} onEdit={openEditSupervisor} onToggle={toggleSupervisor} />
+            <SupervisoresTable supervisores={pagedSupervisores} onEdit={openEditSupervisor} onToggle={toggleSupervisor} />
           )}
         </div>
+
+        {/* Pagination */}
+        {!loading && (
+          <div className="flex items-center justify-between px-6 py-3 border-t border-gray-100 bg-gray-50/40">
+            {activeTab === "farmacias" ? (
+              <>
+                <span className="text-xs text-gray-500">
+                  {filteredFarmacias.length === 0 ? "0 farmacias" : `${(farmaciaPage - 1) * PAGE_SIZE + 1}–${Math.min(farmaciaPage * PAGE_SIZE, filteredFarmacias.length)} de ${filteredFarmacias.length}`}
+                </span>
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={() => setFarmaciaPage((p) => Math.max(1, p - 1))}
+                    disabled={farmaciaPage === 1}
+                    className="p-1.5 rounded-lg text-gray-400 hover:text-teal-600 hover:bg-teal-50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                  </button>
+                  {Array.from({ length: farmaciaPages }, (_, i) => i + 1).map((p) => (
+                    <button
+                      key={p}
+                      onClick={() => setFarmaciaPage(p)}
+                      className={`w-7 h-7 rounded-lg text-xs font-medium transition-colors ${
+                        p === farmaciaPage
+                          ? "bg-teal-600 text-white"
+                          : "text-gray-500 hover:bg-gray-100"
+                      }`}
+                    >
+                      {p}
+                    </button>
+                  ))}
+                  <button
+                    onClick={() => setFarmaciaPage((p) => Math.min(farmaciaPages, p + 1))}
+                    disabled={farmaciaPage === farmaciaPages}
+                    className="p-1.5 rounded-lg text-gray-400 hover:text-teal-600 hover:bg-teal-50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                  >
+                    <ChevronRight className="w-4 h-4" />
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                <span className="text-xs text-gray-500">
+                  {filteredSupervisores.length === 0 ? "0 supervisores" : `${(supervisorPage - 1) * PAGE_SIZE + 1}–${Math.min(supervisorPage * PAGE_SIZE, filteredSupervisores.length)} de ${filteredSupervisores.length}`}
+                </span>
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={() => setSupervisorPage((p) => Math.max(1, p - 1))}
+                    disabled={supervisorPage === 1}
+                    className="p-1.5 rounded-lg text-gray-400 hover:text-teal-600 hover:bg-teal-50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                  </button>
+                  {Array.from({ length: supervisorPages }, (_, i) => i + 1).map((p) => (
+                    <button
+                      key={p}
+                      onClick={() => setSupervisorPage(p)}
+                      className={`w-7 h-7 rounded-lg text-xs font-medium transition-colors ${
+                        p === supervisorPage
+                          ? "bg-teal-600 text-white"
+                          : "text-gray-500 hover:bg-gray-100"
+                      }`}
+                    >
+                      {p}
+                    </button>
+                  ))}
+                  <button
+                    onClick={() => setSupervisorPage((p) => Math.min(supervisorPages, p + 1))}
+                    disabled={supervisorPage === supervisorPages}
+                    className="p-1.5 rounded-lg text-gray-400 hover:text-teal-600 hover:bg-teal-50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                  >
+                    <ChevronRight className="w-4 h-4" />
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        )}
       </div>
 
       {/* ── Farmacia Modal ──────────────────────────────────────────────────────── */}
       <Dialog open={isFarmaciaModal} onOpenChange={(open) => !open && closeModal()}>
-        <DialogContent className="sm:max-w-lg rounded-2xl gap-0 p-0 overflow-hidden">
-          <div className="bg-gradient-to-r from-teal-600 to-cyan-600 px-6 py-5">
+        <DialogContent className="sm:max-w-2xl rounded-2xl gap-0 p-0 overflow-hidden max-h-[90vh] flex flex-col">
+          <div className="bg-gradient-to-r from-teal-600 to-cyan-600 px-6 py-5 flex-shrink-0">
             <DialogTitle className="text-white font-bold text-lg">
               {isEditMode ? "Editar Farmacia" : "Nueva Farmacia"}
             </DialogTitle>
@@ -654,7 +751,7 @@ export default function AdminDashboardClient() {
               {isEditMode ? "Modifica los datos de la farmacia" : "Completa los datos para crear una farmacia"}
             </p>
           </div>
-          <form onSubmit={handleFarmaciaSubmit} className="p-6 space-y-4">
+          <form onSubmit={handleFarmaciaSubmit} className="p-6 space-y-4 overflow-y-auto flex-1">
             <div className="grid grid-cols-2 gap-4">
               <div className="col-span-2 space-y-1.5">
                 <Label className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Nombre *</Label>
@@ -691,16 +788,6 @@ export default function AdminDashboardClient() {
                   className="h-10 rounded-xl border-gray-200 focus:border-teal-400"
                 />
               </div>
-              <div className="col-span-2 space-y-1.5">
-                <Label className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Dirección *</Label>
-                <Input
-                  required
-                  value={farmaciaForm.direccion}
-                  onChange={(e) => setFarmaciaForm({ ...farmaciaForm, direccion: e.target.value })}
-                  placeholder="Av. Principal, Edificio A, Local 1"
-                  className="h-10 rounded-xl border-gray-200 focus:border-teal-400"
-                />
-              </div>
               <div className="space-y-1.5">
                 <Label className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Teléfono</Label>
                 <Input
@@ -720,6 +807,45 @@ export default function AdminDashboardClient() {
                 />
               </div>
             </div>
+
+            {/* Location */}
+            <div className="space-y-3">
+              <div className="space-y-1.5">
+                <Label className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Dirección *</Label>
+                <Input
+                  required
+                  value={farmaciaForm.direccion}
+                  onChange={(e) => setFarmaciaForm({ ...farmaciaForm, direccion: e.target.value })}
+                  placeholder="Av. Principal, Edificio A, Local 1"
+                  className="h-10 rounded-xl border-gray-200 focus:border-teal-400"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs font-semibold text-gray-600 uppercase tracking-wide flex items-center gap-1.5">
+                  <MapPin className="w-3.5 h-3.5 text-teal-600" />
+                  Ubicación en el mapa
+                  <span className="text-gray-400 normal-case font-normal">(haz clic para marcar)</span>
+                </Label>
+                <LocationPickerMap
+                  value={
+                    farmaciaForm.latitude != null && farmaciaForm.longitude != null
+                      ? { lat: farmaciaForm.latitude, lng: farmaciaForm.longitude }
+                      : null
+                  }
+                  onChange={({ lat, lng }) =>
+                    setFarmaciaForm({ ...farmaciaForm, latitude: lat, longitude: lng })
+                  }
+                  height="260px"
+                />
+                {farmaciaForm.latitude != null && (
+                  <p className="text-xs text-teal-600 flex items-center gap-1">
+                    <CheckCircle2 className="w-3.5 h-3.5" />
+                    Lat: {farmaciaForm.latitude.toFixed(6)}, Lng: {farmaciaForm.longitude?.toFixed(6)}
+                  </p>
+                )}
+              </div>
+            </div>
+
             <DialogFooter className="pt-2 gap-2">
               <Button type="button" variant="ghost" onClick={closeModal} className="rounded-xl">
                 Cancelar
