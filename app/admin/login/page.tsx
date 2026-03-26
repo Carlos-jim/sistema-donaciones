@@ -1,3 +1,5 @@
+"use client";
+
 import { Shield } from "lucide-react";
 import { PortalLoginCard } from "@/components/portal-login-card";
 
