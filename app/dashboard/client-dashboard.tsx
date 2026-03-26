@@ -116,6 +116,7 @@ interface Donacion {
   latitude: number | null;
   longitude: number | null;
   createdAt: string;
+  descripcion: string | null;
   usuarioComun: {
     nombre: string;
   };
@@ -261,11 +262,14 @@ export default function DashboardClient({
         );
       }
 
+      const requiresPrescription = don.descripcion?.includes("Requiere Receta: Sí") ?? false;
+
       return {
         id: don.id,
         name: don.medicamentos[0]?.medicamento?.nombre || "Medicamento",
         unit: don.medicamentos[0]?.medicamento?.presentacion || "unidades",
         quantity: don.medicamentos[0]?.cantidad ?? 1,
+        requiresPrescription,
         donor: don.usuarioComun?.nombre || "Donante",
         location: "Ubicación",
         distance: distance !== null ? formatDistance(distance) : "N/A",

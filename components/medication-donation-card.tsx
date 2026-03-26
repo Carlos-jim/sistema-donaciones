@@ -22,6 +22,7 @@ interface MedicationDonationCardProps {
   name: string
   unit?: string
   quantity?: number
+  requiresPrescription?: boolean
   donor: string
   location: string
   distance: string
@@ -34,6 +35,7 @@ export function MedicationDonationCard({
   name,
   unit,
   quantity,
+  requiresPrescription = false,
   donor,
   location,
   distance,
@@ -196,52 +198,58 @@ export function MedicationDonationCard({
               </div>
             </div>
 
-            {/* Recipe upload */}
-            <div className="border-t pt-3 space-y-2">
-              <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide">
-                Receta médica <span className="normal-case font-normal text-gray-400">(opcional)</span>
-              </p>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/jpeg,image/png,image/webp,image/jpg"
-                className="hidden"
-                onChange={handleFileChange}
-              />
-              {recipePreview ? (
-                <div className="relative w-full">
-                  <div className="relative w-full h-36 rounded-xl overflow-hidden border border-teal-100 bg-gray-50">
-                    <Image src={recipePreview} alt="Receta" fill className="object-cover" />
-                    {uploadingRecipe && (
-                      <div className="absolute inset-0 flex items-center justify-center bg-black/40">
-                        <Loader2 className="w-6 h-6 animate-spin text-white" />
-                      </div>
+            {/* Recipe upload — solo si el donante indicó que requiere receta */}
+            {requiresPrescription && (
+              <div className="border-t pt-3 space-y-2">
+                <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide flex items-center gap-1.5">
+                  Receta médica
+                  <span className="bg-red-100 text-red-600 text-[10px] font-semibold px-1.5 py-0.5 rounded-full normal-case tracking-normal">
+                    Obligatoria
+                  </span>
+                </p>
+                <p className="text-xs text-gray-400">El donante indicó que este medicamento requiere receta médica.</p>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp,image/jpg"
+                  className="hidden"
+                  onChange={handleFileChange}
+                />
+                {recipePreview ? (
+                  <div className="relative w-full">
+                    <div className="relative w-full h-36 rounded-xl overflow-hidden border border-teal-100 bg-gray-50">
+                      <Image src={recipePreview} alt="Receta" fill className="object-cover" />
+                      {uploadingRecipe && (
+                        <div className="absolute inset-0 flex items-center justify-center bg-black/40">
+                          <Loader2 className="w-6 h-6 animate-spin text-white" />
+                        </div>
+                      )}
+                    </div>
+                    {!uploadingRecipe && (
+                      <button
+                        onClick={removeRecipe}
+                        className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    )}
+                    {recipeUrl && (
+                      <p className="text-xs text-teal-600 flex items-center gap-1 mt-1">
+                        <CheckCircle2 className="w-3 h-3" /> Receta subida correctamente
+                      </p>
                     )}
                   </div>
-                  {!uploadingRecipe && (
-                    <button
-                      onClick={removeRecipe}
-                      className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600"
-                    >
-                      <X className="w-3 h-3" />
-                    </button>
-                  )}
-                  {recipeUrl && (
-                    <p className="text-xs text-teal-600 flex items-center gap-1 mt-1">
-                      <CheckCircle2 className="w-3 h-3" /> Receta subida correctamente
-                    </p>
-                  )}
-                </div>
-              ) : (
-                <button
-                  onClick={() => fileInputRef.current?.click()}
-                  className="w-full flex flex-col items-center gap-2 py-5 border-2 border-dashed border-gray-200 rounded-xl text-gray-400 hover:border-teal-400 hover:text-teal-600 hover:bg-teal-50/40 transition-colors"
-                >
-                  <FileImage className="w-6 h-6" />
-                  <span className="text-xs">Haz clic para subir receta (JPG, PNG, WebP · máx 5MB)</span>
-                </button>
-              )}
-            </div>
+                ) : (
+                  <button
+                    onClick={() => fileInputRef.current?.click()}
+                    className="w-full flex flex-col items-center gap-2 py-5 border-2 border-dashed border-red-200 rounded-xl text-gray-400 hover:border-red-400 hover:text-red-500 hover:bg-red-50/40 transition-colors"
+                  >
+                    <FileImage className="w-6 h-6" />
+                    <span className="text-xs">Haz clic para subir receta (JPG, PNG, WebP · máx 5MB)</span>
+                  </button>
+                )}
+              </div>
+            )}
 
             <p className="text-xs text-gray-400 leading-relaxed">
               Al confirmar, se creará una solicitud que un supervisor revisará y vinculará con esta donación. Recibirás una notificación cuando sea aprobada.
@@ -254,7 +262,7 @@ export function MedicationDonationCard({
             </Button>
             <Button
               onClick={handleConfirm}
-              disabled={loading || uploadingRecipe}
+              disabled={loading || uploadingRecipe || (requiresPrescription && !recipeUrl)}
               className="bg-gradient-to-r from-teal-600 to-cyan-600 hover:from-teal-700 hover:to-cyan-700 text-white rounded-xl min-w-[140px]"
             >
               {loading
