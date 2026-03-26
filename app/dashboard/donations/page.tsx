@@ -63,7 +63,6 @@ type AcceptedDelivery = {
   assignedDate: string | null;
   codigoComprobante: string | null;
   codigoEntregaDonante: string | null;
-  codigoRetiroSolicitante: string | null;
   farmaciaConfirmada: boolean | null;
   motivoRechazoFarmacia: string | null;
   deliveryConfirmedAt: string | null;
@@ -74,7 +73,6 @@ type AcceptedDelivery = {
   } | null;
   medicamentos: OfferMedication[];
   donorQrPayload: string | null;
-  requesterQrPayload: string | null;
 };
 
 type DonationsResponse = {
@@ -111,7 +109,6 @@ type DonationItem =
       deliveryConfirmedAt: string | null;
       medications: OfferMedication[];
       donorCode: string | null;
-      requesterCode: string | null;
     };
 
 function formatDate(date: string | null) {
@@ -202,7 +199,7 @@ export default function MyDonationsPage() {
       id: delivery.id,
       createdAt: delivery.assignedDate || delivery.createdAt,
       status: delivery.estado,
-      code: delivery.codigoComprobante || delivery.codigoEntregaDonante,
+      code: delivery.codigoEntregaDonante || delivery.codigoComprobante,
       description: delivery.motivo,
       pharmacyLabel: delivery.farmaciaEntrega
         ? `${delivery.farmaciaEntrega.nombre} - ${delivery.farmaciaEntrega.direccion}`
@@ -216,7 +213,6 @@ export default function MyDonationsPage() {
       deliveryConfirmedAt: delivery.deliveryConfirmedAt,
       medications: delivery.medicamentos,
       donorCode: delivery.codigoEntregaDonante,
-      requesterCode: delivery.codigoRetiroSolicitante,
     })),
   ].sort(
     (left, right) =>
@@ -243,7 +239,7 @@ export default function MyDonationsPage() {
       });
       await fetchDonations();
       setSelectedItem((current) =>
-        current && current.id === item.id
+        current && current.kind === "delivery" && current.id === item.id
           ? {
               ...current,
               canConfirmDelivery: false,
@@ -456,24 +452,13 @@ export default function MyDonationsPage() {
                 </div>
 
                 {"donorCode" in selectedItem && (
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    <div className="rounded-xl border bg-gray-50 p-4">
-                      <p className="text-xs uppercase tracking-wide text-gray-500">
-                        Codigo donante
-                      </p>
-                      <p className="mt-1 font-mono text-sm text-gray-900">
-                        {selectedItem.donorCode || "N/A"}
-                      </p>
-                    </div>
-
-                    <div className="rounded-xl border bg-gray-50 p-4">
-                      <p className="text-xs uppercase tracking-wide text-gray-500">
-                        Codigo beneficiario
-                      </p>
-                      <p className="mt-1 font-mono text-sm text-gray-900">
-                        {selectedItem.requesterCode || "N/A"}
-                      </p>
-                    </div>
+                  <div className="rounded-xl border bg-gray-50 p-4">
+                    <p className="text-xs uppercase tracking-wide text-gray-500">
+                      Codigo de entrega
+                    </p>
+                    <p className="mt-1 font-mono text-sm text-gray-900">
+                      {selectedItem.donorCode || "N/A"}
+                    </p>
                   </div>
                 )}
 

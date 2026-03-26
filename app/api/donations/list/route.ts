@@ -65,7 +65,6 @@ export async function GET() {
         assignedDate: true,
         codigoComprobante: true,
         codigoEntregaDonante: true,
-        codigoRetiroSolicitante: true,
         farmaciaConfirmada: true,
         motivoRechazoFarmacia: true,
         deliveryConfirmedAt: true,
@@ -102,20 +101,9 @@ export async function GET() {
               })
             : null;
 
-        const requesterQrPayload =
-          delivery.codigoRetiroSolicitante && delivery.farmaciaEntregaId
-            ? await signDeliveryQrPayload({
-                solicitudId: delivery.id,
-                pharmacyId: delivery.farmaciaEntregaId,
-                code: delivery.codigoRetiroSolicitante,
-                role: "REQUESTER_PICKUP",
-              })
-            : null;
-
         return {
           ...delivery,
           donorQrPayload,
-          requesterQrPayload,
         };
       }),
     );

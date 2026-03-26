@@ -310,6 +310,11 @@ export async function updateStatus(
         select: {
           farmaciaId: true,
           farmaciaEntregaId: true,
+          donanteAsignadoId: true,
+          medicamentos: {
+            include: { medicamento: { select: { nombre: true } } },
+            take: 1,
+          },
         },
       });
 
@@ -335,6 +340,8 @@ export async function updateStatus(
 
       const now = new Date();
       const data: Record<string, unknown> = {};
+      const medicamentoNombre =
+        solicitud.medicamentos[0]?.medicamento?.nombre || "medicamento";
 
       if (newStatus === "RECHAZADA") {
         data.estado = EstadoSolicitud.APROBADA;
@@ -375,6 +382,31 @@ export async function updateStatus(
         where: { id },
         data,
       });
+
+      // Notificar al donante según el nuevo estado
+      if (solicitud.donanteAsignadoId) {
+        if (newStatus === "RECIBIDA") {
+          await prisma.notificacion.create({
+            data: {
+              userId: solicitud.donanteAsignadoId,
+              type: "SYSTEM",
+              title: "Farmacia recibió el medicamento",
+              message: `${pharmacy.nombre} confirmó la recepción de ${medicamentoNombre}. ¡Gracias por tu donación!`,
+              link: "/dashboard/donations",
+            },
+          });
+        } else if (newStatus === "LISTA_PARA_RETIRO") {
+          await prisma.notificacion.create({
+            data: {
+              userId: solicitud.donanteAsignadoId,
+              type: "SYSTEM",
+              title: "Medicamento disponible para retiro",
+              message: `${pharmacy.nombre} ha habilitado el retiro de ${medicamentoNombre}. El beneficiario ya puede recogerlo.`,
+              link: "/dashboard/donations",
+            },
+          });
+        }
+      }
     } else {
       const donacion = await prisma.donacion.findUnique({
         where: { id },

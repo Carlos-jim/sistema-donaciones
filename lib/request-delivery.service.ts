@@ -126,8 +126,8 @@ export async function acceptRequestWithDeliveryCodes(
     data: {
       userId: donorUserId,
       type: "SYSTEM",
-      title: "Entrega confirmada",
-      message: `Entrega ${medicamentoNombre} en ${farmacia.nombre} con código ${donorCode}.`,
+      title: "¡Te comprometiste a donar!",
+      message: `Has aceptado donar ${medicamentoNombre}. Lleva el medicamento a ${farmacia.nombre} y presenta el código ${donorCode}.`,
       link: "/dashboard/donations",
     },
   });

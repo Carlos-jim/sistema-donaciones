@@ -90,6 +90,7 @@ interface Solicitud {
   farmaciaConfirmada: boolean | null;
   motivoRechazoFarmacia: string | null;
   codigoComprobante: string | null;
+  codigoRetiroSolicitante: string | null;
   pickupConfirmedAt: string | null;
   receptionConfirmedAt: string | null;
   usuarioComun: { nombre: string };
@@ -841,12 +842,12 @@ export default function MyRequestsPage() {
                             Tel: {selectedSolicitud.farmaciaEntrega.telefono}
                           </p>
                         )}
-                        {selectedSolicitud.codigoComprobante &&
+                        {selectedSolicitud.codigoRetiroSolicitante &&
                           selectedSolicitud.farmaciaConfirmada === true && (
                             <p className="text-sm font-mono mt-2 bg-white border rounded px-2 py-1">
-                              Comprobante:{" "}
+                              Codigo de retiro:{" "}
                               <strong>
-                                {selectedSolicitud.codigoComprobante}
+                                {selectedSolicitud.codigoRetiroSolicitante}
                               </strong>
                             </p>
                           )}
@@ -912,10 +913,10 @@ export default function MyRequestsPage() {
                       <p className="text-sm text-purple-600">
                         {selectedSolicitud.farmaciaEntrega.direccion}
                       </p>
-                      {selectedSolicitud.codigoComprobante && (
+                      {selectedSolicitud.codigoRetiroSolicitante && (
                         <p className="text-sm font-mono mt-2 bg-white border rounded px-2 py-1">
-                          Código:{" "}
-                          <strong>{selectedSolicitud.codigoComprobante}</strong>
+                          Codigo de retiro:{" "}
+                          <strong>{selectedSolicitud.codigoRetiroSolicitante}</strong>
                         </p>
                       )}
                       {canConfirmPickup(selectedSolicitud) ? (

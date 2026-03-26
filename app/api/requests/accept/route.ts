@@ -19,10 +19,16 @@ export async function POST(request: NextRequest) {
       pharmacyId,
     });
 
+    const donorView = {
+      donorCode: result.donorCode,
+      donorQrPayload: result.donorQrPayload,
+      farmacia: result.farmacia,
+    };
+
     return NextResponse.json({
       success: true,
       message: "Solicitud aceptada exitosamente",
-      data: result,
+      data: donorView,
     });
   } catch (error) {
     const message =
