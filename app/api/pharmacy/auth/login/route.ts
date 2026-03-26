@@ -14,22 +14,21 @@ const loginSchema = z.object({
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const validation = loginSchema.safeParse(body);
+    const parsed = loginSchema.safeParse(body);
 
-    if (!validation.success) {
+    if (!parsed.success) {
       return NextResponse.json(
-        { success: false, error: validation.error.errors[0].message },
+        { success: false, error: parsed.error.errors[0].message },
         { status: 400 },
       );
     }
 
-    const { email, password } = validation.data;
-
-    const ente = await prisma.enteSalud.findUnique({
+    const { email, password } = parsed.data;
+    const pharmacy = await prisma.farmacia.findUnique({
       where: { email },
     });
 
-    if (!ente) {
+    if (!pharmacy) {
       return NextResponse.json(
         { success: false, error: "Credenciales invalidas" },
         { status: 401 },
@@ -38,7 +37,7 @@ export async function POST(request: NextRequest) {
 
     const isValidPassword = await passwordService.verify(
       password,
-      ente.password,
+      pharmacy.password,
     );
 
     if (!isValidPassword) {
@@ -48,42 +47,43 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (!ente.aprobado) {
+    if (!pharmacy.activo) {
       return NextResponse.json(
         {
           success: false,
-          error: "Esta cuenta esta desactivada. Contacta al administrador.",
+          error: "Esta farmacia esta desactivada. Contacta al administrador.",
         },
         { status: 403 },
       );
     }
 
     const token = await tokenService.generate({
-      userId: ente.id,
-      email: ente.email,
-      tipo: "SUPERVISOR",
-      role: "SUPERVISOR",
-      nombre: ente.nombre,
+      userId: pharmacy.id,
+      email: pharmacy.email,
+      tipo: "FARMACIA",
+      role: "FARMACIA",
+      nombre: pharmacy.nombre,
+      farmaciaId: pharmacy.id,
     });
 
     const response = NextResponse.json(
       {
         success: true,
         user: {
-          id: ente.id,
-          nombre: ente.nombre,
-          email: ente.email,
-          tipo: "SUPERVISOR",
+          id: pharmacy.id,
+          nombre: pharmacy.nombre,
+          email: pharmacy.email,
+          tipo: "FARMACIA",
         },
       },
       { status: 200 },
     );
 
-    setSessionCookie(response, AUTH_COOKIE_NAMES.SUPERVISOR, token);
+    setSessionCookie(response, AUTH_COOKIE_NAMES.FARMACIA, token);
 
     return response;
   } catch (error) {
-    console.error("Error en supervisor login:", error);
+    console.error("Error en pharmacy login:", error);
     return NextResponse.json(
       { success: false, error: "Error interno del servidor" },
       { status: 500 },

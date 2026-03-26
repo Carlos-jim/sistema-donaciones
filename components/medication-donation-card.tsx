@@ -1,9 +1,13 @@
+"use client"
+
+import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { MapPin, Clock, Calendar } from "lucide-react"
 
 interface MedicationDonationCardProps {
+  id: string
   name: string
   donor: string
   location: string
@@ -13,6 +17,7 @@ interface MedicationDonationCardProps {
 }
 
 export function MedicationDonationCard({
+  id,
   name,
   donor,
   location,
@@ -20,6 +25,8 @@ export function MedicationDonationCard({
   expiration,
   date,
 }: MedicationDonationCardProps) {
+  const router = useRouter()
+
   return (
     <Card className="overflow-hidden">
       <CardHeader className="pb-2">
@@ -48,7 +55,12 @@ export function MedicationDonationCard({
         </div>
       </CardContent>
       <CardFooter>
-        <Button className="w-full bg-teal-600 hover:bg-teal-700">Solicitar</Button>
+        <Button
+          className="w-full bg-teal-600 hover:bg-teal-700"
+          onClick={() => router.push(`/dashboard/request-medication?donacionId=${id}`)}
+        >
+          Solicitar
+        </Button>
       </CardFooter>
     </Card>
   )

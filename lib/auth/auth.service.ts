@@ -50,6 +50,7 @@ export class AuthService implements IAuthService {
       userId: user.id,
       email: user.email,
       tipo: "COMUN",
+      role: "COMUN",
     });
 
     // Retornar usuario sin password
@@ -97,6 +98,7 @@ export class AuthService implements IAuthService {
       userId: user.id,
       email: user.email,
       tipo: "COMUN",
+      role: "COMUN",
     });
 
     // Retornar usuario sin password

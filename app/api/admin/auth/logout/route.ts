@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
+import { clearSessionCookie } from "@/lib/auth/cookie";
+import { AUTH_COOKIE_NAMES } from "@/lib/auth/roles";
 
 export async function POST() {
-  const res = NextResponse.json({ success: true });
-  res.cookies.set("admin-token", "", { maxAge: 0, path: "/" });
-  return res;
+  const response = NextResponse.json({ success: true });
+  clearSessionCookie(response, AUTH_COOKIE_NAMES.ADMIN);
+  return response;
 }

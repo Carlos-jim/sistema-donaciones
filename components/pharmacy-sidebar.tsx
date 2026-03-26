@@ -1,6 +1,6 @@
 "use client";
 
-import { Package, Home, LogOut, Gift, ClipboardList } from "lucide-react";
+import { Package, Home, Gift, ClipboardList } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/sidebar";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
+import { RoleLogoutButton } from "@/components/role-logout-button";
 
 const items = [
   {
@@ -25,7 +25,7 @@ const items = [
     icon: Home,
   },
   {
-    title: "Recepción",
+    title: "Recepcion",
     url: "/pharmacy/reception",
     icon: Gift,
   },
@@ -53,7 +53,7 @@ export function PharmacySidebar() {
       </SidebarHeader>
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel>Gestión</SidebarGroupLabel>
+          <SidebarGroupLabel>Gestion</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {items.map((item) => (
@@ -75,16 +75,12 @@ export function PharmacySidebar() {
         </SidebarGroup>
       </SidebarContent>
       <SidebarFooter className="p-4 border-t">
-        <Button
-          variant="ghost"
+        <RoleLogoutButton
+          logoutUrl="/api/pharmacy/auth/logout"
+          redirectTo="/pharmacy/login"
+          label="Cerrar sesion"
           className="w-full justify-start text-red-500 hover:text-red-600 hover:bg-red-50"
-          asChild
-        >
-          <Link href="/api/auth/logout">
-            <LogOut className="mr-2 h-4 w-4" />
-            <span>Cerrar Sesión</span>
-          </Link>
-        </Button>
+        />
       </SidebarFooter>
       <SidebarRail />
     </Sidebar>

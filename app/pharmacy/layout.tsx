@@ -1,3 +1,6 @@
+"use client";
+
+import { usePathname } from "next/navigation";
 import {
   SidebarProvider,
   SidebarTrigger,
@@ -10,6 +13,12 @@ export default function PharmacyLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const pathname = usePathname();
+
+  if (pathname === "/pharmacy/login") {
+    return children;
+  }
+
   return (
     <SidebarProvider>
       <PharmacySidebar />

@@ -5,16 +5,15 @@ import prisma from "@/lib/prisma";
 
 export async function PUT(request: Request) {
   try {
-    const cookieStore = await cookies();
-    const token = cookieStore.get("auth-token")?.value;
+    const token = (await cookies()).get("auth-token")?.value;
 
     if (!token) {
       return NextResponse.json({ error: "No autorizado" }, { status: 401 });
     }
 
     const payload = await tokenService.verify(token);
-    if (!payload?.email) {
-      return NextResponse.json({ error: "Token inválido" }, { status: 401 });
+    if (!payload?.userId) {
+      return NextResponse.json({ error: "Token invalido" }, { status: 401 });
     }
 
     const body = await request.json();
@@ -28,7 +27,7 @@ export async function PUT(request: Request) {
     }
 
     const usuario = await prisma.usuarioComun.findUnique({
-      where: { email: payload.email },
+      where: { id: payload.userId },
     });
 
     if (!usuario) {
@@ -57,9 +56,9 @@ export async function PUT(request: Request) {
       location: updatedUser.direccion,
     });
   } catch (error) {
-    console.error("Error upgrading user location:", error);
+    console.error("Error updating user location:", error);
     return NextResponse.json(
-      { error: "Error al actualizar la ubicación" },
+      { error: "Error al actualizar la ubicacion" },
       { status: 500 },
     );
   }

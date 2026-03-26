@@ -1,21 +1,40 @@
 "use server";
 
 import prisma from "@/lib/prisma";
-async function getFallbackSupervisor() {
-  // Directly grab the first one to satisfy DB constraints
-  return await prisma.enteSalud.findFirst();
+import { getSessionForRole } from "@/lib/auth/server-session";
+
+async function getAuthenticatedSupervisor() {
+  const session = await getSessionForRole("SUPERVISOR");
+
+  if (!session) {
+    throw new Error("No autorizado");
+  }
+
+  const ente = await prisma.enteSalud.findUnique({
+    where: { id: session.userId },
+    select: {
+      id: true,
+      nombre: true,
+      aprobado: true,
+    },
+  });
+
+  if (!ente || !ente.aprobado) {
+    throw new Error("Supervisor no autorizado");
+  }
+
+  return ente;
 }
 
-// --- Request Actions ---
-
 export async function getPendingRequests() {
-  // No auth check
-  const requests = await prisma.solicitud.findMany({
+  await getAuthenticatedSupervisor();
+
+  return prisma.solicitud.findMany({
     where: {
       estado: "PENDIENTE",
     },
     include: {
-      usuarioComun: true, // Beneficiary info
+      usuarioComun: true,
       medicamentos: {
         include: {
           medicamento: true,
@@ -32,24 +51,21 @@ export async function getPendingRequests() {
       createdAt: "desc",
     },
   });
-
-  return requests;
 }
 
 export async function approveRequest(requestId: string) {
-  // Get Supervisor (EnteSalud) details to record "approvalInstitution"
-  const ente = await getFallbackSupervisor();
-
-  if (!ente)
-    throw new Error("No supervisor/ente found in DB to assign approval.");
+  const supervisor = await getAuthenticatedSupervisor();
 
   await prisma.solicitud.update({
     where: { id: requestId },
     data: {
       estado: "APROBADA",
-      aprobadoPorEnteId: ente.id,
+      aprobadoPorEnteId: supervisor.id,
       approvalDate: new Date(),
-      approvalInstitution: ente.nombre,
+      approvalInstitution: supervisor.nombre,
+      rejectionReason: null,
+      tipoRechazo: null,
+      motivoRechazoFarmacia: null,
     },
   });
 
@@ -57,16 +73,14 @@ export async function approveRequest(requestId: string) {
 }
 
 export async function rejectRequest(requestId: string, reason: string) {
-  const ente = await getFallbackSupervisor();
-
-  if (!ente)
-    throw new Error("No supervisor/ente found in DB to assign rejection.");
+  const supervisor = await getAuthenticatedSupervisor();
 
   await prisma.solicitud.update({
     where: { id: requestId },
     data: {
       estado: "RECHAZADA",
-      aprobadoPorEnteId: ente.id,
+      aprobadoPorEnteId: supervisor.id,
+      approvalInstitution: supervisor.nombre,
       rejectionReason: reason,
       tipoRechazo: "SUPERVISOR",
       motivoRechazoFarmacia: null,
@@ -78,17 +92,13 @@ export async function rejectRequest(requestId: string, reason: string) {
 
 export async function updateMedicamentoPriority(
   solicitudMedicamentoId: string,
-  nuevaPrioridad: number
+  nuevaPrioridad: number,
 ) {
-  const ente = await getFallbackSupervisor();
+  const supervisor = await getAuthenticatedSupervisor();
 
-  if (!ente)
-    throw new Error("No supervisor/ente found in assign priority modification.");
-
-  // Get current priority before updating
   const currentMedicamento = await prisma.solicitudMedicamento.findUnique({
     where: { id: solicitudMedicamentoId },
-    select: { prioridad: true }
+    select: { prioridad: true },
   });
 
   if (!currentMedicamento) {
@@ -99,22 +109,21 @@ export async function updateMedicamentoPriority(
     return { success: true, message: "Priority is already set to this value" };
   }
 
-  // Update with audit trail
   await prisma.solicitudMedicamento.update({
     where: { id: solicitudMedicamentoId },
     data: {
       prioridad: nuevaPrioridad,
       prioridadOriginal: currentMedicamento.prioridad,
-      prioridadModificadaPorId: ente.id,
+      prioridadModificadaPorId: supervisor.id,
       fechaModificacionPrioridad: new Date(),
       updatedAt: new Date(),
     },
   });
 
-  return { 
-    success: true, 
+  return {
+    success: true,
     message: `Priority updated from ${currentMedicamento.prioridad} to ${nuevaPrioridad}`,
     prioridadAnterior: currentMedicamento.prioridad,
-    prioridadNueva: nuevaPrioridad
+    prioridadNueva: nuevaPrioridad,
   };
 }

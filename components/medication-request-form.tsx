@@ -48,6 +48,7 @@ interface MedicationRequestFormProps {
   onSuccess?: () => void;
   onCancel?: () => void;
   initialLocation?: any;
+  initialMedication?: string;
 }
 
 // Step indicator component
@@ -98,6 +99,7 @@ export function MedicationRequestForm({
   onSuccess,
   onCancel,
   initialLocation,
+  initialMedication,
 }: MedicationRequestFormProps) {
   const router = useRouter();
   const { toast } = useToast();
@@ -106,7 +108,7 @@ export function MedicationRequestForm({
   const [currentStep, setCurrentStep] = useState(1);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [formData, setFormData] = useState<MedicationRequestFormData>({
-    medication: "",
+    medication: initialMedication ?? "",
     quantity: 1,
     unit: "tablets",
     requiresPrescription: false,

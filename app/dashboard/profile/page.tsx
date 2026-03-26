@@ -131,7 +131,9 @@ export default function ProfilePage() {
           nombre,
           email,
           telefono,
-          cedula: cedulaNumero ? `${cedulaTipo}-${cedulaNumero}` : undefined,
+          cedula: cedulaNumero.trim()
+            ? `${cedulaTipo}-${cedulaNumero.trim()}`
+            : null,
         }),
       });
       const data = await res.json();
@@ -366,13 +368,20 @@ export default function ProfilePage() {
             <MapPin className="w-4 h-4 text-teal-600" />
             Mi Ubicación
           </h3>
-          <p className="text-xs text-gray-500 mt-0.5">Se usa para sugerirte farmacias y donaciones cercanas.</p>
+          <p className="text-xs text-gray-500 mt-0.5">
+            Marca y guarda solo tu ubicacion exacta.
+          </p>
         </div>
         <div className="p-6 space-y-4">
           <div className="h-[280px] w-full rounded-2xl overflow-hidden border-2 border-dashed border-teal-200 relative">
             <MapView
+              locations={[]}
               onUserLocationChange={handleLocationChange}
               showUserMarker={true}
+              showPharmacies={false}
+              showPharmacySelector={false}
+              showPharmacyLegend={false}
+              autoLocateOnMount={false}
               initialUserLocation={
                 profile?.direccion
                   ? { lat: profile.direccion.lat, lng: profile.direccion.lng }

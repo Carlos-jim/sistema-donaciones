@@ -3,12 +3,7 @@ import { clearSessionCookie } from "@/lib/auth/cookie";
 import { AUTH_COOKIE_NAMES } from "@/lib/auth/roles";
 
 export async function POST() {
-  const response = NextResponse.json(
-    { success: true, message: "Sesion cerrada exitosamente" },
-    { status: 200 },
-  );
-
-  clearSessionCookie(response, AUTH_COOKIE_NAMES.COMUN);
-
+  const response = NextResponse.json({ success: true });
+  clearSessionCookie(response, AUTH_COOKIE_NAMES.FARMACIA);
   return response;
 }

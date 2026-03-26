@@ -12,12 +12,10 @@ import {
 import {
   getPendingPickups,
   lookupByValidationCode,
+  type PendingPickupItem,
+  type PharmacyLookupItem,
   updateStatus,
 } from "../actions";
-
-type LookupResult = Awaited<ReturnType<typeof lookupByValidationCode>>;
-type LookupItem = LookupResult extends { data: infer T } ? T : never;
-type PendingPickup = Awaited<ReturnType<typeof getPendingPickups>>["data"][number];
 
 function statusLabel(status: string) {
   return status.replace(/_/g, " ");
@@ -53,12 +51,12 @@ function statusClass(status: string) {
 
 export default function PharmacyReceptionPage() {
   const [inputCode, setInputCode] = useState("");
-  const [item, setItem] = useState<LookupItem | null>(null);
+  const [item, setItem] = useState<PharmacyLookupItem | null>(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
   const [rejectionReason, setRejectionReason] = useState("");
-  const [pendingPickups, setPendingPickups] = useState<PendingPickup[]>([]);
+  const [pendingPickups, setPendingPickups] = useState<PendingPickupItem[]>([]);
 
   const loadPendingPickups = async (farmaciaId: string) => {
     const result = await getPendingPickups(farmaciaId);
@@ -73,7 +71,10 @@ export default function PharmacyReceptionPage() {
 
     const result = await lookupByValidationCode(rawCode);
 
-    if (result.success && result.data) {
+    if (!result.success) {
+      setItem(null);
+      setError(result.error || "Codigo no encontrado");
+    } else {
       setItem(result.data);
       setRejectionReason("");
 
@@ -83,9 +84,6 @@ export default function PharmacyReceptionPage() {
       ) {
         await loadPendingPickups(result.data.farmaciaEntregaId);
       }
-    } else {
-      setItem(null);
-      setError(result.error || "Codigo no encontrado");
     }
 
     setLoading(false);
@@ -118,6 +116,17 @@ export default function PharmacyReceptionPage() {
 
     setActionLoading(false);
   };
+
+  const displayCode = item
+    ? item.type === "SOLICITUD"
+      ? item.enteredCode ||
+        item.codigoRetiroSolicitante ||
+        item.codigoEntregaDonante ||
+        item.codigoComprobante ||
+        item.codigo ||
+        "Sin codigo"
+      : item.enteredCode || item.codigo || "Sin codigo"
+    : "Sin codigo";
 
   return (
     <div className="min-h-screen bg-gray-50 px-4 py-10">
@@ -200,14 +209,7 @@ export default function PharmacyReceptionPage() {
                   <p className="text-sm text-gray-500">
                     {item.type === "SOLICITUD" ? "Solicitud" : "Donacion"}
                   </p>
-                  <h2 className="text-xl font-semibold text-gray-900">
-                    {item.enteredCode ||
-                      item.codigoRetiroSolicitante ||
-                      item.codigoEntregaDonante ||
-                      item.codigoComprobante ||
-                      item.codigo ||
-                      "Sin codigo"}
-                  </h2>
+                  <h2 className="text-xl font-semibold text-gray-900">{displayCode}</h2>
                   <p className="mt-1 text-xs text-gray-500">
                     {roleLabel(item.validationRole)}
                   </p>

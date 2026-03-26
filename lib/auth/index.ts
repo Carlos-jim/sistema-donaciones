@@ -4,6 +4,9 @@ export { PasswordService, passwordService } from "./password.service";
 export { TokenService, tokenService } from "./token.service";
 export { UserRepository, userRepository } from "./user.repository";
 export { AuthService } from "./auth.service";
+export * from "./roles";
+export * from "./server-session";
+export * from "./cookie";
 
 // Factory para crear AuthService con dependencias predeterminadas
 import { AuthService } from "./auth.service";

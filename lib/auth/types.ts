@@ -1,5 +1,4 @@
-// Tipos e interfaces para el sistema de autenticación
-// Siguiendo el principio de Interface Segregation (I de SOLID)
+import type { Prisma } from "@prisma/client";
 
 export interface IPasswordService {
   hash(password: string): Promise<string>;
@@ -22,12 +21,23 @@ export interface IAuthService {
   login(data: LoginData): Promise<AuthResult>;
 }
 
-// DTOs y entidades
+export type AuthRole = "COMUN" | "SUPERVISOR" | "FARMACIA" | "ADMIN";
+
+export type TokenTipo =
+  | "COMUN"
+  | "ENTE_SALUD"
+  | "SUPERVISOR"
+  | "FARMACIA"
+  | "ADMIN";
+
 export interface TokenPayload {
   userId: string;
   email: string;
-  tipo: "COMUN" | "ENTE_SALUD";
-  nombre?: string; // Optional: include name in token for easy access
+  tipo: TokenTipo;
+  role?: AuthRole;
+  nombre?: string;
+  farmaciaId?: string;
+  adminRole?: string;
 }
 
 export interface UserEntity {
@@ -36,7 +46,7 @@ export interface UserEntity {
   email: string;
   password: string;
   telefono: string | null;
-  direccion: string | null;
+  direccion: Prisma.JsonValue | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -46,7 +56,7 @@ export interface CreateUserData {
   email: string;
   password: string;
   telefono?: string;
-  direccion?: string;
+  direccion?: Prisma.InputJsonValue;
 }
 
 export interface RegisterData {
@@ -54,7 +64,7 @@ export interface RegisterData {
   email: string;
   password: string;
   telefono?: string;
-  direccion?: string;
+  direccion?: Prisma.InputJsonValue;
 }
 
 export interface LoginData {
@@ -69,5 +79,4 @@ export interface AuthResult {
   error?: string;
 }
 
-// Tipo para usuario sin password (para respuestas)
 export type SafeUser = Omit<UserEntity, "password">;
