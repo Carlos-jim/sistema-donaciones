@@ -1,5 +1,6 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import prisma from "@/lib/prisma";
 import { getSessionForRole } from "@/lib/auth/server-session";
 
@@ -26,35 +27,91 @@ async function getAuthenticatedSupervisor() {
   return ente;
 }
 
-export async function getPendingRequests() {
+async function getManageableRequestOrThrow(requestId: string) {
+  const request = await prisma.solicitud.findUnique({
+    where: { id: requestId },
+    select: {
+      id: true,
+      estado: true,
+      donanteAsignadoId: true,
+    },
+  });
+
+  if (!request) {
+    throw new Error("Solicitud no encontrada");
+  }
+
+  return request;
+}
+
+export async function getSupervisorRequests() {
   await getAuthenticatedSupervisor();
 
   return prisma.solicitud.findMany({
     where: {
-      estado: "PENDIENTE",
+      estado: {
+        in: ["PENDIENTE", "APROBADA", "RECHAZADA"],
+      },
     },
-    include: {
-      usuarioComun: true,
+    select: {
+      id: true,
+      createdAt: true,
+      updatedAt: true,
+      estado: true,
+      recipePhotoUrl: true,
+      motivo: true,
+      tiempoEspera: true,
+      rejectionReason: true,
+      approvalDate: true,
+      approvalInstitution: true,
+      donanteAsignadoId: true,
+      usuarioComun: {
+        select: {
+          nombre: true,
+          cedula: true,
+          email: true,
+          telefono: true,
+        },
+      },
       medicamentos: {
-        include: {
-          medicamento: true,
+        select: {
+          id: true,
+          cantidad: true,
+          prioridad: true,
+          prioridadOriginal: true,
+          fechaModificacionPrioridad: true,
           prioridadModificadaPor: {
             select: {
               nombre: true,
             },
           },
+          medicamento: {
+            select: {
+              nombre: true,
+              presentacion: true,
+            },
+          },
         },
       },
-      farmacia: true,
+      farmacia: {
+        select: {
+          id: true,
+          nombre: true,
+          direccion: true,
+        },
+      },
     },
-    orderBy: {
-      createdAt: "desc",
-    },
+    orderBy: [{ updatedAt: "desc" }, { createdAt: "desc" }],
   });
 }
 
 export async function approveRequest(requestId: string) {
   const supervisor = await getAuthenticatedSupervisor();
+  const request = await getManageableRequestOrThrow(requestId);
+
+  if (!["PENDIENTE", "RECHAZADA"].includes(request.estado)) {
+    throw new Error("Solo puedes aprobar solicitudes pendientes o rechazadas");
+  }
 
   await prisma.solicitud.update({
     where: { id: requestId },
@@ -69,24 +126,65 @@ export async function approveRequest(requestId: string) {
     },
   });
 
+  revalidatePath("/supervisor");
   return { success: true };
 }
 
 export async function rejectRequest(requestId: string, reason: string) {
   const supervisor = await getAuthenticatedSupervisor();
+  const request = await getManageableRequestOrThrow(requestId);
+
+  if (!reason.trim()) {
+    throw new Error("Debes indicar un motivo de rechazo");
+  }
+
+  if (!["PENDIENTE", "APROBADA"].includes(request.estado)) {
+    throw new Error("Solo puedes rechazar solicitudes pendientes o aprobadas");
+  }
 
   await prisma.solicitud.update({
     where: { id: requestId },
     data: {
       estado: "RECHAZADA",
       aprobadoPorEnteId: supervisor.id,
+      approvalDate: null,
       approvalInstitution: supervisor.nombre,
-      rejectionReason: reason,
+      rejectionReason: reason.trim(),
       tipoRechazo: "SUPERVISOR",
       motivoRechazoFarmacia: null,
     },
   });
 
+  revalidatePath("/supervisor");
+  return { success: true };
+}
+
+export async function restoreRequestToPending(requestId: string) {
+  await getAuthenticatedSupervisor();
+  const request = await getManageableRequestOrThrow(requestId);
+
+  if (!["APROBADA", "RECHAZADA"].includes(request.estado)) {
+    throw new Error("Solo puedes revertir solicitudes aprobadas o rechazadas");
+  }
+
+  if (request.donanteAsignadoId) {
+    throw new Error("No se puede revertir una solicitud que ya tiene donante");
+  }
+
+  await prisma.solicitud.update({
+    where: { id: requestId },
+    data: {
+      estado: "PENDIENTE",
+      aprobadoPorEnteId: null,
+      approvalDate: null,
+      approvalInstitution: null,
+      rejectionReason: null,
+      tipoRechazo: null,
+      motivoRechazoFarmacia: null,
+    },
+  });
+
+  revalidatePath("/supervisor");
   return { success: true };
 }
 
@@ -119,6 +217,8 @@ export async function updateMedicamentoPriority(
       updatedAt: new Date(),
     },
   });
+
+  revalidatePath("/supervisor");
 
   return {
     success: true,
