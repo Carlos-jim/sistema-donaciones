@@ -260,7 +260,7 @@ export function MedicationRequestCard({
       </Card>
 
       <Dialog open={isDialogOpen} onOpenChange={handleDialogOpenChange}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-xl">
               {acceptResult ? "Donacion confirmada" : "Confirmar donacion"}

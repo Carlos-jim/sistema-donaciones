@@ -380,24 +380,24 @@ export default function DashboardClient({
           <TabsList className="grid w-full grid-cols-3 bg-gray-100/80 p-1 rounded-xl">
             <TabsTrigger
               value="map"
-              className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm transition-all duration-300"
+              className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm transition-all duration-300 flex items-center justify-center gap-1.5 px-2"
             >
-              <MapPin className="mr-2 h-4 w-4" />
-              Mapa
+              <MapPin className="h-4 w-4 shrink-0" />
+              <span className="hidden sm:inline text-sm truncate">Mapa</span>
             </TabsTrigger>
             <TabsTrigger
               value="requests"
-              className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm transition-all duration-300"
+              className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm transition-all duration-300 flex items-center justify-center gap-1.5 px-2"
             >
-              <Search className="mr-2 h-4 w-4" />
-              Listado de Solicitudes
+              <Search className="h-4 w-4 shrink-0" />
+              <span className="hidden sm:inline text-sm truncate">Solicitudes</span>
             </TabsTrigger>
             <TabsTrigger
               value="donations"
-              className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm transition-all duration-300"
+              className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm transition-all duration-300 flex items-center justify-center gap-1.5 px-2"
             >
-              <PlusCircle className="mr-2 h-4 w-4" />
-              Donaciones Públicas
+              <PlusCircle className="h-4 w-4 shrink-0" />
+              <span className="hidden sm:inline text-sm truncate">Donaciones</span>
             </TabsTrigger>
           </TabsList>
 

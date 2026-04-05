@@ -244,7 +244,7 @@ export default function DonateMedicationClient({
           <div className="absolute -top-20 -right-20 w-64 h-64 bg-gradient-to-br from-teal-100 to-teal-50 rounded-full blur-3xl opacity-60 pointer-events-none" />
           <div className="absolute -bottom-20 -left-20 w-64 h-64 bg-gradient-to-tr from-teal-50 to-cyan-50 rounded-full blur-3xl opacity-60 pointer-events-none" />
 
-          <div className="relative bg-white/80 backdrop-blur-xl rounded-3xl border border-gray-200 overflow-hidden">
+          <div className="relative bg-white/80 backdrop-blur-xl rounded-3xl border border-gray-200 overflow-visible">
             {/* Header with gradient */}
             <div className="bg-gradient-to-r from-teal-600 via-teal-500 to-cyan-500 px-8 py-8">
               <div className="flex items-center gap-4">
@@ -661,7 +661,7 @@ export default function DonateMedicationClient({
               </div>
 
               {/* Footer with navigation */}
-              <div className="px-8 py-5 bg-gray-50/80 border-t border-gray-100 flex justify-between items-center">
+              <div className="sticky bottom-0 z-10 px-8 py-5 bg-gray-50/80 border-t border-gray-100 flex justify-between items-center rounded-b-3xl">
                 {currentStep === 1 ? (
                   <Button
                     key="cancel-btn"
