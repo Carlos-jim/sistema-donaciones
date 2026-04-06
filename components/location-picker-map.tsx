@@ -1,8 +1,8 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useState, useEffect } from "react";
-import type { LeafletMouseEvent } from "leaflet";
+import { useState, useEffect, useRef, useCallback } from "react";
+import type { LeafletMouseEvent, Map as LeafletMap } from "leaflet";
 
 const DEFAULT_CENTER: [number, number] = [10.99, -63.9];
 const DEFAULT_ZOOM = 13;
@@ -24,9 +24,26 @@ function LocationPickerInner({ value, onChange, height = "280px" }: LocationPick
   const [TileLayer, setTileLayer] = useState<any>(null);
   const [Marker, setMarker] = useState<any>(null);
   const [useMapEvents, setUseMapEvents] = useState<any>(null);
+  const mapRef = useRef<LeafletMap | null>(null);
   const [markerPos, setMarkerPos] = useState<[number, number] | null>(
     value ? [value.lat, value.lng] : null
   );
+
+  const syncMapLayout = useCallback((nextPosition?: [number, number] | null) => {
+    if (typeof window === "undefined") return;
+
+    window.requestAnimationFrame(() => {
+      if (!mapRef.current) return;
+
+      mapRef.current.invalidateSize();
+
+      if (nextPosition) {
+        mapRef.current.setView(nextPosition, mapRef.current.getZoom(), {
+          animate: false,
+        });
+      }
+    });
+  }, []);
 
   useEffect(() => {
     Promise.all([
@@ -50,8 +67,24 @@ function LocationPickerInner({ value, onChange, height = "280px" }: LocationPick
   }, []);
 
   useEffect(() => {
-    if (value) setMarkerPos([value.lat, value.lng]);
-  }, [value]);
+    if (!value) {
+      setMarkerPos(null);
+      syncMapLayout();
+      return;
+    }
+
+    const nextPosition: [number, number] = [value.lat, value.lng];
+    setMarkerPos(nextPosition);
+    syncMapLayout(nextPosition);
+  }, [value, syncMapLayout]);
+
+  useEffect(() => {
+    const timeoutId = window.setTimeout(() => {
+      syncMapLayout(markerPos);
+    }, 180);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [markerPos, syncMapLayout]);
 
   if (!L || !MapContainer) {
     return (
@@ -81,6 +114,10 @@ function LocationPickerInner({ value, onChange, height = "280px" }: LocationPick
     <MapContainer
       center={center}
       zoom={DEFAULT_ZOOM}
+      ref={(mapInstance: LeafletMap | null) => {
+        mapRef.current = mapInstance;
+      }}
+      whenReady={() => syncMapLayout(markerPos)}
       style={{ height, width: "100%", borderRadius: "0.75rem" }}
       scrollWheelZoom={false}
     >
