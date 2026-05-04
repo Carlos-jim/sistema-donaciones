@@ -12,7 +12,11 @@ const loginSchema = z.object({
   password: z.string().min(1, "La contrasena es requerida"),
 });
 
-const authService = new AuthService(passwordService, tokenService, userRepository);
+const authService = new AuthService(
+  passwordService,
+  tokenService,
+  userRepository,
+);
 
 export async function POST(request: NextRequest) {
   try {

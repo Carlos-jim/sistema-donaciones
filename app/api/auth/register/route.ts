@@ -15,7 +15,11 @@ const registerSchema = z.object({
   direccion: z.any().optional(),
 });
 
-const authService = new AuthService(passwordService, tokenService, userRepository);
+const authService = new AuthService(
+  passwordService,
+  tokenService,
+  userRepository,
+);
 
 export async function POST(request: NextRequest) {
   try {
