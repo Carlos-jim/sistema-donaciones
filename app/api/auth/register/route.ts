@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { authService } from "@/lib/auth";
 import { z } from "zod";
+import { AuthService } from "@/lib/auth/auth.service";
+import { passwordService } from "@/lib/auth/password.service";
+import { tokenService } from "@/lib/auth/token.service";
+import { userRepository } from "@/lib/auth/user.repository";
 
 // Schema de validación con Zod
 const registerSchema = z.object({
@@ -11,6 +14,8 @@ const registerSchema = z.object({
   cedula: z.string().optional(),
   direccion: z.any().optional(),
 });
+
+const authService = new AuthService(passwordService, tokenService, userRepository);
 
 export async function POST(request: NextRequest) {
   try {

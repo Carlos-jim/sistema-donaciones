@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { cookies } from "next/headers"
-import { tokenService } from "@/lib/auth"
+import { tokenService } from "@/lib/auth/token.service"
 import { prisma } from "@/lib/prisma"
 
 export async function GET(request: NextRequest) {

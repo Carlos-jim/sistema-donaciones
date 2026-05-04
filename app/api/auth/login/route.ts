@@ -1,13 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { authService } from "@/lib/auth";
 import { setSessionCookie } from "@/lib/auth/cookie";
 import { AUTH_COOKIE_NAMES } from "@/lib/auth/roles";
+import { AuthService } from "@/lib/auth/auth.service";
+import { passwordService } from "@/lib/auth/password.service";
+import { tokenService } from "@/lib/auth/token.service";
+import { userRepository } from "@/lib/auth/user.repository";
 
 const loginSchema = z.object({
   email: z.string().email("Correo electronico invalido"),
   password: z.string().min(1, "La contrasena es requerida"),
 });
+
+const authService = new AuthService(passwordService, tokenService, userRepository);
 
 export async function POST(request: NextRequest) {
   try {

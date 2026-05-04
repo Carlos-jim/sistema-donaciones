@@ -3,7 +3,6 @@
 import { revalidatePath } from "next/cache";
 import prisma from "@/lib/prisma";
 import { getSessionForRole } from "@/lib/auth/server-session";
-import type { Prisma } from "@prisma/client";
 
 function isMissingColumnError(error: unknown) {
   if (!error || typeof error !== "object") {
@@ -25,7 +24,6 @@ function isMissingColumnError(error: unknown) {
 }
 
 async function updateSolicitudWithFallback(
-  tx: Prisma.TransactionClient,
   requestId: string,
   payloads: Array<Record<string, unknown>>,
 ) {
@@ -33,7 +31,7 @@ async function updateSolicitudWithFallback(
 
   for (const payload of payloads) {
     try {
-      await tx.solicitud.update({
+      await prisma.solicitud.update({
         where: { id: requestId },
         data: payload,
       });
@@ -52,7 +50,6 @@ async function updateSolicitudWithFallback(
 }
 
 async function createSystemNotificationWithFallback(
-  tx: Prisma.TransactionClient,
   userId: string,
   title: string,
   message: string,
@@ -85,7 +82,7 @@ async function createSystemNotificationWithFallback(
 
   for (const payload of payloads) {
     try {
-      await tx.notificacion.create({
+      await prisma.notificacion.create({
         data: payload,
       });
       return;
@@ -213,57 +210,52 @@ export async function approveRequest(requestId: string) {
   }
 
   try {
-    await prisma.$transaction(async (tx) => {
-      await updateSolicitudWithFallback(tx, requestId, [
-        {
-          estado: "APROBADA",
-          aprobadoPorEnteId: supervisor.id,
-          approvalDate: new Date(),
-          approvalInstitution: supervisor.nombre,
-          rejectionReason: null,
-          tipoRechazo: null,
-          motivoRechazoFarmacia: null,
-        },
-      ]);
-
-      await createSystemNotificationWithFallback(
-        tx,
-        request.usuarioComunId,
-        "Solicitud de medicamento aprobada",
-        "Tu solicitud ha sido revisada y aprobada.",
-      );
-    });
+    await updateSolicitudWithFallback(requestId, [
+      {
+        estado: "APROBADA",
+        aprobadoPorEnteId: supervisor.id,
+        approvalDate: new Date(),
+        approvalInstitution: supervisor.nombre,
+        rejectionReason: null,
+        tipoRechazo: null,
+        motivoRechazoFarmacia: null,
+      },
+      {
+        estado: "APROBADA",
+        aprobadoPorEnteId: supervisor.id,
+        approvalDate: new Date(),
+        approvalInstitution: supervisor.nombre,
+        rejectionReason: null,
+      },
+      {
+        estado: "APROBADA",
+        rejectionReason: null,
+      },
+      {
+        estado: "APROBADA",
+      },
+    ]);
   } catch (error) {
     if (!isMissingColumnError(error)) {
       throw error;
     }
 
-    // Fallback for environments where newer columns are missing.
-    await prisma.$transaction(async (tx) => {
-      await updateSolicitudWithFallback(tx, requestId, [
-        {
-          estado: "APROBADA",
-          aprobadoPorEnteId: supervisor.id,
-          approvalDate: new Date(),
-          approvalInstitution: supervisor.nombre,
-          rejectionReason: null,
-        },
-        {
-          estado: "APROBADA",
-          rejectionReason: null,
-        },
-        {
-          estado: "APROBADA",
-        },
-      ]);
-
-      await createSystemNotificationWithFallback(
-        tx,
-        request.usuarioComunId,
-        "Solicitud de medicamento aprobada",
-        "Tu solicitud ha sido revisada y aprobada.",
-      );
+    // Último fallback para esquemas legacy.
+    await prisma.solicitud.update({
+      where: { id: requestId },
+      data: { estado: "APROBADA" },
     });
+  }
+
+  // Best-effort: no debe tumbar la aprobación si falla por esquema legacy.
+  try {
+    await createSystemNotificationWithFallback(
+      request.usuarioComunId,
+      "Solicitud de medicamento aprobada",
+      "Tu solicitud ha sido revisada y aprobada.",
+    );
+  } catch (error) {
+    console.error("No se pudo crear notificación de aprobación:", error);
   }
 
   revalidatePath("/supervisor");
@@ -283,57 +275,52 @@ export async function rejectRequest(requestId: string, reason: string) {
   }
 
   try {
-    await prisma.$transaction(async (tx) => {
-      await updateSolicitudWithFallback(tx, requestId, [
-        {
-          estado: "RECHAZADA",
-          aprobadoPorEnteId: supervisor.id,
-          approvalDate: null,
-          approvalInstitution: supervisor.nombre,
-          rejectionReason: reason.trim(),
-          tipoRechazo: "SUPERVISOR",
-          motivoRechazoFarmacia: null,
-        },
-      ]);
-
-      await createSystemNotificationWithFallback(
-        tx,
-        request.usuarioComunId,
-        "Solicitud de medicamento rechazada",
-        `Tu solicitud ha sido rechazada por el supervisor (${supervisor.nombre}). Motivo: ${reason.trim()}`,
-      );
-    });
+    await updateSolicitudWithFallback(requestId, [
+      {
+        estado: "RECHAZADA",
+        aprobadoPorEnteId: supervisor.id,
+        approvalDate: null,
+        approvalInstitution: supervisor.nombre,
+        rejectionReason: reason.trim(),
+        tipoRechazo: "SUPERVISOR",
+        motivoRechazoFarmacia: null,
+      },
+      {
+        estado: "RECHAZADA",
+        aprobadoPorEnteId: supervisor.id,
+        approvalDate: null,
+        approvalInstitution: supervisor.nombre,
+        rejectionReason: reason.trim(),
+      },
+      {
+        estado: "RECHAZADA",
+        rejectionReason: reason.trim(),
+      },
+      {
+        estado: "RECHAZADA",
+      },
+    ]);
   } catch (error) {
     if (!isMissingColumnError(error)) {
       throw error;
     }
 
-    // Fallback for environments where newer columns are missing.
-    await prisma.$transaction(async (tx) => {
-      await updateSolicitudWithFallback(tx, requestId, [
-        {
-          estado: "RECHAZADA",
-          aprobadoPorEnteId: supervisor.id,
-          approvalDate: null,
-          approvalInstitution: supervisor.nombre,
-          rejectionReason: reason.trim(),
-        },
-        {
-          estado: "RECHAZADA",
-          rejectionReason: reason.trim(),
-        },
-        {
-          estado: "RECHAZADA",
-        },
-      ]);
-
-      await createSystemNotificationWithFallback(
-        tx,
-        request.usuarioComunId,
-        "Solicitud de medicamento rechazada",
-        `Tu solicitud ha sido rechazada por el supervisor (${supervisor.nombre}). Motivo: ${reason.trim()}`,
-      );
+    // Último fallback para esquemas legacy.
+    await prisma.solicitud.update({
+      where: { id: requestId },
+      data: { estado: "RECHAZADA" },
     });
+  }
+
+  // Best-effort: no debe tumbar el rechazo si falla por esquema legacy.
+  try {
+    await createSystemNotificationWithFallback(
+      request.usuarioComunId,
+      "Solicitud de medicamento rechazada",
+      `Tu solicitud ha sido rechazada por el supervisor (${supervisor.nombre}). Motivo: ${reason.trim()}`,
+    );
+  } catch (error) {
+    console.error("No se pudo crear notificación de rechazo:", error);
   }
 
   revalidatePath("/supervisor");
