@@ -34,6 +34,7 @@ async function getManageableRequestOrThrow(requestId: string) {
       id: true,
       estado: true,
       donanteAsignadoId: true,
+      usuarioComunId: true,
     },
   });
 
@@ -113,17 +114,30 @@ export async function approveRequest(requestId: string) {
     throw new Error("Solo puedes aprobar solicitudes pendientes o rechazadas");
   }
 
-  await prisma.solicitud.update({
-    where: { id: requestId },
-    data: {
-      estado: "APROBADA",
-      aprobadoPorEnteId: supervisor.id,
-      approvalDate: new Date(),
-      approvalInstitution: supervisor.nombre,
-      rejectionReason: null,
-      tipoRechazo: null,
-      motivoRechazoFarmacia: null,
-    },
+  await prisma.$transaction(async (tx) => {
+    await tx.solicitud.update({
+      where: { id: requestId },
+      data: {
+        estado: "APROBADA",
+        aprobadoPorEnteId: supervisor.id,
+        approvalDate: new Date(),
+        approvalInstitution: supervisor.nombre,
+        rejectionReason: null,
+        tipoRechazo: null,
+        motivoRechazoFarmacia: null,
+      },
+    });
+
+    await tx.notificacion.create({
+      data: {
+        userId: request.usuarioComunId,
+        type: "SYSTEM",
+        title: "Solicitud de medicamento aprobada",
+        message: `Tu solicitud ha sido revisada y aprobada.`,
+        link: "/dashboard/requests",
+        activo: true,
+      },
+    });
   });
 
   revalidatePath("/supervisor");
@@ -142,17 +156,30 @@ export async function rejectRequest(requestId: string, reason: string) {
     throw new Error("Solo puedes rechazar solicitudes pendientes o aprobadas");
   }
 
-  await prisma.solicitud.update({
-    where: { id: requestId },
-    data: {
-      estado: "RECHAZADA",
-      aprobadoPorEnteId: supervisor.id,
-      approvalDate: null,
-      approvalInstitution: supervisor.nombre,
-      rejectionReason: reason.trim(),
-      tipoRechazo: "SUPERVISOR",
-      motivoRechazoFarmacia: null,
-    },
+  await prisma.$transaction(async (tx) => {
+    await tx.solicitud.update({
+      where: { id: requestId },
+      data: {
+        estado: "RECHAZADA",
+        aprobadoPorEnteId: supervisor.id,
+        approvalDate: null,
+        approvalInstitution: supervisor.nombre,
+        rejectionReason: reason.trim(),
+        tipoRechazo: "SUPERVISOR",
+        motivoRechazoFarmacia: null,
+      },
+    });
+
+    await tx.notificacion.create({
+      data: {
+        userId: request.usuarioComunId,
+        type: "SYSTEM",
+        title: "Solicitud de medicamento rechazada",
+        message: `Tu solicitud ha sido rechazada por el supervisor (${supervisor.nombre}). Motivo: ${reason.trim()}`,
+        link: "/dashboard/requests",
+        activo: true,
+      },
+    });
   });
 
   revalidatePath("/supervisor");
