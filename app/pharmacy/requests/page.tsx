@@ -184,22 +184,22 @@ export default async function PharmacyRequestsPage() {
 
   return (
     <div className="mx-auto max-w-6xl space-y-8">
-      <section className="rounded-3xl bg-gradient-to-r from-amber-500 via-orange-500 to-teal-600 p-6 text-white shadow-lg">
+      <section className="rounded-3xl bg-gradient-to-r from-teal-600 via-teal-600 to-cyan-600 p-6 text-white shadow-lg">
         <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
           <div>
             <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-white/15">
               <ClipboardList className="h-6 w-6" />
             </div>
-            <p className="mt-4 text-sm font-medium text-amber-50">Solicitudes activas</p>
+            <p className="mt-4 text-sm font-medium text-teal-100">Solicitudes activas</p>
             <h2 className="mt-1 text-3xl font-bold tracking-tight">{pharmacy.nombre}</h2>
-            <p className="mt-2 max-w-2xl text-sm text-amber-50">
+            <p className="mt-2 max-w-2xl text-sm text-teal-50">
               Bandeja de solicitudes que esta farmacia debe recibir, validar o entregar al beneficiario.
             </p>
           </div>
 
           <Link
             href="/pharmacy/reception"
-            className="inline-flex items-center justify-center gap-2 rounded-2xl bg-white px-4 py-3 text-sm font-semibold text-teal-700 shadow-sm transition hover:bg-amber-50"
+            className="inline-flex items-center justify-center gap-2 rounded-2xl bg-white px-4 py-3 text-sm font-semibold text-teal-700 shadow-sm transition hover:bg-teal-50"
           >
             <ScanLine className="h-4 w-4" />
             Ir a recepcion

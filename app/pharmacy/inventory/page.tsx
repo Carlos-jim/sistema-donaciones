@@ -78,22 +78,22 @@ export default async function PharmacyInventoryPage() {
 
   return (
     <div className="mx-auto max-w-6xl space-y-8">
-      <section className="rounded-3xl bg-gradient-to-r from-cyan-600 via-teal-600 to-teal-700 p-6 text-white shadow-lg">
+      <section className="rounded-3xl bg-gradient-to-r from-teal-600 via-teal-600 to-cyan-600 p-6 text-white shadow-lg">
         <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
           <div>
             <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-white/15">
               <Warehouse className="h-6 w-6" />
             </div>
-            <p className="mt-4 text-sm font-medium text-cyan-100">Inventario de farmacia</p>
+            <p className="mt-4 text-sm font-medium text-teal-100">Inventario de farmacia</p>
             <h2 className="mt-1 text-3xl font-bold tracking-tight">{pharmacy.nombre}</h2>
-            <p className="mt-2 max-w-2xl text-sm text-cyan-50">
+            <p className="mt-2 max-w-2xl text-sm text-teal-50">
               Aqui ves los medicamentos que ya fueron recibidos fisicamente y quedaron registrados en esta farmacia.
             </p>
           </div>
 
           <Link
             href="/pharmacy/reception"
-            className="inline-flex items-center justify-center gap-2 rounded-2xl bg-white px-4 py-3 text-sm font-semibold text-teal-700 shadow-sm transition hover:bg-cyan-50"
+            className="inline-flex items-center justify-center gap-2 rounded-2xl bg-white px-4 py-3 text-sm font-semibold text-teal-700 shadow-sm transition hover:bg-teal-50"
           >
             <ScanLine className="h-4 w-4" />
             Procesar otra recepcion

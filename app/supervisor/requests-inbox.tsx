@@ -1,8 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
 import {
   CheckCircle,
   ChevronLeft,
@@ -189,8 +188,9 @@ export default function RequestsInbox({
 }: {
   requests: RequestItem[];
 }) {
-  const router = useRouter();
   const { toast } = useToast();
+  const [tableRequests, setTableRequests] = useState<RequestItem[]>(requests);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("ALL");
@@ -211,22 +211,78 @@ export default function RequestsInbox({
   );
   const [isUpdatingPriority, setIsUpdatingPriority] = useState(false);
 
+  const refreshTable = useCallback(async (showLoader = false) => {
+    if (showLoader) {
+      setIsRefreshing(true);
+    }
+
+    try {
+      const response = await fetch("/api/supervisor/requests", {
+        method: "GET",
+        cache: "no-store",
+      });
+
+      if (!response.ok) {
+        throw new Error("No se pudieron obtener las solicitudes actualizadas");
+      }
+
+      const data = await response.json();
+      const nextRequests = (data.requests ?? []) as RequestItem[];
+      setTableRequests(nextRequests);
+
+      setSelectedRequest((current) =>
+        current
+          ? nextRequests.find((item) => item.id === current.id) ?? null
+          : null,
+      );
+      setApproveTarget((current) =>
+        current
+          ? nextRequests.find((item) => item.id === current.id) ?? null
+          : null,
+      );
+    } catch {
+      if (showLoader) {
+        toast({
+          title: "No se pudo actualizar",
+          description: "Intenta nuevamente en unos segundos.",
+          variant: "destructive",
+        });
+      }
+    } finally {
+      if (showLoader) {
+        setIsRefreshing(false);
+      }
+    }
+  }, [toast]);
+
+  useEffect(() => {
+    setTableRequests(requests);
+  }, [requests]);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      void refreshTable();
+    }, 10000);
+
+    return () => clearInterval(timer);
+  }, [refreshTable]);
+
   const counts = useMemo(
     () => ({
-      pending: requests.filter((request) => request.estado === "PENDIENTE")
+      pending: tableRequests.filter((request) => request.estado === "PENDIENTE")
         .length,
-      approved: requests.filter((request) => request.estado === "APROBADA")
+      approved: tableRequests.filter((request) => request.estado === "APROBADA")
         .length,
-      rejected: requests.filter((request) => request.estado === "RECHAZADA")
+      rejected: tableRequests.filter((request) => request.estado === "RECHAZADA")
         .length,
     }),
-    [requests],
+    [tableRequests],
   );
 
   const filtered = useMemo(() => {
     const query = searchQuery.toLowerCase().trim();
 
-    return requests.filter((request) => {
+    return tableRequests.filter((request) => {
       const matchesStatus =
         statusFilter === "ALL" || request.estado === statusFilter;
       const matchesUrgency =
@@ -241,7 +297,7 @@ export default function RequestsInbox({
 
       return matchesStatus && matchesUrgency && matchesSearch;
     });
-  }, [requests, searchQuery, statusFilter, urgencyFilter]);
+  }, [tableRequests, searchQuery, statusFilter, urgencyFilter]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
   const safePage = Math.min(currentPage, totalPages);
@@ -270,7 +326,7 @@ export default function RequestsInbox({
       });
       setApproveTarget(null);
       closeReviewDialog();
-      router.refresh();
+      await refreshTable();
     } catch (error) {
       toast({
         title: "Error",
@@ -306,7 +362,7 @@ export default function RequestsInbox({
         description: "La solicitud paso a la lista de rechazadas.",
       });
       closeReviewDialog();
-      router.refresh();
+      await refreshTable();
     } catch (error) {
       toast({
         title: "Error",
@@ -333,7 +389,7 @@ export default function RequestsInbox({
         description: "La solicitud volvio a pendientes para que puedas revisarla otra vez.",
       });
       closeReviewDialog();
-      router.refresh();
+      await refreshTable();
     } catch (error) {
       toast({
         title: "Error",
@@ -377,7 +433,7 @@ export default function RequestsInbox({
         description: "Se guardo el nuevo nivel de prioridad.",
       });
       setEditingPriority(null);
-      router.refresh();
+      await refreshTable();
     } catch (error) {
       toast({
         title: "Error",
@@ -393,7 +449,7 @@ export default function RequestsInbox({
     urgencyConfig[tiempoEspera] ?? urgencyConfig.BAJO;
 
   const statusButtons: { key: StatusFilter; label: string; count: number }[] = [
-    { key: "ALL", label: "Todas", count: requests.length },
+    { key: "ALL", label: "Todas", count: tableRequests.length },
     { key: "PENDIENTE", label: "Pendientes", count: counts.pending },
     { key: "APROBADA", label: "Aprobadas", count: counts.approved },
     { key: "RECHAZADA", label: "Rechazadas", count: counts.rejected },
@@ -414,11 +470,24 @@ export default function RequestsInbox({
             <ClipboardList className="h-4 w-4 text-teal-600" />
             Solicitudes gestionables
           </h2>
-          <span className="text-xs text-gray-400">
-            {filtered.length !== requests.length
-              ? `${filtered.length} de ${requests.length} solicitudes`
-              : `${requests.length} solicitudes`}
-          </span>
+          <div className="flex items-center gap-3">
+            <span className="text-xs text-gray-400">
+              {filtered.length !== tableRequests.length
+                ? `${filtered.length} de ${tableRequests.length} solicitudes`
+                : `${tableRequests.length} solicitudes`}
+            </span>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => void refreshTable(true)}
+              disabled={isRefreshing}
+              className="h-8 rounded-lg border-gray-200 text-xs"
+            >
+              <RotateCcw className={`mr-1.5 h-3.5 w-3.5 ${isRefreshing ? "animate-spin" : ""}`} />
+              Actualizar
+            </Button>
+          </div>
         </div>
 
         <div className="space-y-3 border-b border-gray-50 px-6 py-4">
@@ -494,7 +563,7 @@ export default function RequestsInbox({
           </div>
         </div>
 
-        {requests.length === 0 ? (
+        {tableRequests.length === 0 ? (
           <div className="flex flex-col items-center gap-3 px-6 py-16 text-center">
             <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-teal-50">
               <ClipboardList className="h-8 w-8 text-teal-300" />

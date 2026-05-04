@@ -38,7 +38,7 @@ export default function AdminLayout({
             logoutUrl="/api/admin/auth/logout"
             redirectTo="/admin/login"
             label="Cerrar sesion"
-            className="text-sm text-teal-200 hover:text-white transition-colors"
+            className="rounded-xl text-sm text-teal-100 border border-white/25 bg-transparent hover:bg-white/15 hover:text-white hover:border-white/40 transition-colors"
           />
         </div>
       </header>
