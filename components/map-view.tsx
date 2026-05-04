@@ -108,15 +108,16 @@ function MapViewInner({
       : null,
   );
   const [isClient, setIsClient] = useState(false);
-  const [selection, setSelection] = useState<{ lat: number; lng: number } | null>(
-    null,
-  );
+  const [selection, setSelection] = useState<{
+    lat: number;
+    lng: number;
+  } | null>(null);
   const [dbPharmacies, setDbPharmacies] = useState<MapLocation[]>([]);
   const [allPharmacies, setAllPharmacies] = useState<PharmacyOption[]>([]);
   const [isConfirmDialogOpen, setIsConfirmDialogOpen] = useState(false);
-  const [pendingLocation, setPendingLocation] = useState<[number, number] | null>(
-    null,
-  );
+  const [pendingLocation, setPendingLocation] = useState<
+    [number, number] | null
+  >(null);
   const [selectedPharmacy, setSelectedPharmacy] = useState("");
 
   const mapRef = useRef<any>(null);
@@ -144,8 +145,9 @@ function MapViewInner({
         setAllPharmacies(data);
 
         const mappedPharmacies: MapLocation[] = data
-          .filter((pharmacy: PharmacyOption) =>
-            pharmacy.latitude != null && pharmacy.longitude != null,
+          .filter(
+            (pharmacy: PharmacyOption) =>
+              pharmacy.latitude != null && pharmacy.longitude != null,
           )
           .map((pharmacy: PharmacyOption) => ({
             id: pharmacy.id,
@@ -216,7 +218,12 @@ function MapViewInner({
 
       applyLocationUpdate(newPos, address);
     },
-    [applyLocationUpdate, confirmLocationChange, isLocationLocked, userLocation],
+    [
+      applyLocationUpdate,
+      confirmLocationChange,
+      isLocationLocked,
+      userLocation,
+    ],
   );
 
   const handleConfirmUpdate = () => {
