@@ -139,12 +139,12 @@ interface DashboardClientProps {
     tasaExito: number;
     topMedicamentos: { label: string; value: string }[];
     actividadReciente: { text: string; time: string }[];
-  }
+  };
 }
 
 export default function DashboardClient({
   initialUserLocation,
-  statistics
+  statistics,
 }: DashboardClientProps) {
   const [activeTab, setActiveTab] = useState("map");
   const [sortBy, setSortBy] = useState<"nearest" | "recent">("nearest");
@@ -248,10 +248,12 @@ export default function DashboardClient({
   // Filter requests by search and urgency
   const filteredRequests = useMemo(() => {
     return sortedRequests.filter((request) => {
-      const matchesSearch = searchTerm === "" ||
+      const matchesSearch =
+        searchTerm === "" ||
         request.name.toLowerCase().includes(searchTerm.toLowerCase());
 
-      const matchesUrgency = urgencyFilter === "all" ||
+      const matchesUrgency =
+        urgencyFilter === "all" ||
         request.urgency.toLowerCase() === urgencyFilter.toLowerCase();
 
       return matchesSearch && matchesUrgency;
@@ -271,7 +273,8 @@ export default function DashboardClient({
         );
       }
 
-      const requiresPrescription = don.descripcion?.includes("Requiere Receta: Sí") ?? false;
+      const requiresPrescription =
+        don.descripcion?.includes("Requiere Receta: Sí") ?? false;
 
       return {
         id: don.id,
@@ -399,14 +402,18 @@ export default function DashboardClient({
               className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm transition-all duration-300 flex items-center justify-center gap-1.5 px-2"
             >
               <Search className="h-4 w-4 shrink-0" />
-              <span className="hidden sm:inline text-sm truncate">Solicitudes</span>
+              <span className="hidden sm:inline text-sm truncate">
+                Solicitudes
+              </span>
             </TabsTrigger>
             <TabsTrigger
               value="donations"
               className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm transition-all duration-300 flex items-center justify-center gap-1.5 px-2"
             >
               <PlusCircle className="h-4 w-4 shrink-0" />
-              <span className="hidden sm:inline text-sm truncate">Donaciones</span>
+              <span className="hidden sm:inline text-sm truncate">
+                Donaciones
+              </span>
             </TabsTrigger>
           </TabsList>
 
@@ -420,7 +427,9 @@ export default function DashboardClient({
               >
                 <Card className="border-0 shadow-xl shadow-gray-200/50 overflow-hidden">
                   <CardHeader className="bg-gradient-to-r from-gray-50 to-white">
-                    <CardTitle>Mapa de Solicitudes y Donaciones Públicas</CardTitle>
+                    <CardTitle>
+                      Mapa de Solicitudes y Donaciones Públicas
+                    </CardTitle>
                     <CardDescription>
                       Visualiza el listado de solicitudes y donaciones públicas
                       cercanas a tu ubicación.
@@ -452,7 +461,8 @@ export default function DashboardClient({
                         <div>
                           <CardTitle>Listado de Solicitudes</CardTitle>
                           <CardDescription>
-                            Ayuda a quienes necesitan medicamentos. Haz clic en "Quiero Donar" para comprometerte.
+                            Ayuda a quienes necesitan medicamentos. Haz clic en
+                            "Quiero Donar" para comprometerte.
                           </CardDescription>
                         </div>
                         <div className="flex items-center gap-2">
@@ -490,7 +500,10 @@ export default function DashboardClient({
                         </div>
                         <div className="flex items-center gap-2">
                           <Filter className="h-4 w-4 text-gray-500" />
-                          <Select value={urgencyFilter} onValueChange={setUrgencyFilter}>
+                          <Select
+                            value={urgencyFilter}
+                            onValueChange={setUrgencyFilter}
+                          >
                             <SelectTrigger className="w-[160px]">
                               <SelectValue placeholder="Urgencia" />
                             </SelectTrigger>
@@ -505,7 +518,9 @@ export default function DashboardClient({
                       </div>
                       {/* Results count */}
                       <p className="text-sm text-gray-500">
-                        {filteredRequests.length} solicitud{filteredRequests.length !== 1 ? 'es' : ''} disponible{filteredRequests.length !== 1 ? 's' : ''}
+                        {filteredRequests.length} solicitud
+                        {filteredRequests.length !== 1 ? "es" : ""} disponible
+                        {filteredRequests.length !== 1 ? "s" : ""}
                       </p>
                     </div>
                   </CardHeader>
@@ -518,7 +533,9 @@ export default function DashboardClient({
                     ) : filteredRequests.length === 0 ? (
                       <div className="text-center py-12 text-gray-500">
                         <Search className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-                        <p className="text-lg font-medium">No hay solicitudes disponibles</p>
+                        <p className="text-lg font-medium">
+                          No hay solicitudes disponibles
+                        </p>
                         <p className="text-sm mt-1">
                           {searchTerm || urgencyFilter !== "all"
                             ? "Intenta ajustar los filtros de búsqueda"
@@ -602,9 +619,18 @@ export default function DashboardClient({
             title: "Estadísticas",
             description: "Resumen de actividad en la plataforma",
             content: [
-              { label: "Total de Solicitudes", value: statistics.totalSolicitudes.toString() },
-              { label: "Total de Donaciones", value: statistics.totalDonaciones.toString() },
-              { label: "Solicitudes Atendidas", value: statistics.solicitudesAtendidas.toString() },
+              {
+                label: "Total de Solicitudes",
+                value: statistics.totalSolicitudes.toString(),
+              },
+              {
+                label: "Total de Donaciones",
+                value: statistics.totalDonaciones.toString(),
+              },
+              {
+                label: "Solicitudes Atendidas",
+                value: statistics.solicitudesAtendidas.toString(),
+              },
               { label: "Tasa de Éxito", value: `${statistics.tasaExito}%` },
             ],
           },
@@ -681,4 +707,3 @@ export default function DashboardClient({
     </motion.div>
   );
 }
-
