@@ -194,7 +194,8 @@ export default function SupportPage() {
         </div>
         <h1 className="text-2xl font-bold text-gray-900">Centro de Ayuda</h1>
         <p className="text-gray-500 text-sm max-w-xl mx-auto">
-          Encuentra respuestas a las preguntas más frecuentes sobre la plataforma de donaciones de medicamentos.
+          Encuentra respuestas a las preguntas más frecuentes sobre la
+          plataforma de donaciones de medicamentos.
         </p>
       </div>
 
@@ -203,19 +204,25 @@ export default function SupportPage() {
         <Link href="/dashboard/request-medication">
           <div className="flex items-center gap-3 p-4 bg-white border border-gray-100 rounded-xl hover:border-teal-200 hover:bg-teal-50/40 transition-all cursor-pointer shadow-sm">
             <ClipboardList className="w-5 h-5 text-teal-600 flex-shrink-0" />
-            <span className="text-sm font-medium text-gray-700">Solicitar medicamento</span>
+            <span className="text-sm font-medium text-gray-700">
+              Solicitar medicamento
+            </span>
           </div>
         </Link>
         <Link href="/dashboard/donate-medication">
           <div className="flex items-center gap-3 p-4 bg-white border border-gray-100 rounded-xl hover:border-emerald-200 hover:bg-emerald-50/40 transition-all cursor-pointer shadow-sm">
             <HeartHandshake className="w-5 h-5 text-emerald-600 flex-shrink-0" />
-            <span className="text-sm font-medium text-gray-700">Donar medicamento</span>
+            <span className="text-sm font-medium text-gray-700">
+              Donar medicamento
+            </span>
           </div>
         </Link>
         <Link href="/dashboard/notifications">
           <div className="flex items-center gap-3 p-4 bg-white border border-gray-100 rounded-xl hover:border-amber-200 hover:bg-amber-50/40 transition-all cursor-pointer shadow-sm">
             <Bell className="w-5 h-5 text-amber-600 flex-shrink-0" />
-            <span className="text-sm font-medium text-gray-700">Mis notificaciones</span>
+            <span className="text-sm font-medium text-gray-700">
+              Mis notificaciones
+            </span>
           </div>
         </Link>
       </div>
@@ -226,7 +233,8 @@ export default function SupportPage() {
           <BookOpen className="w-5 h-5 text-teal-600" />
           <h2 className="font-semibold text-gray-800">Preguntas Frecuentes</h2>
           <Badge className="bg-teal-50 text-teal-700 border-teal-100 hover:bg-teal-50 ml-auto text-xs">
-            {FAQ_CATEGORIES.reduce((acc, c) => acc + c.items.length, 0)} preguntas
+            {FAQ_CATEGORIES.reduce((acc, c) => acc + c.items.length, 0)}{" "}
+            preguntas
           </Badge>
         </div>
 
@@ -247,7 +255,9 @@ export default function SupportPage() {
                 >
                   <Icon className="w-4 h-4 flex-shrink-0" />
                   <span className="leading-tight">{cat.label}</span>
-                  <span className="ml-auto text-xs opacity-60">{cat.items.length}</span>
+                  <span className="ml-auto text-xs opacity-60">
+                    {cat.items.length}
+                  </span>
                 </button>
               );
             })}
@@ -255,11 +265,17 @@ export default function SupportPage() {
 
           {/* FAQ items */}
           <div className="flex-1 p-5 space-y-2">
-            <div className={`flex items-center gap-2 mb-4 pb-3 border-b border-gray-100`}>
-              <div className={`w-8 h-8 ${category.bg} rounded-lg flex items-center justify-center`}>
+            <div
+              className={`flex items-center gap-2 mb-4 pb-3 border-b border-gray-100`}
+            >
+              <div
+                className={`w-8 h-8 ${category.bg} rounded-lg flex items-center justify-center`}
+              >
                 <category.icon className={`w-4 h-4 ${category.color}`} />
               </div>
-              <h3 className="font-semibold text-gray-800 text-sm">{category.label}</h3>
+              <h3 className="font-semibold text-gray-800 text-sm">
+                {category.label}
+              </h3>
             </div>
             {category.items.map((item, i) => (
               <FAQItem key={i} q={item.q} a={item.a} />
@@ -270,9 +286,12 @@ export default function SupportPage() {
 
       {/* Contact section */}
       <div className="bg-gradient-to-r from-teal-600 to-cyan-600 rounded-2xl p-6 text-white">
-        <h2 className="font-bold text-lg mb-1">¿No encontraste lo que buscabas?</h2>
+        <h2 className="font-bold text-lg mb-1">
+          ¿No encontraste lo que buscabas?
+        </h2>
         <p className="text-teal-100 text-sm mb-5">
-          Nuestro equipo de soporte está disponible para ayudarte de lunes a viernes, de 8am a 6pm.
+          Nuestro equipo de soporte está disponible para ayudarte de lunes a
+          viernes, de 8am a 6pm.
         </p>
         <div className="grid sm:grid-cols-3 gap-3">
           <a
@@ -281,7 +300,9 @@ export default function SupportPage() {
           >
             <Mail className="w-5 h-5 text-teal-100 flex-shrink-0" />
             <div>
-              <p className="text-xs text-teal-200 font-medium uppercase tracking-wide">Correo</p>
+              <p className="text-xs text-teal-200 font-medium uppercase tracking-wide">
+                Correo
+              </p>
               <p className="text-sm font-semibold">soporte@donaciones.org</p>
             </div>
           </a>
@@ -291,14 +312,18 @@ export default function SupportPage() {
           >
             <Phone className="w-5 h-5 text-teal-100 flex-shrink-0" />
             <div>
-              <p className="text-xs text-teal-200 font-medium uppercase tracking-wide">Teléfono</p>
+              <p className="text-xs text-teal-200 font-medium uppercase tracking-wide">
+                Teléfono
+              </p>
               <p className="text-sm font-semibold">+58 212 900-0000</p>
             </div>
           </a>
           <div className="flex items-center gap-3 bg-white/10 rounded-xl p-4">
             <MessageCircle className="w-5 h-5 text-teal-100 flex-shrink-0" />
             <div>
-              <p className="text-xs text-teal-200 font-medium uppercase tracking-wide">Horario</p>
+              <p className="text-xs text-teal-200 font-medium uppercase tracking-wide">
+                Horario
+              </p>
               <p className="text-sm font-semibold">Lun–Vie 8am–6pm</p>
             </div>
           </div>

@@ -14,7 +14,7 @@ const updateSchema = z.object({
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const admin = await getAdminFromCookie();
@@ -37,7 +37,7 @@ export async function PATCH(
       if (existing) {
         return NextResponse.json(
           { error: "Ya existe un medicamento con ese nombre" },
-          { status: 409 }
+          { status: 409 },
         );
       }
     }
@@ -50,16 +50,22 @@ export async function PATCH(
     return NextResponse.json(medicamento);
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return NextResponse.json({ error: error.errors[0].message }, { status: 400 });
+      return NextResponse.json(
+        { error: error.errors[0].message },
+        { status: 400 },
+      );
     }
     console.error("Error updating medicamento:", error);
-    return NextResponse.json({ error: "Error al actualizar el medicamento" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Error al actualizar el medicamento" },
+      { status: 500 },
+    );
   }
 }
 
 export async function DELETE(
   _request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const admin = await getAdminFromCookie();
@@ -76,7 +82,10 @@ export async function DELETE(
     });
 
     if (!med) {
-      return NextResponse.json({ error: "Medicamento no encontrado" }, { status: 404 });
+      return NextResponse.json(
+        { error: "Medicamento no encontrado" },
+        { status: 404 },
+      );
     }
 
     const totalUsos = med._count.solicitudes + med._count.donaciones;
@@ -86,7 +95,9 @@ export async function DELETE(
         where: { id },
         data: { activo: false },
       });
-      return NextResponse.json({ message: "Medicamento desactivado (tiene registros asociados)" });
+      return NextResponse.json({
+        message: "Medicamento desactivado (tiene registros asociados)",
+      });
     }
 
     // Hard delete if no references
@@ -94,6 +105,9 @@ export async function DELETE(
     return NextResponse.json({ message: "Medicamento eliminado" });
   } catch (error) {
     console.error("Error deleting medicamento:", error);
-    return NextResponse.json({ error: "Error al eliminar el medicamento" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Error al eliminar el medicamento" },
+      { status: 500 },
+    );
   }
 }

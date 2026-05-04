@@ -47,7 +47,12 @@ export async function GET(request: NextRequest) {
             estado: true,
             tiempoEspera: true,
             usuarioComun: { select: { nombre: true, email: true } },
-            medicamentos: { select: { medicamento: { select: { nombre: true } }, cantidad: true } },
+            medicamentos: {
+              select: {
+                medicamento: { select: { nombre: true } },
+                cantidad: true,
+              },
+            },
           },
         }),
         prisma.donacion.findMany({
@@ -58,7 +63,12 @@ export async function GET(request: NextRequest) {
             createdAt: true,
             estado: true,
             usuarioComun: { select: { nombre: true, email: true } },
-            medicamentos: { select: { medicamento: { select: { nombre: true } }, cantidad: true } },
+            medicamentos: {
+              select: {
+                medicamento: { select: { nombre: true } },
+                cantidad: true,
+              },
+            },
           },
         }),
       ]);
@@ -70,7 +80,9 @@ export async function GET(request: NextRequest) {
       });
 
       const topMeds = topMedicamentos.map((item) => ({
-        nombre: meds.find((m) => m.id === item.medicamentoId)?.nombre ?? "Desconocido",
+        nombre:
+          meds.find((m) => m.id === item.medicamentoId)?.nombre ??
+          "Desconocido",
         totalSolicitudes: item._count.medicamentoId,
       }));
 
@@ -82,7 +94,11 @@ export async function GET(request: NextRequest) {
           totalSolicitudes,
           totalDonaciones,
           solicitudesAtendidas: solicitudesPorEstado
-            .filter((s) => ["COMPLETADA", "LISTA_PARA_RETIRO", "EN_PROCESO"].includes(s.estado))
+            .filter((s) =>
+              ["COMPLETADA", "LISTA_PARA_RETIRO", "EN_PROCESO"].includes(
+                s.estado,
+              ),
+            )
             .reduce((acc, s) => acc + s._count.estado, 0),
         },
         solicitudesPorEstado: solicitudesPorEstado.map((s) => ({
@@ -163,9 +179,15 @@ export async function GET(request: NextRequest) {
       return NextResponse.json(solicitudes);
     }
 
-    return NextResponse.json({ error: "Tipo de reporte no válido" }, { status: 400 });
+    return NextResponse.json(
+      { error: "Tipo de reporte no válido" },
+      { status: 400 },
+    );
   } catch (error) {
     console.error("Error generating report:", error);
-    return NextResponse.json({ error: "Error al generar el informe" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Error al generar el informe" },
+      { status: 500 },
+    );
   }
 }

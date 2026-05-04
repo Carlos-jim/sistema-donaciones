@@ -20,28 +20,49 @@ export async function GET() {
     ] = await Promise.all([
       prisma.usuarioComun.findMany({
         select: {
-          id: true, nombre: true, email: true, cedula: true,
-          telefono: true, createdAt: true,
+          id: true,
+          nombre: true,
+          email: true,
+          cedula: true,
+          telefono: true,
+          createdAt: true,
           _count: { select: { solicitudes: true, donaciones: true } },
         },
       }),
       prisma.farmacia.findMany({
         select: {
-          id: true, nombre: true, email: true, telefono: true,
-          direccion: true, horario: true, activo: true, createdAt: true,
+          id: true,
+          nombre: true,
+          email: true,
+          telefono: true,
+          direccion: true,
+          horario: true,
+          activo: true,
+          createdAt: true,
         },
       }),
       prisma.enteSalud.findMany({
         select: {
-          id: true, nombre: true, email: true, telefono: true,
-          direccion: true, aprobado: true, createdAt: true,
+          id: true,
+          nombre: true,
+          email: true,
+          telefono: true,
+          direccion: true,
+          aprobado: true,
+          createdAt: true,
         },
       }),
       prisma.solicitud.findMany({
         select: {
-          id: true, codigo: true, estado: true, tiempoEspera: true,
-          motivo: true, requiresPrescription: true,
-          rejectionReason: true, createdAt: true, updatedAt: true,
+          id: true,
+          codigo: true,
+          estado: true,
+          tiempoEspera: true,
+          motivo: true,
+          requiresPrescription: true,
+          rejectionReason: true,
+          createdAt: true,
+          updatedAt: true,
           usuarioComun: { select: { nombre: true, email: true } },
           medicamentos: {
             select: {
@@ -54,8 +75,11 @@ export async function GET() {
       }),
       prisma.donacion.findMany({
         select: {
-          id: true, codigo: true, estado: true,
-          createdAt: true, updatedAt: true,
+          id: true,
+          codigo: true,
+          estado: true,
+          createdAt: true,
+          updatedAt: true,
           usuarioComun: { select: { nombre: true, email: true } },
           medicamentos: {
             select: {
@@ -68,8 +92,13 @@ export async function GET() {
       }),
       prisma.medicamento.findMany({
         select: {
-          id: true, nombre: true, principioActivo: true,
-          presentacion: true, concentracion: true, activo: true, createdAt: true,
+          id: true,
+          nombre: true,
+          principioActivo: true,
+          presentacion: true,
+          concentracion: true,
+          activo: true,
+          createdAt: true,
         },
       }),
     ]);
@@ -104,6 +133,9 @@ export async function GET() {
     });
   } catch (error) {
     console.error("Error creating backup:", error);
-    return NextResponse.json({ error: "Error al generar el backup" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Error al generar el backup" },
+      { status: 500 },
+    );
   }
 }
