@@ -211,49 +211,54 @@ export default function RequestsInbox({
   );
   const [isUpdatingPriority, setIsUpdatingPriority] = useState(false);
 
-  const refreshTable = useCallback(async (showLoader = false) => {
-    if (showLoader) {
-      setIsRefreshing(true);
-    }
-
-    try {
-      const response = await fetch("/api/supervisor/requests", {
-        method: "GET",
-        cache: "no-store",
-      });
-
-      if (!response.ok) {
-        throw new Error("No se pudieron obtener las solicitudes actualizadas");
+  const refreshTable = useCallback(
+    async (showLoader = false) => {
+      if (showLoader) {
+        setIsRefreshing(true);
       }
 
-      const data = await response.json();
-      const nextRequests = (data.requests ?? []) as RequestItem[];
-      setTableRequests(nextRequests);
-
-      setSelectedRequest((current) =>
-        current
-          ? nextRequests.find((item) => item.id === current.id) ?? null
-          : null,
-      );
-      setApproveTarget((current) =>
-        current
-          ? nextRequests.find((item) => item.id === current.id) ?? null
-          : null,
-      );
-    } catch {
-      if (showLoader) {
-        toast({
-          title: "No se pudo actualizar",
-          description: "Intenta nuevamente en unos segundos.",
-          variant: "destructive",
+      try {
+        const response = await fetch("/api/supervisor/requests", {
+          method: "GET",
+          cache: "no-store",
         });
+
+        if (!response.ok) {
+          throw new Error(
+            "No se pudieron obtener las solicitudes actualizadas",
+          );
+        }
+
+        const data = await response.json();
+        const nextRequests = (data.requests ?? []) as RequestItem[];
+        setTableRequests(nextRequests);
+
+        setSelectedRequest((current) =>
+          current
+            ? (nextRequests.find((item) => item.id === current.id) ?? null)
+            : null,
+        );
+        setApproveTarget((current) =>
+          current
+            ? (nextRequests.find((item) => item.id === current.id) ?? null)
+            : null,
+        );
+      } catch {
+        if (showLoader) {
+          toast({
+            title: "No se pudo actualizar",
+            description: "Intenta nuevamente en unos segundos.",
+            variant: "destructive",
+          });
+        }
+      } finally {
+        if (showLoader) {
+          setIsRefreshing(false);
+        }
       }
-    } finally {
-      if (showLoader) {
-        setIsRefreshing(false);
-      }
-    }
-  }, [toast]);
+    },
+    [toast],
+  );
 
   useEffect(() => {
     setTableRequests(requests);
@@ -273,8 +278,9 @@ export default function RequestsInbox({
         .length,
       approved: tableRequests.filter((request) => request.estado === "APROBADA")
         .length,
-      rejected: tableRequests.filter((request) => request.estado === "RECHAZADA")
-        .length,
+      rejected: tableRequests.filter(
+        (request) => request.estado === "RECHAZADA",
+      ).length,
     }),
     [tableRequests],
   );
@@ -386,7 +392,8 @@ export default function RequestsInbox({
       await restoreRequestToPending(selectedRequest.id);
       toast({
         title: "Solicitud revertida",
-        description: "La solicitud volvio a pendientes para que puedas revisarla otra vez.",
+        description:
+          "La solicitud volvio a pendientes para que puedas revisarla otra vez.",
       });
       closeReviewDialog();
       await refreshTable();
@@ -404,7 +411,10 @@ export default function RequestsInbox({
     }
   };
 
-  const startPriorityEdit = (medicamentoId: string, currentPriority: number) => {
+  const startPriorityEdit = (
+    medicamentoId: string,
+    currentPriority: number,
+  ) => {
     setEditingPriority(medicamentoId);
     setTempPriorities((current) => ({
       ...current,
@@ -455,12 +465,13 @@ export default function RequestsInbox({
     { key: "RECHAZADA", label: "Rechazadas", count: counts.rejected },
   ];
 
-  const urgencyButtons: { key: UrgencyFilter; label: string; dot?: string }[] = [
-    { key: "ALL", label: "Todas" },
-    { key: "ALTO", label: "Alta", dot: "bg-red-500" },
-    { key: "MEDIO", label: "Media", dot: "bg-yellow-500" },
-    { key: "BAJO", label: "Baja", dot: "bg-green-500" },
-  ];
+  const urgencyButtons: { key: UrgencyFilter; label: string; dot?: string }[] =
+    [
+      { key: "ALL", label: "Todas" },
+      { key: "ALTO", label: "Alta", dot: "bg-red-500" },
+      { key: "MEDIO", label: "Media", dot: "bg-yellow-500" },
+      { key: "BAJO", label: "Baja", dot: "bg-green-500" },
+    ];
 
   return (
     <div className="space-y-4">
@@ -484,7 +495,9 @@ export default function RequestsInbox({
               disabled={isRefreshing}
               className="h-8 rounded-lg border-gray-200 text-xs"
             >
-              <RotateCcw className={`mr-1.5 h-3.5 w-3.5 ${isRefreshing ? "animate-spin" : ""}`} />
+              <RotateCcw
+                className={`mr-1.5 h-3.5 w-3.5 ${isRefreshing ? "animate-spin" : ""}`}
+              />
               Actualizar
             </Button>
           </div>
@@ -601,7 +614,9 @@ export default function RequestsInbox({
                   className="group flex items-center gap-4 px-6 py-4 transition-colors hover:bg-gray-50/70"
                 >
                   <div className="flex shrink-0 flex-col items-center gap-1.5">
-                    <span className={`h-2.5 w-2.5 rounded-full ${urgency.dot}`} />
+                    <span
+                      className={`h-2.5 w-2.5 rounded-full ${urgency.dot}`}
+                    />
                   </div>
 
                   <div className="flex w-56 shrink-0 items-center gap-3">
@@ -777,7 +792,8 @@ export default function RequestsInbox({
           <DialogHeader>
             <DialogTitle>Revision de solicitud</DialogTitle>
             <DialogDescription>
-              Revisa datos del beneficiario, receta y prioridades antes de decidir.
+              Revisa datos del beneficiario, receta y prioridades antes de
+              decidir.
             </DialogDescription>
           </DialogHeader>
 
@@ -861,9 +877,9 @@ export default function RequestsInbox({
                     <ul className="space-y-3">
                       {selectedRequest.medicamentos.map((medication) => {
                         const isEditing = editingPriority === medication.id;
-                        const currentPriority =
-                          (tempPriorities[medication.id] ??
-                            medication.prioridad) as 1 | 2 | 3;
+                        const currentPriority = (tempPriorities[
+                          medication.id
+                        ] ?? medication.prioridad) as 1 | 2 | 3;
                         const config =
                           priorityConfig[currentPriority] ?? priorityConfig[1];
 

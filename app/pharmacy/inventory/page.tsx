@@ -8,7 +8,10 @@ import {
   Warehouse,
 } from "lucide-react";
 import Link from "next/link";
-import { getPharmacyInventoryData, type PharmacyInventoryReceipt } from "@/app/pharmacy/data";
+import {
+  getPharmacyInventoryData,
+  type PharmacyInventoryReceipt,
+} from "@/app/pharmacy/data";
 
 function formatDate(date: Date | null) {
   if (!date) {
@@ -39,7 +42,8 @@ function getOriginLabel(receipt: PharmacyInventoryReceipt) {
 }
 
 export default async function PharmacyInventoryPage() {
-  const { pharmacy, summary, medications, receipts } = await getPharmacyInventoryData();
+  const { pharmacy, summary, medications, receipts } =
+    await getPharmacyInventoryData();
 
   const stats = [
     {
@@ -68,7 +72,9 @@ export default async function PharmacyInventoryPage() {
     },
     {
       label: "Ultima recepcion",
-      value: summary.lastReceivedAt ? formatDate(summary.lastReceivedAt) : "Sin movimientos",
+      value: summary.lastReceivedAt
+        ? formatDate(summary.lastReceivedAt)
+        : "Sin movimientos",
       description: pharmacy.nombre,
       icon: CalendarDays,
       iconClass: "bg-emerald-50 text-emerald-700",
@@ -84,10 +90,15 @@ export default async function PharmacyInventoryPage() {
             <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-white/15">
               <Warehouse className="h-6 w-6" />
             </div>
-            <p className="mt-4 text-sm font-medium text-teal-100">Inventario de farmacia</p>
-            <h2 className="mt-1 text-3xl font-bold tracking-tight">{pharmacy.nombre}</h2>
+            <p className="mt-4 text-sm font-medium text-teal-100">
+              Inventario de farmacia
+            </p>
+            <h2 className="mt-1 text-3xl font-bold tracking-tight">
+              {pharmacy.nombre}
+            </h2>
             <p className="mt-2 max-w-2xl text-sm text-teal-50">
-              Aqui ves los medicamentos que ya fueron recibidos fisicamente y quedaron registrados en esta farmacia.
+              Aqui ves los medicamentos que ya fueron recibidos fisicamente y
+              quedaron registrados en esta farmacia.
             </p>
           </div>
 
@@ -109,11 +120,19 @@ export default async function PharmacyInventoryPage() {
           >
             <div className="flex items-start justify-between gap-4">
               <div>
-                <p className="text-2xl font-bold text-slate-900">{stat.value}</p>
-                <p className="mt-1 text-sm font-semibold text-slate-700">{stat.label}</p>
-                <p className="mt-1 text-xs leading-5 text-slate-500">{stat.description}</p>
+                <p className="text-2xl font-bold text-slate-900">
+                  {stat.value}
+                </p>
+                <p className="mt-1 text-sm font-semibold text-slate-700">
+                  {stat.label}
+                </p>
+                <p className="mt-1 text-xs leading-5 text-slate-500">
+                  {stat.description}
+                </p>
               </div>
-              <div className={`flex h-11 w-11 items-center justify-center rounded-2xl ${stat.iconClass}`}>
+              <div
+                className={`flex h-11 w-11 items-center justify-center rounded-2xl ${stat.iconClass}`}
+              >
                 <stat.icon className="h-5 w-5" />
               </div>
             </div>
@@ -123,9 +142,12 @@ export default async function PharmacyInventoryPage() {
 
       <section className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
         <div className="border-b border-slate-100 px-6 py-5">
-          <h3 className="text-lg font-semibold text-slate-900">Resumen por medicamento</h3>
+          <h3 className="text-lg font-semibold text-slate-900">
+            Resumen por medicamento
+          </h3>
           <p className="mt-1 text-sm text-slate-500">
-            Cantidad acumulada y ultimos ingresos dentro del inventario de la farmacia.
+            Cantidad acumulada y ultimos ingresos dentro del inventario de la
+            farmacia.
           </p>
         </div>
 
@@ -136,7 +158,8 @@ export default async function PharmacyInventoryPage() {
                 Todavia no hay medicamentos registrados en inventario
               </p>
               <p className="mt-2 text-sm text-slate-500">
-                Procesa una recepcion y, cuando la donacion quede recibida, aparecera aqui.
+                Procesa una recepcion y, cuando la donacion quede recibida,
+                aparecera aqui.
               </p>
             </div>
           ) : (
@@ -152,8 +175,11 @@ export default async function PharmacyInventoryPage() {
                         {medication.nombre}
                       </p>
                       <p className="mt-1 text-sm text-slate-500">
-                        {medication.presentacion || "Presentacion no registrada"}
-                        {medication.concentracion ? ` · ${medication.concentracion}` : ""}
+                        {medication.presentacion ||
+                          "Presentacion no registrada"}
+                        {medication.concentracion
+                          ? ` · ${medication.concentracion}`
+                          : ""}
                       </p>
                     </div>
                     <div className="rounded-xl bg-white px-3 py-2 text-right shadow-sm">
@@ -168,7 +194,9 @@ export default async function PharmacyInventoryPage() {
 
                   <div className="mt-4 space-y-2 text-sm text-slate-600">
                     <p>{medication.donationCount} recepciones registradas</p>
-                    <p>Ultimo ingreso: {formatDate(medication.lastReceivedAt)}</p>
+                    <p>
+                      Ultimo ingreso: {formatDate(medication.lastReceivedAt)}
+                    </p>
                   </div>
 
                   <div className="mt-4 flex flex-wrap gap-2">
@@ -191,7 +219,9 @@ export default async function PharmacyInventoryPage() {
       <section className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
         <div className="flex items-center justify-between border-b border-slate-100 px-6 py-5">
           <div>
-            <h3 className="text-lg font-semibold text-slate-900">Historial de recepciones</h3>
+            <h3 className="text-lg font-semibold text-slate-900">
+              Historial de recepciones
+            </h3>
             <p className="mt-1 text-sm text-slate-500">
               Detalle de las donaciones fisicas ya registradas en la farmacia.
             </p>
@@ -212,7 +242,8 @@ export default async function PharmacyInventoryPage() {
                 No hay recepciones para mostrar
               </p>
               <p className="mt-2 text-sm text-slate-500">
-                Cuando una donacion quede marcada como recibida, su detalle aparecera aqui.
+                Cuando una donacion quede marcada como recibida, su detalle
+                aparecera aqui.
               </p>
             </div>
           ) : (
@@ -232,9 +263,13 @@ export default async function PharmacyInventoryPage() {
                           Recibida
                         </span>
                       </div>
-                      <p className="mt-2 text-sm text-slate-600">{getOriginLabel(receipt)}</p>
+                      <p className="mt-2 text-sm text-slate-600">
+                        {getOriginLabel(receipt)}
+                      </p>
                       {receipt.descripcion && (
-                        <p className="mt-2 text-sm text-slate-500">{receipt.descripcion}</p>
+                        <p className="mt-2 text-sm text-slate-500">
+                          {receipt.descripcion}
+                        </p>
                       )}
                     </div>
 
@@ -260,7 +295,8 @@ export default async function PharmacyInventoryPage() {
                               {medication.medicamento.nombre}
                             </p>
                             <p className="mt-1 text-sm text-slate-500">
-                              {medication.medicamento.presentacion || "Presentacion no registrada"}
+                              {medication.medicamento.presentacion ||
+                                "Presentacion no registrada"}
                               {medication.medicamento.concentracion
                                 ? ` · ${medication.medicamento.concentracion}`
                                 : ""}
@@ -271,7 +307,9 @@ export default async function PharmacyInventoryPage() {
                         <div className="mt-4 space-y-1 text-sm text-slate-600">
                           <p>Cantidad: {medication.cantidad}</p>
                           <p>Lote: {medication.lote || "No indicado"}</p>
-                          <p>Expira: {formatDate(medication.fechaExpiracion)}</p>
+                          <p>
+                            Expira: {formatDate(medication.fechaExpiracion)}
+                          </p>
                         </div>
                       </div>
                     ))}

@@ -8,7 +8,10 @@ import {
   UserRound,
 } from "lucide-react";
 import Link from "next/link";
-import { getPharmacyActiveRequestsData, type PharmacyActiveRequest } from "@/app/pharmacy/data";
+import {
+  getPharmacyActiveRequestsData,
+  type PharmacyActiveRequest,
+} from "@/app/pharmacy/data";
 
 function formatDate(date: Date | null) {
   if (!date) {
@@ -140,7 +143,9 @@ export default async function PharmacyRequestsPage() {
       title: "Listas para retiro",
       icon: CheckCircle2,
       iconClass: "bg-emerald-50 text-emerald-700",
-      items: requests.filter((request) => request.estado === "LISTA_PARA_RETIRO"),
+      items: requests.filter(
+        (request) => request.estado === "LISTA_PARA_RETIRO",
+      ),
     },
   ];
 
@@ -190,10 +195,15 @@ export default async function PharmacyRequestsPage() {
             <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-white/15">
               <ClipboardList className="h-6 w-6" />
             </div>
-            <p className="mt-4 text-sm font-medium text-teal-100">Solicitudes activas</p>
-            <h2 className="mt-1 text-3xl font-bold tracking-tight">{pharmacy.nombre}</h2>
+            <p className="mt-4 text-sm font-medium text-teal-100">
+              Solicitudes activas
+            </p>
+            <h2 className="mt-1 text-3xl font-bold tracking-tight">
+              {pharmacy.nombre}
+            </h2>
             <p className="mt-2 max-w-2xl text-sm text-teal-50">
-              Bandeja de solicitudes que esta farmacia debe recibir, validar o entregar al beneficiario.
+              Bandeja de solicitudes que esta farmacia debe recibir, validar o
+              entregar al beneficiario.
             </p>
           </div>
 
@@ -215,11 +225,19 @@ export default async function PharmacyRequestsPage() {
           >
             <div className="flex items-start justify-between gap-4">
               <div>
-                <p className="text-3xl font-bold text-slate-900">{stat.value}</p>
-                <p className="mt-1 text-sm font-semibold text-slate-700">{stat.label}</p>
-                <p className="mt-1 text-xs leading-5 text-slate-500">{stat.description}</p>
+                <p className="text-3xl font-bold text-slate-900">
+                  {stat.value}
+                </p>
+                <p className="mt-1 text-sm font-semibold text-slate-700">
+                  {stat.label}
+                </p>
+                <p className="mt-1 text-xs leading-5 text-slate-500">
+                  {stat.description}
+                </p>
               </div>
-              <div className={`flex h-11 w-11 items-center justify-center rounded-2xl ${stat.iconClass}`}>
+              <div
+                className={`flex h-11 w-11 items-center justify-center rounded-2xl ${stat.iconClass}`}
+              >
                 <stat.icon className="h-5 w-5" />
               </div>
             </div>
@@ -236,11 +254,15 @@ export default async function PharmacyRequestsPage() {
             <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
               <div>
                 <div className="flex items-center gap-3">
-                  <div className={`flex h-10 w-10 items-center justify-center rounded-2xl ${section.iconClass}`}>
+                  <div
+                    className={`flex h-10 w-10 items-center justify-center rounded-2xl ${section.iconClass}`}
+                  >
                     <section.icon className="h-5 w-5" />
                   </div>
                   <div>
-                    <h3 className="text-lg font-semibold text-slate-900">{section.title}</h3>
+                    <h3 className="text-lg font-semibold text-slate-900">
+                      {section.title}
+                    </h3>
                     <p className="mt-1 text-sm text-slate-500">
                       {statusSectionDescription(section.key)}
                     </p>
@@ -260,7 +282,8 @@ export default async function PharmacyRequestsPage() {
                   No hay solicitudes en este estado
                 </p>
                 <p className="mt-2 text-sm text-slate-500">
-                  Cuando una solicitud pase a {section.title.toLowerCase()} aparecera aqui.
+                  Cuando una solicitud pase a {section.title.toLowerCase()}{" "}
+                  aparecera aqui.
                 </p>
               </div>
             ) : (
@@ -289,11 +312,16 @@ export default async function PharmacyRequestsPage() {
                         </div>
 
                         <div className="mt-3 flex flex-wrap items-center gap-3 text-sm text-slate-500">
-                          {request.usuarioComun.cedula && <span>{request.usuarioComun.cedula}</span>}
-                          {request.usuarioComun.telefono && <span>{request.usuarioComun.telefono}</span>}
-                          {!request.usuarioComun.cedula && !request.usuarioComun.telefono && (
-                            <span>Sin datos de contacto adicionales</span>
+                          {request.usuarioComun.cedula && (
+                            <span>{request.usuarioComun.cedula}</span>
                           )}
+                          {request.usuarioComun.telefono && (
+                            <span>{request.usuarioComun.telefono}</span>
+                          )}
+                          {!request.usuarioComun.cedula &&
+                            !request.usuarioComun.telefono && (
+                              <span>Sin datos de contacto adicionales</span>
+                            )}
                         </div>
                       </div>
 
@@ -313,7 +341,9 @@ export default async function PharmacyRequestsPage() {
                           className="rounded-full bg-white px-3 py-1 text-xs font-medium text-slate-700 ring-1 ring-slate-200"
                         >
                           {medication.medicamento.nombre}
-                          {medication.cantidad > 1 ? ` x${medication.cantidad}` : ""}
+                          {medication.cantidad > 1
+                            ? ` x${medication.cantidad}`
+                            : ""}
                         </span>
                       ))}
                     </div>
@@ -359,7 +389,10 @@ export default async function PharmacyRequestsPage() {
                     <div className="mt-4 flex flex-wrap items-center gap-2 text-xs text-slate-500">
                       <UserRound className="h-3.5 w-3.5" />
                       <span>
-                        Beneficiario {request.pickupConfirmedAt ? "ya confirmo retiro" : "pendiente de retiro"}
+                        Beneficiario{" "}
+                        {request.pickupConfirmedAt
+                          ? "ya confirmo retiro"
+                          : "pendiente de retiro"}
                       </span>
                       {request.deliveryConfirmedAt && (
                         <>

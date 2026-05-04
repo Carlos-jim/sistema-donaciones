@@ -25,7 +25,9 @@ export default function SupervisorLayout({
               <ClipboardList className="w-5 h-5" />
             </div>
             <div>
-              <h1 className="font-bold text-lg leading-none">Panel Supervisor</h1>
+              <h1 className="font-bold text-lg leading-none">
+                Panel Supervisor
+              </h1>
               <p className="text-teal-200 text-xs">Sistema de Donaciones</p>
             </div>
           </Link>
@@ -37,7 +39,9 @@ export default function SupervisorLayout({
           />
         </div>
       </header>
-      <main className="flex-1 max-w-6xl mx-auto w-full px-6 py-8">{children}</main>
+      <main className="flex-1 max-w-6xl mx-auto w-full px-6 py-8">
+        {children}
+      </main>
     </div>
   );
 }

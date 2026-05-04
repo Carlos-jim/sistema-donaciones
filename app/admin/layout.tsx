@@ -42,7 +42,9 @@ export default function AdminLayout({
           />
         </div>
       </header>
-      <main className="flex-1 max-w-7xl mx-auto w-full px-6 py-8">{children}</main>
+      <main className="flex-1 max-w-7xl mx-auto w-full px-6 py-8">
+        {children}
+      </main>
     </div>
   );
 }
