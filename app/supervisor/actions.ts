@@ -4,6 +4,25 @@ import { revalidatePath } from "next/cache";
 import prisma from "@/lib/prisma";
 import { getSessionForRole } from "@/lib/auth/server-session";
 
+function isMissingColumnError(error: unknown) {
+  if (!error || typeof error !== "object") {
+    return false;
+  }
+
+  const maybeCode = (error as { code?: unknown }).code;
+  const maybeMessage = (error as { message?: unknown }).message;
+
+  if (maybeCode === "P2022") {
+    return true;
+  }
+
+  if (typeof maybeMessage === "string") {
+    return maybeMessage.toLowerCase().includes("does not exist");
+  }
+
+  return false;
+}
+
 async function getAuthenticatedSupervisor() {
   const session = await getSessionForRole("SUPERVISOR");
 
@@ -114,31 +133,62 @@ export async function approveRequest(requestId: string) {
     throw new Error("Solo puedes aprobar solicitudes pendientes o rechazadas");
   }
 
-  await prisma.$transaction(async (tx) => {
-    await tx.solicitud.update({
-      where: { id: requestId },
-      data: {
-        estado: "APROBADA",
-        aprobadoPorEnteId: supervisor.id,
-        approvalDate: new Date(),
-        approvalInstitution: supervisor.nombre,
-        rejectionReason: null,
-        tipoRechazo: null,
-        motivoRechazoFarmacia: null,
-      },
-    });
+  try {
+    await prisma.$transaction(async (tx) => {
+      await tx.solicitud.update({
+        where: { id: requestId },
+        data: {
+          estado: "APROBADA",
+          aprobadoPorEnteId: supervisor.id,
+          approvalDate: new Date(),
+          approvalInstitution: supervisor.nombre,
+          rejectionReason: null,
+          tipoRechazo: null,
+          motivoRechazoFarmacia: null,
+        },
+      });
 
-    await tx.notificacion.create({
-      data: {
-        userId: request.usuarioComunId,
-        type: "SYSTEM",
-        title: "Solicitud de medicamento aprobada",
-        message: `Tu solicitud ha sido revisada y aprobada.`,
-        link: "/dashboard/requests",
-        activo: true,
-      },
+      await tx.notificacion.create({
+        data: {
+          userId: request.usuarioComunId,
+          type: "SYSTEM",
+          title: "Solicitud de medicamento aprobada",
+          message: `Tu solicitud ha sido revisada y aprobada.`,
+          link: "/dashboard/requests",
+          activo: true,
+        },
+      });
     });
-  });
+  } catch (error) {
+    if (!isMissingColumnError(error)) {
+      throw error;
+    }
+
+    // Fallback for environments where newer columns are missing.
+    await prisma.$transaction(async (tx) => {
+      await tx.solicitud.update({
+        where: { id: requestId },
+        data: {
+          estado: "APROBADA",
+          aprobadoPorEnteId: supervisor.id,
+          approvalDate: new Date(),
+          approvalInstitution: supervisor.nombre,
+          rejectionReason: null,
+        },
+      });
+
+      await tx.notificacion.create({
+        data: {
+          userId: request.usuarioComunId,
+          type: "SYSTEM",
+          title: "Solicitud de medicamento aprobada",
+          message: `Tu solicitud ha sido revisada y aprobada.`,
+          link: "/dashboard/requests",
+          activo: true,
+        },
+      });
+    });
+  }
 
   revalidatePath("/supervisor");
   return { success: true };
@@ -156,31 +206,62 @@ export async function rejectRequest(requestId: string, reason: string) {
     throw new Error("Solo puedes rechazar solicitudes pendientes o aprobadas");
   }
 
-  await prisma.$transaction(async (tx) => {
-    await tx.solicitud.update({
-      where: { id: requestId },
-      data: {
-        estado: "RECHAZADA",
-        aprobadoPorEnteId: supervisor.id,
-        approvalDate: null,
-        approvalInstitution: supervisor.nombre,
-        rejectionReason: reason.trim(),
-        tipoRechazo: "SUPERVISOR",
-        motivoRechazoFarmacia: null,
-      },
-    });
+  try {
+    await prisma.$transaction(async (tx) => {
+      await tx.solicitud.update({
+        where: { id: requestId },
+        data: {
+          estado: "RECHAZADA",
+          aprobadoPorEnteId: supervisor.id,
+          approvalDate: null,
+          approvalInstitution: supervisor.nombre,
+          rejectionReason: reason.trim(),
+          tipoRechazo: "SUPERVISOR",
+          motivoRechazoFarmacia: null,
+        },
+      });
 
-    await tx.notificacion.create({
-      data: {
-        userId: request.usuarioComunId,
-        type: "SYSTEM",
-        title: "Solicitud de medicamento rechazada",
-        message: `Tu solicitud ha sido rechazada por el supervisor (${supervisor.nombre}). Motivo: ${reason.trim()}`,
-        link: "/dashboard/requests",
-        activo: true,
-      },
+      await tx.notificacion.create({
+        data: {
+          userId: request.usuarioComunId,
+          type: "SYSTEM",
+          title: "Solicitud de medicamento rechazada",
+          message: `Tu solicitud ha sido rechazada por el supervisor (${supervisor.nombre}). Motivo: ${reason.trim()}`,
+          link: "/dashboard/requests",
+          activo: true,
+        },
+      });
     });
-  });
+  } catch (error) {
+    if (!isMissingColumnError(error)) {
+      throw error;
+    }
+
+    // Fallback for environments where newer columns are missing.
+    await prisma.$transaction(async (tx) => {
+      await tx.solicitud.update({
+        where: { id: requestId },
+        data: {
+          estado: "RECHAZADA",
+          aprobadoPorEnteId: supervisor.id,
+          approvalDate: null,
+          approvalInstitution: supervisor.nombre,
+          rejectionReason: reason.trim(),
+        },
+      });
+
+      await tx.notificacion.create({
+        data: {
+          userId: request.usuarioComunId,
+          type: "SYSTEM",
+          title: "Solicitud de medicamento rechazada",
+          message: `Tu solicitud ha sido rechazada por el supervisor (${supervisor.nombre}). Motivo: ${reason.trim()}`,
+          link: "/dashboard/requests",
+          activo: true,
+        },
+      });
+    });
+  }
 
   revalidatePath("/supervisor");
   return { success: true };
@@ -198,18 +279,36 @@ export async function restoreRequestToPending(requestId: string) {
     throw new Error("No se puede revertir una solicitud que ya tiene donante");
   }
 
-  await prisma.solicitud.update({
-    where: { id: requestId },
-    data: {
-      estado: "PENDIENTE",
-      aprobadoPorEnteId: null,
-      approvalDate: null,
-      approvalInstitution: null,
-      rejectionReason: null,
-      tipoRechazo: null,
-      motivoRechazoFarmacia: null,
-    },
-  });
+  try {
+    await prisma.solicitud.update({
+      where: { id: requestId },
+      data: {
+        estado: "PENDIENTE",
+        aprobadoPorEnteId: null,
+        approvalDate: null,
+        approvalInstitution: null,
+        rejectionReason: null,
+        tipoRechazo: null,
+        motivoRechazoFarmacia: null,
+      },
+    });
+  } catch (error) {
+    if (!isMissingColumnError(error)) {
+      throw error;
+    }
+
+    // Fallback for environments where newer columns are missing.
+    await prisma.solicitud.update({
+      where: { id: requestId },
+      data: {
+        estado: "PENDIENTE",
+        aprobadoPorEnteId: null,
+        approvalDate: null,
+        approvalInstitution: null,
+        rejectionReason: null,
+      },
+    });
+  }
 
   revalidatePath("/supervisor");
   return { success: true };
@@ -234,16 +333,31 @@ export async function updateMedicamentoPriority(
     return { success: true, message: "Priority is already set to this value" };
   }
 
-  await prisma.solicitudMedicamento.update({
-    where: { id: solicitudMedicamentoId },
-    data: {
-      prioridad: nuevaPrioridad,
-      prioridadOriginal: currentMedicamento.prioridad,
-      prioridadModificadaPorId: supervisor.id,
-      fechaModificacionPrioridad: new Date(),
-      updatedAt: new Date(),
-    },
-  });
+  try {
+    await prisma.solicitudMedicamento.update({
+      where: { id: solicitudMedicamentoId },
+      data: {
+        prioridad: nuevaPrioridad,
+        prioridadOriginal: currentMedicamento.prioridad,
+        prioridadModificadaPorId: supervisor.id,
+        fechaModificacionPrioridad: new Date(),
+        updatedAt: new Date(),
+      },
+    });
+  } catch (error) {
+    if (!isMissingColumnError(error)) {
+      throw error;
+    }
+
+    // Fallback for environments where priority audit columns are missing.
+    await prisma.solicitudMedicamento.update({
+      where: { id: solicitudMedicamentoId },
+      data: {
+        prioridad: nuevaPrioridad,
+        updatedAt: new Date(),
+      },
+    });
+  }
 
   revalidatePath("/supervisor");
 
