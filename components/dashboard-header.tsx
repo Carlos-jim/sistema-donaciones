@@ -19,6 +19,7 @@ const navItems = [
   { href: "/dashboard", label: "Listado de Solicitudes" },
   { href: "/dashboard/requests", label: "Mis Solicitudes" },
   { href: "/dashboard/donations", label: "Mis Donaciones" },
+  { href: "/dashboard/support", label: "Ayuda" },
 ];
 
 interface Notification {
