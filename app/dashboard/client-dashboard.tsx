@@ -132,10 +132,19 @@ interface Donacion {
 
 interface DashboardClientProps {
   initialUserLocation: { lat: number; lng: number } | null;
+  statistics: {
+    totalSolicitudes: number;
+    totalDonaciones: number;
+    solicitudesAtendidas: number;
+    tasaExito: number;
+    topMedicamentos: { label: string; value: string }[];
+    actividadReciente: { text: string; time: string }[];
+  }
 }
 
 export default function DashboardClient({
   initialUserLocation,
+  statistics
 }: DashboardClientProps) {
   const [activeTab, setActiveTab] = useState("map");
   const [sortBy, setSortBy] = useState<"nearest" | "recent">("nearest");
@@ -593,22 +602,16 @@ export default function DashboardClient({
             title: "Estadísticas",
             description: "Resumen de actividad en la plataforma",
             content: [
-              { label: "Total de Solicitudes", value: "124" },
-              { label: "Total de Donaciones", value: "87" },
-              { label: "Solicitudes Atendidas", value: "65" },
-              { label: "Tasa de Éxito", value: "52%" },
+              { label: "Total de Solicitudes", value: statistics.totalSolicitudes.toString() },
+              { label: "Total de Donaciones", value: statistics.totalDonaciones.toString() },
+              { label: "Solicitudes Atendidas", value: statistics.solicitudesAtendidas.toString() },
+              { label: "Tasa de Éxito", value: `${statistics.tasaExito}%` },
             ],
           },
           {
             title: "Medicamentos Más Solicitados",
             description: "Últimos 30 días",
-            content: [
-              { label: "Paracetamol", value: "32 solicitudes" },
-              { label: "Insulina", value: "28 solicitudes" },
-              { label: "Amoxicilina", value: "21 solicitudes" },
-              { label: "Ibuprofeno", value: "19 solicitudes" },
-              { label: "Loratadina", value: "15 solicitudes" },
-            ],
+            content: statistics.topMedicamentos,
           },
         ].map((card, cardIndex) => (
           <motion.div
@@ -656,24 +659,7 @@ export default function DashboardClient({
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {[
-                  {
-                    text: "Se confirmó una donación de Paracetamol",
-                    time: "Hace 2 horas",
-                  },
-                  {
-                    text: "Nueva solicitud: Insulina Lantus",
-                    time: "Hace 5 horas",
-                  },
-                  {
-                    text: "Nueva oferta pública: Omeprazol",
-                    time: "Hace 1 día",
-                  },
-                  {
-                    text: "Solicitud atendida con retiro en farmacia",
-                    time: "Hace 2 días",
-                  },
-                ].map((activity, index) => (
+                {statistics.actividadReciente.map((activity, index) => (
                   <motion.div
                     key={index}
                     className="relative pl-4 before:absolute before:left-0 before:top-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-teal-500 before:to-teal-300 before:rounded-full"
@@ -695,3 +681,4 @@ export default function DashboardClient({
     </motion.div>
   );
 }
+
