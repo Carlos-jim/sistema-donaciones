@@ -36,7 +36,11 @@ async function request(method, path, body) {
   }
 
   let data;
-  try { data = await res.json(); } catch { data = {}; }
+  try {
+    data = await res.json();
+  } catch {
+    data = {};
+  }
   return { status: res.status, data };
 }
 
@@ -116,7 +120,11 @@ async function run() {
   const toggled = await request("PATCH", `/api/admin/medicamentos/${medId}`, {
     activo: false,
   });
-  log(`PATCH /api/admin/medicamentos/${medId} (toggle)`, toggled.status, toggled.data);
+  log(
+    `PATCH /api/admin/medicamentos/${medId} (toggle)`,
+    toggled.status,
+    toggled.data,
+  );
   if (toggled.status === 200) {
     console.log("  ✔ activo:", toggled.data.activo);
   }
@@ -131,16 +139,34 @@ async function run() {
     ? getAll2.data.find((m) => m.id === medId)
     : null;
   if (ourMed) {
-    console.log("\n📦 Estructura del medicamento creado (recibida por frontend):");
+    console.log(
+      "\n📦 Estructura del medicamento creado (recibida por frontend):",
+    );
     console.log(JSON.stringify(ourMed, null, 2));
     console.log("\n  ✔ Campos requeridos por el frontend:");
-    const required = ["id", "nombre", "principioActivo", "presentacion", "concentracion", "descripcion", "activo", "createdAt", "_count"];
+    const required = [
+      "id",
+      "nombre",
+      "principioActivo",
+      "presentacion",
+      "concentracion",
+      "descripcion",
+      "activo",
+      "createdAt",
+      "_count",
+    ];
     for (const field of required) {
       const present = field in ourMed;
-      console.log(`    ${present ? "✅" : "❌"} ${field}: ${JSON.stringify(ourMed[field])}`);
+      console.log(
+        `    ${present ? "✅" : "❌"} ${field}: ${JSON.stringify(ourMed[field])}`,
+      );
     }
-    const countOk = typeof ourMed._count?.solicitudes === "number" && typeof ourMed._count?.donaciones === "number";
-    console.log(`    ${countOk ? "✅" : "❌"} _count.solicitudes + _count.donaciones presentes`);
+    const countOk =
+      typeof ourMed._count?.solicitudes === "number" &&
+      typeof ourMed._count?.donaciones === "number";
+    console.log(
+      `    ${countOk ? "✅" : "❌"} _count.solicitudes + _count.donaciones presentes`,
+    );
   } else {
     console.log("  ⚠ No se encontró el medicamento en la lista");
   }
@@ -156,13 +182,23 @@ async function run() {
   // 9. GET — confirm deleted
   console.log("\n── STEP 9: GET all — confirmar eliminación ──");
   const getAll3 = await request("GET", "/api/admin/medicamentos");
-  const stillExists = Array.isArray(getAll3.data) && getAll3.data.some((m) => m.id === medId);
-  console.log(`  ${stillExists ? "❌ Sigue en la lista (inesperado)" : "✅ Eliminado correctamente"}`);
+  const stillExists =
+    Array.isArray(getAll3.data) && getAll3.data.some((m) => m.id === medId);
+  console.log(
+    `  ${stillExists ? "❌ Sigue en la lista (inesperado)" : "✅ Eliminado correctamente"}`,
+  );
 
   // 10. DELETE — non-existent ID
   console.log("\n── STEP 10: DELETE — ID inválido (debe dar 404) ─");
-  const notFound = await request("DELETE", "/api/admin/medicamentos/id-que-no-existe");
-  log("DELETE /api/admin/medicamentos/id-que-no-existe", notFound.status, notFound.data);
+  const notFound = await request(
+    "DELETE",
+    "/api/admin/medicamentos/id-que-no-existe",
+  );
+  log(
+    "DELETE /api/admin/medicamentos/id-que-no-existe",
+    notFound.status,
+    notFound.data,
+  );
 
   // ─── Summary ─────────────────────────────────────────────────────────────
   console.log("\n═══════════════════════════════════════════");
