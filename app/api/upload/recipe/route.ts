@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { writeFile, mkdir } from "fs/promises";
-import path from "path";
-import { existsSync } from "fs";
+import { supabase } from "@/lib/supabase";
 
 export async function POST(request: NextRequest) {
   try {
@@ -36,28 +34,39 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Ensure upload directory exists
-    const uploadDir = path.join(process.cwd(), "public", "uploads", "recipes");
-    if (!existsSync(uploadDir)) {
-      await mkdir(uploadDir, { recursive: true });
-    }
-
     // Generar nombre único para el archivo
     const fileExt = file.name.split(".").pop() || "jpg";
     const fileName = `recipe_${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
-    const filePath = path.join(uploadDir, fileName);
 
-    // Write file to disk
+    // Read file buffer
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
-    await writeFile(filePath, buffer);
 
-    // Return the public URL
-    const publicUrl = `/uploads/recipes/${fileName}`;
+    // Upload to Supabase bucket 'recipes'
+    const { data: uploadData, error: uploadError } = await supabase.storage
+      .from("recipes")
+      .upload(fileName, buffer, {
+        contentType: file.type,
+        cacheControl: "3600",
+        upsert: false,
+      });
+
+    if (uploadError) {
+      console.error("Supabase upload error:", uploadError);
+      return NextResponse.json(
+        { error: "Error al subir el archivo a la nube." },
+        { status: 500 },
+      );
+    }
+
+    // Get public URL
+    const { data: publicUrlData } = supabase.storage
+      .from("recipes")
+      .getPublicUrl(fileName);
 
     return NextResponse.json({
       success: true,
-      url: publicUrl,
+      url: publicUrlData.publicUrl,
       fileName: fileName,
     });
   } catch (error) {
