@@ -474,7 +474,7 @@ function MapViewInner({
   ];
 
   return (
-    <div className="relative h-[500px] w-full overflow-hidden rounded-md">
+    <div className="relative z-0 h-[500px] w-full overflow-hidden rounded-md">
       <MapContainer
         center={center}
         zoom={DEFAULT_ZOOM}
