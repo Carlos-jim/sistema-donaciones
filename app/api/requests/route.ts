@@ -48,11 +48,12 @@ export async function POST(request: Request) {
     // For MVP/Demo scale, probability is low, but let's be safe-ish or just assume unique for now.
     // If collision, Prisma will throw, so we could wrap in loop, but let's keep it simple.
 
-    // Create the solicitud
+    // Create the solicitud (auto-approved so it appears publicly)
     const solicitud = await prisma.solicitud.create({
       data: {
         codigo: codigo,
         motivo: motivo || null,
+        estado: "APROBADA",
         direccion: ubicacion
           ? {
               calle: ubicacion.address || "Ubicación seleccionada en mapa",
