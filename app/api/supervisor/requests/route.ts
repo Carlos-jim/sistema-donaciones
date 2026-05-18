@@ -40,6 +40,13 @@ export async function GET() {
         approvalDate: true,
         approvalInstitution: true,
         donanteAsignadoId: true,
+        donanteAsignado: {
+          select: {
+            nombre: true,
+            cedula: true,
+            email: true,
+          },
+        },
         usuarioComun: {
           select: {
             nombre: true,

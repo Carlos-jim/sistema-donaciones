@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/select";
 import { MapView } from "@/components/map-view";
 import { useToast } from "@/hooks/use-toast";
+import { MedicationAutocomplete } from "@/components/medication-autocomplete";
 import {
   Gift,
   Pill,
@@ -30,7 +31,8 @@ import {
 import { RecipeUpload } from "@/components/recipe-upload";
 
 interface DonationFormData {
-  medication: string;
+  medicamentoId: string;
+  medicationName: string;
   quantity: number;
   unit: string;
   expirationDate: string;
@@ -100,7 +102,8 @@ export default function DonateMedicationClient({
   const [currentStep, setCurrentStep] = useState(1);
 
   const [formData, setFormData] = useState<DonationFormData>({
-    medication: "",
+    medicamentoId: "",
+    medicationName: "",
     quantity: 1,
     unit: "tablets",
     expirationDate: "",
@@ -122,11 +125,12 @@ export default function DonateMedicationClient({
     try {
       console.log("Enviando datos de donación:", formData);
       const payload = {
-        medication: formData.medication,
+        medicamentoId: formData.medicamentoId,
+        medication: formData.medicationName,
         quantity: formData.quantity,
         unit: formData.unit,
         expiration: formData.expirationDate,
-        lote: formData.batchNumber, // Nota: el API espera 'lote' o 'batchNumber'? Revisar schema.
+        lote: formData.batchNumber,
         condition: formData.condition,
         prescription: formData.requiresPrescription ? "yes" : "no",
         description: formData.description,
@@ -176,12 +180,13 @@ export default function DonateMedicationClient({
 
       toast({
         title: "¡Donación registrada!",
-        description: "Tu medicamento ha sido registrado exitosamente.",
+        description: "Tu insumo médico ha sido registrado exitosamente.",
       });
 
       // Reset form
       setFormData({
-        medication: "",
+        medicamentoId: "",
+        medicationName: "",
         quantity: 1,
         unit: "tablets",
         expirationDate: "",
@@ -215,7 +220,7 @@ export default function DonateMedicationClient({
   };
 
   const canProceedToStep2 =
-    formData.medication.trim() !== "" && formData.expirationDate !== "";
+    formData.medicamentoId.trim() !== "" && formData.expirationDate !== "";
 
   const [isStep3Ready, setIsStep3Ready] = useState(false);
 
@@ -253,7 +258,7 @@ export default function DonateMedicationClient({
                 </div>
                 <div>
                   <h1 className="text-2xl font-bold text-white">
-                    Donar Medicamento
+                    Donar Insumo médico
                   </h1>
                   <p className="text-teal-100 text-sm mt-1">
                     Ayuda a quienes más lo necesitan
@@ -268,7 +273,7 @@ export default function DonateMedicationClient({
                 <StepIndicator
                   step={1}
                   currentStep={currentStep}
-                  title="Medicamento"
+                  title="Insumo médico"
                   icon={Pill}
                 />
                 <div
@@ -303,20 +308,21 @@ export default function DonateMedicationClient({
                         className="text-sm font-semibold text-gray-700 flex items-center gap-2"
                       >
                         <Pill className="w-4 h-4 text-teal-600" />
-                        Nombre del Medicamento
+                        Nombre del Insumo médico
                       </Label>
-                      <Input
-                        id="medication"
-                        placeholder="Ej. Paracetamol 500mg"
-                        required
-                        value={formData.medication}
-                        onChange={(e) =>
-                          setFormData({
-                            ...formData,
-                            medication: e.target.value,
-                          })
+                      <MedicationAutocomplete
+                        value={formData.medicamentoId}
+                        onValueChange={(id) =>
+                          setFormData((prev) => ({ ...prev, medicamentoId: id }))
                         }
-                        className="h-12 rounded-xl border-gray-200 focus:border-teal-500 focus:ring-teal-500/20 transition-all"
+                        onSelectMedicamento={(med) =>
+                          setFormData((prev) => ({
+                            ...prev,
+                            medicationName: med?.nombre || "",
+                          }))
+                        }
+                        placeholder="Busca un insumo médico..."
+                        className="w-full"
                       />
                     </div>
 
@@ -421,7 +427,7 @@ export default function DonateMedicationClient({
                     <div className="space-y-3">
                       <Label className="text-sm font-semibold text-gray-700 flex items-center gap-2">
                         <Package className="w-4 h-4 text-teal-600" />
-                        Estado del Medicamento
+                        Estado del Insumo médico
                       </Label>
                       <div className="grid grid-cols-3 gap-3">
                         <button
@@ -490,10 +496,10 @@ export default function DonateMedicationClient({
                     <div className="space-y-3">
                       <Label className="text-sm font-semibold text-gray-700 flex items-center gap-2">
                         <Camera className="w-4 h-4 text-teal-600" />
-                        Foto del Medicamento (opcional)
+                        Foto del Insumo médico (opcional)
                       </Label>
                       <RecipeUpload
-                        label="Sube una foto del medicamento"
+                        label="Sube una foto del insumo médico"
                         currentImageUrl={formData.donationPhotoUrl}
                         onUploadComplete={(url) =>
                           setFormData({ ...formData, donationPhotoUrl: url })
@@ -551,7 +557,7 @@ export default function DonateMedicationClient({
                       </Label>
                       <Textarea
                         id="description"
-                        placeholder="Información adicional sobre el medicamento, instrucciones de uso, etc."
+                        placeholder="Información adicional sobre el insumo médico, instrucciones de uso, etc."
                         rows={4}
                         value={formData.description}
                         onChange={(e) =>
@@ -618,9 +624,9 @@ export default function DonateMedicationClient({
                       </h3>
                       <div className="grid grid-cols-2 gap-3 text-sm">
                         <div>
-                          <span className="text-gray-500">Medicamento:</span>
+                          <span className="text-gray-500">Insumo médico:</span>
                           <p className="font-medium text-gray-800">
-                            {formData.medication || "-"}
+                            {formData.medicationName || "-"}
                           </p>
                         </div>
                         <div>

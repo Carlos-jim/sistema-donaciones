@@ -47,19 +47,19 @@ const FAQ_CATEGORIES = [
     ],
   },
   {
-    label: "Solicitudes de Medicamentos",
+    label: "Solicitudes de Insumos Médicos",
     icon: ClipboardList,
     color: "text-blue-600",
     bg: "bg-blue-50",
     border: "border-blue-100",
     items: [
       {
-        q: "¿Cómo solicito un medicamento?",
-        a: "Desde el dashboard, haz clic en 'Solicitar Medicamento'. Completa el formulario indicando el tipo de medicamento, la cantidad, tu ubicación de entrega preferida y la urgencia. Si el medicamento requiere receta, deberás subir una foto de la misma.",
+        q: "¿Cómo solicito un insumo médico?",
+        a: "Desde el dashboard, haz clic en 'Solicitar Insumo Médico'. Completa el formulario indicando el tipo de insumo médico, la cantidad, tu ubicación de entrega preferida y la urgencia. Si el insumo médico requiere receta, deberás subir una foto de la misma.",
       },
       {
         q: "¿Por qué debo subir mi receta médica?",
-        a: "La receta médica es necesaria para validar la legitimidad de la solicitud. Los entes de salud revisarán la documentación antes de aprobar la solicitud, garantizando que los medicamentos lleguen a quienes realmente los necesitan.",
+        a: "La receta médica es necesaria para validar la legitimidad de la solicitud. Los entes de salud revisarán la documentación antes de aprobar la solicitud, garantizando que los insumos médicos lleguen a quienes realmente los necesitan.",
       },
       {
         q: "¿Cuánto tiempo tarda en aprobarse mi solicitud?",
@@ -71,7 +71,7 @@ const FAQ_CATEGORIES = [
       },
       {
         q: "¿Qué significan los estados de mi solicitud?",
-        a: "PENDIENTE: En espera de revisión. APROBADA: Validada por el supervisor. EN_PROCESO: Un donante la ha aceptado. LISTA_PARA_RETIRO: El medicamento está disponible en la farmacia asignada. COMPLETADA: Retiro confirmado. RECHAZADA: No fue aprobada (se indica el motivo).",
+        a: "PENDIENTE: En espera de revisión. APROBADA: Validada por el supervisor. EN_PROCESO: Un donante la ha aceptado. LISTA_PARA_RETIRO: El insumo médico está disponible en la farmacia asignada. COMPLETADA: Retiro confirmado. RECHAZADA: No fue aprobada (se indica el motivo).",
       },
     ],
   },
@@ -83,19 +83,19 @@ const FAQ_CATEGORIES = [
     border: "border-emerald-100",
     items: [
       {
-        q: "¿Cómo puedo donar medicamentos?",
-        a: "Ve a la sección 'Donar Medicamento' desde el dashboard. Selecciona el medicamento que deseas donar, indica la cantidad disponible y el estado. Podrás ver en el mapa las solicitudes activas cercanas a ti.",
+        q: "¿Cómo puedo donar insumos médicos?",
+        a: "Ve a la sección 'Donar Insumo Médico' desde el dashboard. Selecciona el insumo médico que deseas donar, indica la cantidad disponible y el estado. Podrás ver en el mapa las solicitudes activas cercanas a ti.",
       },
       {
-        q: "¿Qué medicamentos puedo donar?",
-        a: "Puedes donar medicamentos que no hayan vencido, estén en buen estado y no sean de control especial sin receta. Si tienes dudas sobre si un medicamento es elegible, contáctanos.",
+        q: "¿Qué insumos médicos puedo donar?",
+        a: "Puedes donar insumos médicos que no hayan vencido, estén en buen estado y no sean de control especial sin receta. Si tienes dudas sobre si un insumo médico es elegible, contáctanos.",
       },
       {
-        q: "¿Cómo sé a dónde llevar el medicamento?",
+        q: "¿Cómo sé a dónde llevar el insumo médico?",
         a: "Una vez que aceptes una solicitud, el sistema te asignará una farmacia de entrega y te enviará los códigos de verificación necesarios. Verás la dirección y horario de la farmacia en la sección 'Mis Donaciones'.",
       },
       {
-        q: "¿Qué pasa si no puedo entregar el medicamento en la fecha acordada?",
+        q: "¿Qué pasa si no puedo entregar el insumo médico en la fecha acordada?",
         a: "Contacta a soporte a la brevedad para informar la situación. Si la donación queda sin entregar pasado el período establecido, el sistema la marcará automáticamente como expirada.",
       },
     ],
@@ -108,15 +108,15 @@ const FAQ_CATEGORIES = [
     border: "border-violet-100",
     items: [
       {
-        q: "¿Cómo sé en qué farmacia retirar mi medicamento?",
+        q: "¿Cómo sé en qué farmacia retirar mi insumo médico?",
         a: "Cuando tu solicitud esté LISTA_PARA_RETIRO, recibirás una notificación con la farmacia asignada, su dirección, horario de atención y un código QR para confirmar el retiro.",
       },
       {
-        q: "¿Qué debo presentar al retirar el medicamento?",
+        q: "¿Qué debo presentar al retirar el insumo médico?",
         a: "Debes presentar el código QR que recibiste en tu notificación, junto con tu cédula de identidad para verificación.",
       },
       {
-        q: "¿Cuánto tiempo tengo para retirar el medicamento?",
+        q: "¿Cuánto tiempo tengo para retirar el insumo médico?",
         a: "Tienes un período limitado de días desde que se confirma la disponibilidad en farmacia. Pasado ese tiempo, la solicitud puede reasignarse. Te notificaremos antes de que venza el plazo.",
       },
     ],
@@ -130,7 +130,7 @@ const FAQ_CATEGORIES = [
     items: [
       {
         q: "¿Para qué sirven las notificaciones?",
-        a: "Las notificaciones te alertan sobre cambios en el estado de tus solicitudes o donaciones, cuando un donante acepta tu pedido, cuando el medicamento está listo para retirar, y cuando hay actualizaciones del sistema.",
+        a: "Las notificaciones te alertan sobre cambios en el estado de tus solicitudes o donaciones, cuando un donante acepta tu pedido, cuando el insumo médico está listo para retirar, y cuando hay actualizaciones del sistema.",
       },
       {
         q: "No estoy recibiendo notificaciones. ¿Qué hago?",
@@ -139,19 +139,19 @@ const FAQ_CATEGORIES = [
     ],
   },
   {
-    label: "Medicamentos e Inventario",
+    label: "Insumos Médicos e Inventario",
     icon: Package,
     color: "text-rose-600",
     bg: "bg-rose-50",
     border: "border-rose-100",
     items: [
       {
-        q: "¿Cómo busco medicamentos disponibles para donar?",
-        a: "Desde el dashboard principal, puedes ver el mapa con las solicitudes activas y las donaciones disponibles cerca de tu ubicación. Usa el buscador y los filtros para encontrar medicamentos específicos.",
+        q: "¿Cómo busco insumos médicos disponibles para donar?",
+        a: "Desde el dashboard principal, puedes ver el mapa con las solicitudes activas y las donaciones disponibles cerca de tu ubicación. Usa el buscador y los filtros para encontrar insumos médicos específicos.",
       },
       {
-        q: "¿Qué hago si el medicamento que necesito no está disponible?",
-        a: "Publica tu solicitud con el nivel de urgencia adecuado. El sistema notificará automáticamente a potenciales donantes que tengan ese medicamento disponible en su inventario.",
+        q: "¿Qué hago si el insumo médico que necesito no está disponible?",
+        a: "Publica tu solicitud con el nivel de urgencia adecuado. El sistema notificará automáticamente a potenciales donantes que tengan ese insumo médico disponible en su inventario.",
       },
     ],
   },
@@ -195,7 +195,7 @@ export default function SupportPage() {
         <h1 className="text-2xl font-bold text-gray-900">Centro de Ayuda</h1>
         <p className="text-gray-500 text-sm max-w-xl mx-auto">
           Encuentra respuestas a las preguntas más frecuentes sobre la
-          plataforma de donaciones de medicamentos.
+          plataforma de donaciones de insumos médicos.
         </p>
       </div>
 
@@ -205,7 +205,7 @@ export default function SupportPage() {
           <div className="flex items-center gap-3 p-4 bg-white border border-gray-100 rounded-xl hover:border-teal-200 hover:bg-teal-50/40 transition-all cursor-pointer shadow-sm">
             <ClipboardList className="w-5 h-5 text-teal-600 flex-shrink-0" />
             <span className="text-sm font-medium text-gray-700">
-              Solicitar medicamento
+              Solicitar insumo médico
             </span>
           </div>
         </Link>
@@ -213,7 +213,7 @@ export default function SupportPage() {
           <div className="flex items-center gap-3 p-4 bg-white border border-gray-100 rounded-xl hover:border-emerald-200 hover:bg-emerald-50/40 transition-all cursor-pointer shadow-sm">
             <HeartHandshake className="w-5 h-5 text-emerald-600 flex-shrink-0" />
             <span className="text-sm font-medium text-gray-700">
-              Donar medicamento
+              Donar insumo médico
             </span>
           </div>
         </Link>

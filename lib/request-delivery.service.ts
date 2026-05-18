@@ -110,7 +110,7 @@ export async function acceptRequestWithDeliveryCodes(
   });
 
   const medicamentoNombre =
-    solicitud.medicamentos[0]?.medicamento?.nombre || "medicamento";
+    solicitud.medicamentos[0]?.medicamento?.nombre || "insumo médico";
 
   await prisma.notificacion.create({
     data: {
@@ -127,7 +127,7 @@ export async function acceptRequestWithDeliveryCodes(
       userId: donorUserId,
       type: "SYSTEM",
       title: "¡Te comprometiste a donar!",
-      message: `Has aceptado donar ${medicamentoNombre}. Lleva el medicamento a ${farmacia.nombre} y presenta el código ${donorCode}.`,
+      message: `Has aceptado donar ${medicamentoNombre}. Lleva el insumo médico a ${farmacia.nombre} y presenta el código ${donorCode}.`,
       link: "/dashboard/donations",
     },
   });

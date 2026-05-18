@@ -91,7 +91,7 @@ export default async function DashboardPage() {
 
   const rawActivities = [
     ...recentDonations.map((d) => {
-      const medName = d.medicamentos[0]?.medicamento?.nombre || "medicamento";
+      const medName = d.medicamentos[0]?.medicamento?.nombre || "insumo médico";
       let text = `Nueva donación de ${medName}`;
       if (d.estado === "DISPONIBLE") text = `Nueva oferta pública: ${medName}`;
       else if (d.estado === "ENTREGADA")
@@ -102,7 +102,7 @@ export default async function DashboardPage() {
       };
     }),
     ...recentRequests.map((r) => {
-      const medName = r.medicamentos[0]?.medicamento?.nombre || "medicamento";
+      const medName = r.medicamentos[0]?.medicamento?.nombre || "insumo médico";
       let text = `Nueva solicitud: ${medName}`;
       if (r.estado === "COMPLETADA") text = `Solicitud completada: ${medName}`;
       else if (r.estado === "LISTA_PARA_RETIRO")

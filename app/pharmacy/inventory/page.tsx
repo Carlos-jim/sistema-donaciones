@@ -57,13 +57,13 @@ export default async function PharmacyInventoryPage() {
     {
       label: "Unidades recibidas",
       value: summary.totalUnits,
-      description: "Cantidad total de medicamentos en inventario",
+      description: "Cantidad total de insumos médicos en inventario",
       icon: Pill,
       iconClass: "bg-cyan-50 text-cyan-700",
       borderClass: "border-cyan-100",
     },
     {
-      label: "Medicamentos distintos",
+      label: "Insumos médicos distintos",
       value: summary.uniqueMedicationCount,
       description: "Presentaciones distintas registradas",
       icon: Package,
@@ -97,7 +97,7 @@ export default async function PharmacyInventoryPage() {
               {pharmacy.nombre}
             </h2>
             <p className="mt-2 max-w-2xl text-sm text-teal-50">
-              Aqui ves los medicamentos que ya fueron recibidos fisicamente y
+              Aqui ves los insumos médicos que ya fueron recibidos fisicamente y
               quedaron registrados en esta farmacia.
             </p>
           </div>
@@ -142,9 +142,9 @@ export default async function PharmacyInventoryPage() {
 
       <section className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
         <div className="border-b border-slate-100 px-6 py-5">
-          <h3 className="text-lg font-semibold text-slate-900">
-            Resumen por medicamento
-          </h3>
+              <h3 className="text-lg font-semibold text-slate-900">
+                Resumen por insumo médico
+              </h3>
           <p className="mt-1 text-sm text-slate-500">
             Cantidad acumulada y ultimos ingresos dentro del inventario de la
             farmacia.
@@ -154,9 +154,9 @@ export default async function PharmacyInventoryPage() {
         <div className="p-6">
           {medications.length === 0 ? (
             <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-6 py-10 text-center">
-              <p className="text-sm font-semibold text-slate-700">
-                Todavia no hay medicamentos registrados en inventario
-              </p>
+                <p className="text-sm font-semibold text-slate-700">
+                  Todavia no hay insumos médicos registrados en inventario
+                </p>
               <p className="mt-2 text-sm text-slate-500">
                 Procesa una recepcion y, cuando la donacion quede recibida,
                 aparecera aqui.

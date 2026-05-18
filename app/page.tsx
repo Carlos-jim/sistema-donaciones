@@ -4,7 +4,7 @@ import { MapPin, PlusCircle, Search, Heart, Users, Shield, Clock, CheckCircle, A
 
 export default function Home() {
   const stats = [
-    { value: "10,000+", label: "Medicamentos donados", icon: Droplets },
+    { value: "10,000+", label: "Insumos médicos donados", icon: Droplets },
     { value: "5,000+", label: "Familias ayudadas", icon: Users },
     { value: "50+", label: "Farmacias asociadas", icon: Shield },
     { value: "24/7", label: "Disponibilidad", icon: Clock }
@@ -14,19 +14,19 @@ export default function Home() {
     {
       name: "María González",
       role: "Paciente",
-      content: "Encontré el medicamento que necesitaba para mi hijo en menos de 2 horas. ¡Gracias a MediShareNE!",
+      content:                       "Encontré el insumo médico que necesitaba para mi hijo en menos de 2 horas. ¡Gracias a MediShareNE!",
       rating: 5
     },
     {
       name: "Dr. Carlos Martínez",
       role: "Médico",
-      content: "Una herramienta invaluable para conectar pacientes con los medicamentos que necesitan urgentemente.",
+      content:                       "Una herramienta invaluable para conectar pacientes con los insumos médicos que necesitan urgentemente.",
       rating: 5
     },
     {
       name: "Ana Rodríguez",
       role: "Donante",
-      content: "Me siento bien sabiendo que mis medicamentos sobrantes están ayudando a quien más lo necesita.",
+      content:                       "Me siento bien sabiendo que mis insumos médicos sobrantes están ayudando a quien más lo necesita.",
       rating: 5
     }
   ]
@@ -94,10 +94,10 @@ export default function Home() {
                       Conectando Vidas
                     </span>
                     <br />
-                    <span className="text-gray-900">a través de Medicamentos</span>
+                    <span className="text-gray-900">a través de Insumos médicos</span>
                   </h1>
                   <p className="text-lg md:text-xl text-gray-600 leading-relaxed max-w-[600px]">
-                    Plataforma colaborativa que conecta a personas que necesitan medicamentos con donantes dispuestos a ayudar en situaciones de emergencia, garantizando seguridad y confianza.
+                    Plataforma colaborativa que conecta a personas que necesitan insumos médicos con donantes dispuestos a ayudar en situaciones de emergencia, garantizando seguridad y confianza.
                   </p>
                 </div>
 
@@ -134,7 +134,7 @@ export default function Home() {
                     <div className="text-center p-6 rounded-xl bg-teal-50">
                       <Droplets className="h-8 w-8 text-teal-600 mx-auto mb-3" />
                       <div className="text-2xl font-bold text-teal-600">10K+</div>
-                      <div className="text-sm text-gray-600">Medicamentos</div>
+                      <div className="text-sm text-gray-600">Insumos médicos</div>
                     </div>
                     <div className="text-center p-6 rounded-xl bg-cyan-50">
                       <Users className="h-8 w-8 text-cyan-600 mx-auto mb-3" />
@@ -177,7 +177,7 @@ export default function Home() {
                 <span className="block text-teal-600">en 3 Pasos Sencillos</span>
               </h2>
               <p className="max-w-3xl text-lg text-gray-600 md:text-xl">
-                Nuestra plataforma está diseñada para facilitar la conexión entre personas que necesitan medicamentos y donantes potenciales de manera segura y eficiente.
+                    Nuestra plataforma está diseñada para facilitar la conexión entre personas que necesitan insumos médicos y donantes potenciales de manera segura y eficiente.
               </p>
             </div>
 
@@ -195,9 +195,9 @@ export default function Home() {
                       1
                     </div>
                   </div>
-                  <h3 className="text-xl font-bold text-gray-900">Solicita Medicamentos</h3>
+                  <h3 className="text-xl font-bold text-gray-900">Solicita Insumos médicos</h3>
                   <p className="text-gray-600 leading-relaxed">
-                    Registra tu solicitud indicando el medicamento que necesitas, cantidad y tu ubicación. Nuestro sistema verifica la disponibilidad en tiempo real.
+                    Registra tu solicitud indicando el insumo médico que necesitas, cantidad y tu ubicación. Nuestro sistema verifica la disponibilidad en tiempo real.
                   </p>
                   <div className="flex items-center gap-2 text-sm text-teal-600 font-medium">
                     <CheckCircle className="h-4 w-4" />
@@ -218,7 +218,7 @@ export default function Home() {
                   </div>
                   <h3 className="text-xl font-bold text-gray-900">Localiza en el Mapa</h3>
                   <p className="text-gray-600 leading-relaxed">
-                    Visualiza en tiempo real las solicitudes y donaciones disponibles cerca de ti. Filtra por distancia, tipo de medicamento y disponibilidad.
+                    Visualiza en tiempo real las solicitudes y donaciones disponibles cerca de ti. Filtra por distancia, tipo de insumo médico y disponibilidad.
                   </p>
                   <div className="flex items-center gap-2 text-sm text-cyan-600 font-medium">
                     <MapPin className="h-4 w-4" />
@@ -239,7 +239,7 @@ export default function Home() {
                   </div>
                   <h3 className="text-xl font-bold text-gray-900">Dona y Recibe</h3>
                   <p className="text-gray-600 leading-relaxed">
-                    Ofrece los medicamentos que puedes donar o coordina la entrega de forma segura con validación de identidad y seguimiento del proceso.
+                    Ofrece los insumos médicos que puedes donar o coordina la entrega de forma segura con validación de identidad y seguimiento del proceso.
                   </p>
                   <div className="flex items-center gap-2 text-sm text-teal-600 font-medium">
                     <Shield className="h-4 w-4" />
@@ -257,7 +257,7 @@ export default function Home() {
             <div className="text-center mb-12">
               <h2 className="text-3xl md:text-4xl font-bold mb-4">Nuestro Impacto</h2>
               <p className="text-xl text-teal-50 max-w-2xl mx-auto">
-                Estamos transformando vidas a través de la colaboración y el acceso a medicamentos.
+                Estamos transformando vidas a través de la colaboración y el acceso a insumos médicos.
               </p>
             </div>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
@@ -321,7 +321,7 @@ export default function Home() {
                     Acerca de MediShareNE
                   </h2>
                   <p className="text-lg text-gray-600 leading-relaxed">
-                    Nuestra plataforma nace de la necesidad crítica de optimizar el acceso a medicamentos en situaciones de emergencia, conectando a quienes necesitan con quienes pueden ayudar de manera segura y eficiente.
+                    Nuestra plataforma nace de la necesidad crítica de optimizar el acceso a insumos médicos en situaciones de emergencia, conectando a quienes necesitan con quienes pueden ayudar de manera segura y eficiente.
                   </p>
                   <p className="text-lg text-gray-600 leading-relaxed">
                     Trabajamos en colaboración con entes reguladores y profesionales de la salud para garantizar la seguridad, calidad y confiabilidad de todas las donaciones realizadas a través de nuestra plataforma.
@@ -334,8 +334,8 @@ export default function Home() {
                       <CheckCircle className="h-4 w-4 text-teal-600" />
                     </div>
                     <div>
-                      <h4 className="font-semibold text-gray-900">Validación Médica</h4>
-                      <p className="text-gray-600">Todos los medicamentos son verificados por profesionales de la salud.</p>
+                        <h4 className="font-semibold text-gray-900">Validación Médica</h4>
+                        <p className="text-gray-600">Todos los insumos médicos son verificados por profesionales de la salud.</p>
                     </div>
                   </div>
                   <div className="flex items-start gap-3">
@@ -365,8 +365,8 @@ export default function Home() {
                     <div className="space-y-4">
                       <div className="bg-white rounded-xl p-4 shadow-sm">
                         <Droplets className="h-8 w-8 text-teal-600 mb-2" />
-                        <h4 className="font-semibold text-gray-900">Rescate de Medicamentos</h4>
-                        <p className="text-sm text-gray-600">Evitamos desperdicios y damos segunda vida a medicamentos válidos.</p>
+                        <h4 className="font-semibold text-gray-900">Rescate de Insumos médicos</h4>
+                        <p className="text-sm text-gray-600">Evitamos desperdicios y damos segunda vida a insumos médicos válidos.</p>
                       </div>
                       <div className="bg-white rounded-xl p-4 shadow-sm">
                         <Users className="h-8 w-8 text-cyan-600 mb-2" />
@@ -383,7 +383,7 @@ export default function Home() {
                       <div className="bg-white rounded-xl p-4 shadow-sm">
                         <Heart className="h-8 w-8 text-cyan-600 mb-2" />
                         <h4 className="font-semibold text-gray-900">Impacto Real</h4>
-                        <p className="text-sm text-gray-600">Miles de familias beneficiadas con medicamentos urgentes.</p>
+                        <p className="text-sm text-gray-600">Miles de familias beneficiadas con insumos médicos urgentes.</p>
                       </div>
                     </div>
                   </div>
@@ -403,7 +403,7 @@ export default function Home() {
                 ¿Listo para Hacer la Diferencia?
               </h2>
               <p className="text-xl text-teal-50 mb-8">
-                Únete a miles de personas que están cambiando vidas a través de la donación de medicamentos.
+                Únete a miles de personas que están cambiando vidas a través de la donación de insumos médicos.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <Button size="lg" className="bg-white text-teal-600 hover:bg-gray-100 px-8 py-6 text-lg font-semibold shadow-xl hover:shadow-2xl transition-all" asChild>
@@ -432,7 +432,7 @@ export default function Home() {
                 <span className="text-xl font-bold">MediShareNE</span>
               </div>
               <p className="text-gray-400 text-sm">
-                Conectando vidas a través de la donación responsable de medicamentos.
+                Conectando vidas a través de la donación responsable de insumos médicos.
               </p>
               <div className="flex items-center gap-2 text-sm text-teal-400">
                 <Shield className="h-4 w-4" />

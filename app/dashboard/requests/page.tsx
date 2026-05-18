@@ -48,7 +48,9 @@ import {
   Pencil,
   Plus,
   Trash2,
+  QrCode,
 } from "lucide-react";
+import { getQrImageUrl } from "@/lib/qr";
 
 const smoothEase = [0.25, 0.46, 0.45, 0.94] as [number, number, number, number];
 
@@ -91,6 +93,7 @@ interface Solicitud {
   motivoRechazoFarmacia: string | null;
   codigoComprobante: string | null;
   codigoRetiroSolicitante: string | null;
+  requesterQrPayload: string | null;
   pickupConfirmedAt: string | null;
   receptionConfirmedAt: string | null;
   usuarioComun: { nombre: string };
@@ -412,7 +415,7 @@ export default function MyRequestsPage() {
       }
       toast({
         title: "Recepción confirmada",
-        description: "¡Gracias! Has confirmado que recibiste tu medicamento.",
+                        description: "¡Gracias! Has confirmado que recibiste tu insumo médico.",
       });
       setSelectedSolicitud(null);
       fetchSolicitudes();
@@ -520,7 +523,7 @@ export default function MyRequestsPage() {
               Mis Solicitudes
             </h1>
             <p className="text-gray-500 mt-1">
-              Gestiona y da seguimiento a tus solicitudes de medicamentos.
+              Gestiona y da seguimiento a tus solicitudes de insumos médicos.
             </p>
           </div>
           <Link href="/dashboard/request-medication">
@@ -564,13 +567,13 @@ export default function MyRequestsPage() {
             <div className="bg-teal-50 text-teal-400 h-16 w-16 rounded-full flex items-center justify-center mx-auto mb-4">
               <Pill className="h-8 w-8" />
             </div>
-            <h3 className="text-lg font-medium text-gray-900">
-              No tienes solicitudes activas
-            </h3>
-            <p className="text-gray-500 mt-2 mb-6 max-w-sm mx-auto">
-              Crea una solicitud para recibir ayuda de la comunidad con los
-              medicamentos que necesitas.
-            </p>
+              <h3 className="text-lg font-medium text-gray-900">
+                No tienes solicitudes activas
+              </h3>
+              <p className="text-gray-500 mt-2 mb-6 max-w-sm mx-auto">
+                Crea una solicitud para recibir ayuda de la comunidad con los
+                insumos médicos que necesitas.
+              </p>
             <Link href="/dashboard/request-medication">
               <Button
                 variant="outline"
@@ -614,7 +617,7 @@ export default function MyRequestsPage() {
                       </div>
                       <CardTitle className="text-xl text-teal-950 line-clamp-1">
                         {solicitud.medicamentos[0]?.medicamento.nombre ||
-                          "Medicamento"}
+                          "Insumo médico"}
                         {solicitud.medicamentos.length > 1 && (
                           <span className="text-gray-400 font-normal text-sm ml-2">
                             + {solicitud.medicamentos.length - 1} más
@@ -641,7 +644,7 @@ export default function MyRequestsPage() {
                         {solicitud.medicamentos.length > 2 && (
                           <div className="text-xs text-center text-gray-500 pt-1">
                             ... y {solicitud.medicamentos.length - 2}{" "}
-                            medicamentos más
+                            insumos médicos más
                           </div>
                         )}
                       </div>
@@ -900,10 +903,10 @@ export default function MyRequestsPage() {
                 {selectedSolicitud.estado === "LISTA_PARA_RETIRO" &&
                   selectedSolicitud.farmaciaEntrega && (
                     <div className="bg-purple-50 border border-purple-200 rounded-xl p-4">
-                      <h4 className="font-semibold text-purple-800 mb-2 flex items-center gap-2">
-                        <Building2 className="w-4 h-4" />
-                        Tu medicamento está listo para retiro
-                      </h4>
+                        <h4 className="font-semibold text-purple-800 mb-2 flex items-center gap-2">
+                          <Building2 className="w-4 h-4" />
+                          Tu insumo médico está listo para retiro
+                        </h4>
                       <p className="text-sm text-purple-700 mb-1">
                         Farmacia:{" "}
                         <strong>
@@ -914,10 +917,27 @@ export default function MyRequestsPage() {
                         {selectedSolicitud.farmaciaEntrega.direccion}
                       </p>
                       {selectedSolicitud.codigoRetiroSolicitante && (
-                        <p className="text-sm font-mono mt-2 bg-white border rounded px-2 py-1">
-                          Codigo de retiro:{" "}
-                          <strong>{selectedSolicitud.codigoRetiroSolicitante}</strong>
-                        </p>
+                        <div className="mt-3 rounded-xl border-2 border-purple-300 bg-white p-4">
+                          <div className="flex items-center gap-2 mb-2">
+                            <QrCode className="h-4 w-4 text-purple-700" />
+                            <p className="text-xs uppercase tracking-wide text-purple-700 font-semibold">
+                              QR del Beneficiario (Retiro)
+                            </p>
+                          </div>
+                          <p className="font-mono text-sm text-gray-900">
+                            {selectedSolicitud.codigoRetiroSolicitante}
+                          </p>
+                          {selectedSolicitud.requesterQrPayload && (
+                            <img
+                              src={getQrImageUrl(selectedSolicitud.requesterQrPayload, 180)}
+                              alt="QR del beneficiario"
+                              className="mx-auto mt-3 h-[180px] w-[180px] rounded-lg border bg-white p-2"
+                            />
+                          )}
+                          <p className="mt-2 text-xs text-purple-700">
+                            Presenta este codigo o QR en la farmacia al retirar tu insumo médico.
+                          </p>
+                        </div>
                       )}
                       {canConfirmPickup(selectedSolicitud) ? (
                         <Button
@@ -955,7 +975,7 @@ export default function MyRequestsPage() {
                     {canConfirmReception(selectedSolicitud) ? (
                       <>
                         <p className="text-sm text-green-700 mb-3">
-                          Por favor confirma que recibiste tu medicamento.
+                          Por favor confirma que recibiste tu insumo médico.
                         </p>
                         <Button
                           size="sm"
@@ -968,7 +988,7 @@ export default function MyRequestsPage() {
                           <CheckCircle className="w-4 h-4 mr-1" />
                           {isConfirmingReception
                             ? "Confirmando..."
-                            : "Confirmo que recibí mi medicamento"}
+                            : "Confirmo que recibí mi insumo médico"}
                         </Button>
                       </>
                     ) : selectedSolicitud.receptionConfirmedAt ? (
@@ -981,10 +1001,10 @@ export default function MyRequestsPage() {
 
                 {/* Medications */}
                 <div>
-                  <h4 className="font-semibold text-gray-700 mb-3 flex items-center gap-2">
-                    <Pill className="w-4 h-4 text-teal-600" />
-                    Medicamentos Solicitados
-                  </h4>
+                    <h4 className="font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                      <Pill className="w-4 h-4 text-teal-600" />
+                      Insumos Médicos Solicitados
+                    </h4>
                   <div className="space-y-2">
                     {selectedSolicitud.medicamentos.map((med, idx) => (
                       <div
@@ -1206,7 +1226,7 @@ export default function MyRequestsPage() {
               <Textarea
                 value={editMotivo}
                 onChange={(e) => setEditMotivo(e.target.value)}
-                placeholder="Describe brevemente por qué necesitas estos medicamentos..."
+                        placeholder="Describe brevemente por qué necesitas estos insumos médicos..."
                 className="min-h-[80px]"
               />
             </div>
@@ -1214,7 +1234,7 @@ export default function MyRequestsPage() {
             {/* Medications */}
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <Label>Medicamentos</Label>
+                <Label>Insumos médicos</Label>
                 <Button
                   type="button"
                   variant="outline"
@@ -1243,7 +1263,7 @@ export default function MyRequestsPage() {
                           ),
                         )
                       }
-                      placeholder="Nombre del medicamento"
+                      placeholder="Nombre del insumo médico"
                       className="flex-1"
                     />
                     <Input

@@ -128,7 +128,7 @@ export async function processAbandonedPickups(now = new Date()) {
           type: "SYSTEM",
           title: "Solicitud cerrada por no retiro",
           message:
-            "Tu solicitud no fue retirada a tiempo. El medicamento pasó a inventario disponible para otros usuarios.",
+            "Tu solicitud no fue retirada a tiempo. El insumo médico pasó a inventario disponible para otros usuarios.",
           link: "/dashboard/requests",
         },
       });
@@ -140,7 +140,7 @@ export async function processAbandonedPickups(now = new Date()) {
             type: "SYSTEM",
             title: "Donación convertida en disponibilidad pública",
             message:
-              "El beneficiario no retiró a tiempo. La farmacia liberó el medicamento como donación flotante.",
+              "El beneficiario no retiró a tiempo. La farmacia liberó el insumo médico como donación flotante.",
             link: "/dashboard/donations",
           },
         });

@@ -4,6 +4,7 @@
 import { PrismaNeonHttp } from "@prisma/adapter-neon";
 import { PrismaClient } from "@prisma/client";
 import { hash } from "bcryptjs";
+import { categoriasSeed, medicamentosSeed } from "./medicamentos-catalogo";
 
 const adapter = new PrismaNeonHttp(process.env.DATABASE_URL!);
 const prisma = new PrismaClient({ adapter } as any);
@@ -258,20 +259,53 @@ async function main() {
     },
   });
 
-  // ── Medicamentos ───────────────────────────────────────────────────────────
-  console.log("💉 Creating medications...");
-  const paracetamol    = await prisma.medicamento.create({ data: { nombre: "Paracetamol",    descripcion: "Analgésico y antipirético",          principioActivo: "Paracetamol",            presentacion: "Tabletas",  concentracion: "500mg"     } });
-  const ibuprofeno     = await prisma.medicamento.create({ data: { nombre: "Ibuprofeno",     descripcion: "Antiinflamatorio no esteroideo",     principioActivo: "Ibuprofeno",             presentacion: "Tabletas",  concentracion: "400mg"     } });
-  const amoxicilina    = await prisma.medicamento.create({ data: { nombre: "Amoxicilina",    descripcion: "Antibiótico de amplio espectro",     principioActivo: "Amoxicilina",            presentacion: "Cápsulas",  concentracion: "500mg"     } });
-  const losartan       = await prisma.medicamento.create({ data: { nombre: "Losartán",       descripcion: "Antihipertensivo",                   principioActivo: "Losartán potásico",      presentacion: "Tabletas",  concentracion: "50mg"      } });
-  const metformina     = await prisma.medicamento.create({ data: { nombre: "Metformina",     descripcion: "Antidiabético oral",                 principioActivo: "Metformina",             presentacion: "Tabletas",  concentracion: "850mg"     } });
-  const omeprazol      = await prisma.medicamento.create({ data: { nombre: "Omeprazol",      descripcion: "Inhibidor de bomba de protones",     principioActivo: "Omeprazol",              presentacion: "Cápsulas",  concentracion: "20mg"      } });
-  const loratadina     = await prisma.medicamento.create({ data: { nombre: "Loratadina",     descripcion: "Antihistamínico",                    principioActivo: "Loratadina",             presentacion: "Tabletas",  concentracion: "10mg"      } });
-  const insulina       = await prisma.medicamento.create({ data: { nombre: "Insulina Lantus",descripcion: "Insulina de acción prolongada",      principioActivo: "Insulina glargina",      presentacion: "Inyectable",concentracion: "100 UI/ml" } });
-  const atorvastatina  = await prisma.medicamento.create({ data: { nombre: "Atorvastatina",  descripcion: "Reduce el colesterol LDL",           principioActivo: "Atorvastatina cálcica",  presentacion: "Tabletas",  concentracion: "20mg"      } });
-  const enalapril      = await prisma.medicamento.create({ data: { nombre: "Enalapril",      descripcion: "Antihipertensivo IECA",              principioActivo: "Maleato de enalapril",   presentacion: "Tabletas",  concentracion: "10mg"      } });
-  const aspirina       = await prisma.medicamento.create({ data: { nombre: "Aspirina",       descripcion: "Antiagregante plaquetario",          principioActivo: "Ácido acetilsalicílico", presentacion: "Tabletas",  concentracion: "100mg"     } });
-  const azitromicina   = await prisma.medicamento.create({ data: { nombre: "Azitromicina",   descripcion: "Antibiótico macrólido",              principioActivo: "Azitromicina",           presentacion: "Cápsulas",  concentracion: "500mg"     } });
+  // ── Categorías de Medicamentos ─────────────────────────────────────────────
+  console.log("📂 Creating medical supply categories...");
+  const categoriaMap = new Map<string, string>();
+  for (const cat of categoriasSeed) {
+    const created = await prisma.categoriaMedicamento.create({
+      data: {
+        nombre: cat.nombre,
+        descripcion: cat.descripcion,
+        icono: cat.icono,
+        orden: cat.orden,
+      },
+    });
+    categoriaMap.set(cat.nombre, created.id);
+  }
+
+  // ── Medicamentos desde Catálogo Estandarizado ──────────────────────────────
+  console.log("💉 Creating standardized medical supply catalog...");
+  const medicamentoMap = new Map<string, any>();
+
+  for (const med of medicamentosSeed) {
+    const categoriaId = categoriaMap.get(med.categoriaNombre);
+    const created = await prisma.medicamento.create({
+      data: {
+        nombre: med.nombre,
+        descripcion: med.descripcion,
+        principioActivo: med.principioActivo,
+        presentacion: med.presentacion,
+        concentracion: med.concentracion,
+        categoriaId: categoriaId || undefined,
+      },
+    });
+    medicamentoMap.set(med.nombre, created);
+  }
+
+  // Alias para compatibilidad con el resto del seed
+  const paracetamol    = medicamentoMap.get("Paracetamol");
+  const ibuprofeno     = medicamentoMap.get("Ibuprofeno");
+  const amoxicilina    = medicamentoMap.get("Amoxicilina");
+  const losartan       = medicamentoMap.get("Losartán");
+  const metformina     = medicamentoMap.get("Metformina");
+  const omeprazol      = medicamentoMap.get("Omeprazol");
+  const loratadina     = medicamentoMap.get("Loratadina");
+  const insulina       = medicamentoMap.get("Insulina Glargina (Lantus)");
+  const atorvastatina  = medicamentoMap.get("Atorvastatina");
+  const enalapril      = medicamentoMap.get("Enalapril");
+  const aspirina       = medicamentoMap.get("Aspirina Cardio");
+  const azitromicina   = medicamentoMap.get("Azitromicina");
 
   // ── Solicitudes para TEST USER (todos los estados) ─────────────────────────
   console.log("📋 Creating requests for test user...");
@@ -397,7 +431,7 @@ async function main() {
   ]);
 
   await createSolicitud({
-    codigo: "SOL-T009", motivo: "Ya conseguí el medicamento por otra vía",
+    codigo: "SOL-T009", motivo: "Ya conseguí el insumo médico por otra vía",
     estado: "CANCELADA", tiempoEspera: "BAJO", requiresPrescription: false,
     direccion: { lat: 10.4806, lng: -66.9036, calle: "Av. Libertador, Caracas" },
     usuarioComunId: testUser.id,
@@ -409,7 +443,7 @@ async function main() {
   console.log("🎁 Creating donations for test user...");
 
   await createDonacion({
-    codigo: "DON-T001", descripcion: "Medicamentos que me sobraron del tratamiento",
+    codigo: "DON-T001", descripcion: "Insumos médicos que me sobraron del tratamiento",
     estado: "DISPONIBLE", direccion: { lat: 10.4806, lng: -66.9036 },
     usuarioComunId: testUser.id,
   }, [
@@ -437,7 +471,7 @@ async function main() {
   console.log("🎁 Creating general donations...");
 
   await createDonacion({
-    codigo: "DON-001", descripcion: "Donación de medicamentos excedentes del hogar",
+    codigo: "DON-001", descripcion: "Donación de insumos médicos excedentes del hogar",
     estado: "DISPONIBLE", direccion: { lat: 10.49, lng: -66.88 },
     usuarioComunId: usuario2.id,
   }, [
@@ -446,7 +480,7 @@ async function main() {
   ]);
 
   await createDonacion({
-    codigo: "DON-002", descripcion: "Medicamentos de tratamiento finalizado",
+    codigo: "DON-002", descripcion: "Insumos médicos de tratamiento finalizado",
     estado: "DISPONIBLE", direccion: { lat: 10.475, lng: -66.91 },
     enteSaludId: ente1.id,
   }, [
@@ -455,7 +489,7 @@ async function main() {
   ]);
 
   await createDonacion({
-    codigo: "DON-003", descripcion: "Medicamentos cardíacos excedentes",
+    codigo: "DON-003", descripcion: "Insumos médicos cardíacos excedentes",
     estado: "DISPONIBLE", direccion: { lat: 10.50, lng: -66.87 },
     usuarioComunId: usuario3.id,
   }, [
@@ -475,7 +509,7 @@ async function main() {
   console.log("📋 Creating general pending requests...");
 
   await createSolicitud({
-    codigo: "SOL-001", motivo: "Paciente con dolor crónico, necesita medicamento urgente",
+    codigo: "SOL-001", motivo: "Paciente con dolor crónico, necesita insumo médico urgente",
     estado: "PENDIENTE", tiempoEspera: "ALTO", requiresPrescription: true,
     direccion: { lat: 10.4806, lng: -66.9036, calle: "San Bernardino, Caracas" },
     usuarioComunId: usuario2.id,
@@ -516,14 +550,14 @@ async function main() {
   // ── Notificaciones ─────────────────────────────────────────────────────────
   console.log("🔔 Creating notifications...");
   const notifData = [
-    { userId: testUser.id, type: "SYSTEM",        title: "¡Bienvenido a MediShareNE!",               message: "Tu cuenta fue creada exitosamente. Puedes solicitar o donar medicamentos desde tu panel.", read: true,  link: null                  },
+    { userId: testUser.id, type: "SYSTEM",        title: "¡Bienvenido a MediShareNE!",               message: "Tu cuenta fue creada exitosamente. Puedes solicitar o donar insumos médicos desde tu panel.", read: true,  link: null                  },
     { userId: testUser.id, type: "MATCH_DONATION", title: "Nueva donación de Ibuprofeno disponible",  message: "Carlos Rodríguez donó 15 tabletas de Ibuprofeno cerca de tu ubicación.",                 read: false, link: "/dashboard/browse"   },
     { userId: testUser.id, type: "MATCH_REQUEST",  title: "Tu solicitud SOL-T003 fue aprobada",       message: "Hospital Central de Caracas aprobó tu solicitud de Metformina e Insulina.",               read: false, link: "/dashboard/requests" },
     { userId: testUser.id, type: "MATCH_DONATION", title: "Donante asignado a tu solicitud SOL-T004", message: "María García aceptó donar Loratadina. Revisa la farmacia propuesta y confírmala.",          read: false, link: "/dashboard/requests" },
-    { userId: testUser.id, type: "SYSTEM",         title: "Tu medicamento está listo para retiro",    message: "SOL-T006: Aspirina lista en Farmatodo Sambil Margarita. Confirma que irás a retirarla.",    read: false, link: "/dashboard/requests" },
+    { userId: testUser.id, type: "SYSTEM",         title: "Tu insumo médico está listo para retiro",    message: "SOL-T006: Aspirina lista en Farmatodo Sambil Margarita. Confirma que irás a retirarla.",    read: false, link: "/dashboard/requests" },
     { userId: testUser.id, type: "SYSTEM",         title: "Solicitud SOL-T008 rechazada",             message: "Tu solicitud de Insulina fue rechazada por falta de récipe médico vigente.",                read: true,  link: "/dashboard/requests" },
     { userId: usuario2.id, type: "SYSTEM",         title: "Bienvenido a MediShareNE",                 message: "Tu cuenta fue creada exitosamente.",                                                        read: false, link: null                  },
-    { userId: usuario2.id, type: "MATCH_REQUEST",  title: "¡Alguien necesita tu medicamento!",        message: "Hay una solicitud de Paracetamol cerca de ti. ¡Considera donar!",                          read: false, link: "/dashboard/browse"   },
+    { userId: usuario2.id, type: "MATCH_REQUEST",  title: "¡Alguien necesita tu insumo médico!",        message: "Hay una solicitud de Paracetamol cerca de ti. ¡Considera donar!",                          read: false, link: "/dashboard/browse"   },
   ];
   for (const n of notifData) {
     await prisma.notificacion.create({ data: n });
@@ -535,7 +569,7 @@ async function main() {
   console.log("   - 2 Health Entities");
   console.log("   - 9 Pharmacies (Margarita Island)");
   console.log("   - 5 Users");
-  console.log("   - 12 Medications");
+  console.log("   - 12 Medical supplies");
   console.log("   - 13 Requests (9 for test user covering all states + 4 pending others)");
   console.log("   - 7 Donations (3 for test user + 4 others available)");
   console.log("   - 8 Notifications");

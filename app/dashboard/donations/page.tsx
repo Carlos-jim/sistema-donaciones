@@ -10,7 +10,9 @@ import {
   Package,
   Pill,
   PlusCircle,
+  QrCode,
 } from "lucide-react";
+import { getQrImageUrl } from "@/lib/qr";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -109,6 +111,7 @@ type DonationItem =
       deliveryConfirmedAt: string | null;
       medications: OfferMedication[];
       donorCode: string | null;
+      donorQrPayload: string | null;
     };
 
 function formatDate(date: string | null) {
@@ -213,6 +216,7 @@ export default function MyDonationsPage() {
       deliveryConfirmedAt: delivery.deliveryConfirmedAt,
       medications: delivery.medicamentos,
       donorCode: delivery.codigoEntregaDonante,
+      donorQrPayload: delivery.donorQrPayload,
     })),
   ].sort(
     (left, right) =>
@@ -329,7 +333,7 @@ export default function MyDonationsPage() {
                     </span>
                   </div>
                   <CardTitle className="line-clamp-1 text-xl text-teal-950">
-                    {item.medications[0]?.medicamento.nombre || "Medicamento"}
+                    {item.medications[0]?.medicamento.nombre || "Insumo médico"}
                   </CardTitle>
                 </CardHeader>
 
@@ -452,12 +456,25 @@ export default function MyDonationsPage() {
                 </div>
 
                 {"donorCode" in selectedItem && (
-                  <div className="rounded-xl border bg-gray-50 p-4">
-                    <p className="text-xs uppercase tracking-wide text-gray-500">
-                      Codigo de entrega
-                    </p>
-                    <p className="mt-1 font-mono text-sm text-gray-900">
+                  <div className="rounded-xl border-2 border-blue-200 bg-gradient-to-r from-blue-50 to-blue-100 p-4">
+                    <div className="flex items-center gap-2 mb-2">
+                      <QrCode className="h-4 w-4 text-blue-700" />
+                      <p className="text-xs uppercase tracking-wide text-blue-700 font-semibold">
+                        QR del Donante (Entrega)
+                      </p>
+                    </div>
+                    <p className="font-mono text-sm text-gray-900">
                       {selectedItem.donorCode || "N/A"}
+                    </p>
+                    {"donorQrPayload" in selectedItem && selectedItem.donorQrPayload && (
+                      <img
+                        src={getQrImageUrl(selectedItem.donorQrPayload, 180)}
+                        alt="QR del donante"
+                        className="mx-auto mt-3 h-[180px] w-[180px] rounded-lg border bg-white p-2"
+                      />
+                    )}
+                    <p className="mt-2 text-xs text-blue-700">
+                      Presenta este codigo o QR en la farmacia al entregar el insumo médico.
                     </p>
                   </div>
                 )}
@@ -476,7 +493,7 @@ export default function MyDonationsPage() {
                 <div>
                   <h3 className="mb-3 flex items-center gap-2 font-semibold text-gray-800">
                     <Pill className="h-4 w-4 text-teal-600" />
-                    Medicamentos
+                    Insumos médicos
                   </h3>
                   <div className="space-y-3">
                     {selectedItem.medications.map((medication) => (

@@ -34,6 +34,7 @@ const solicitudLookupArgs = Prisma.validator<Prisma.SolicitudDefaultArgs>()({
       select: {
         nombre: true,
         email: true,
+        cedula: true,
       },
     },
     farmaciaEntrega: {
@@ -57,6 +58,7 @@ const donacionLookupArgs = Prisma.validator<Prisma.DonacionDefaultArgs>()({
       select: {
         nombre: true,
         email: true,
+        cedula: true,
       },
     },
     farmacia: {
@@ -317,7 +319,7 @@ export async function updateStatus(
       const now = new Date();
       const data: Record<string, unknown> = {};
       const medicamentoNombre =
-        solicitud.medicamentos[0]?.medicamento?.nombre || "medicamento";
+        solicitud.medicamentos[0]?.medicamento?.nombre || "insumo médico";
 
       if (newStatus === "RECHAZADA") {
         data.estado = EstadoSolicitud.APROBADA;
@@ -366,7 +368,7 @@ export async function updateStatus(
             data: {
               userId: solicitud.donanteAsignadoId,
               type: "SYSTEM",
-              title: "Farmacia recibió el medicamento",
+              title: "Farmacia recibió el insumo médico",
               message: `${pharmacy.nombre} confirmó la recepción de ${medicamentoNombre}. ¡Gracias por tu donación!`,
               link: "/dashboard/donations",
             },
@@ -376,7 +378,7 @@ export async function updateStatus(
             data: {
               userId: solicitud.donanteAsignadoId,
               type: "SYSTEM",
-              title: "Medicamento disponible para retiro",
+              title: "Insumo médico disponible para retiro",
               message: `${pharmacy.nombre} ha habilitado el retiro de ${medicamentoNombre}. El beneficiario ya puede recogerlo.`,
               link: "/dashboard/donations",
             },

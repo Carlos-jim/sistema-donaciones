@@ -161,6 +161,13 @@ export async function getSupervisorRequests() {
       approvalDate: true,
       approvalInstitution: true,
       donanteAsignadoId: true,
+      donanteAsignado: {
+        select: {
+          nombre: true,
+          cedula: true,
+          email: true,
+        },
+      },
       usuarioComun: {
         select: {
           nombre: true,
@@ -251,7 +258,7 @@ export async function approveRequest(requestId: string) {
   try {
     await createSystemNotificationWithFallback(
       request.usuarioComunId,
-      "Solicitud de medicamento aprobada",
+      "Solicitud de insumo médico aprobada",
       "Tu solicitud ha sido revisada y aprobada.",
     );
   } catch (error) {
@@ -316,7 +323,7 @@ export async function rejectRequest(requestId: string, reason: string) {
   try {
     await createSystemNotificationWithFallback(
       request.usuarioComunId,
-      "Solicitud de medicamento rechazada",
+      "Solicitud de insumo médico rechazada",
       `Tu solicitud ha sido rechazada por el supervisor (${supervisor.nombre}). Motivo: ${reason.trim()}`,
     );
   } catch (error) {

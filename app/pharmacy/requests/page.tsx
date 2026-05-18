@@ -96,7 +96,7 @@ function getNextStepLabel(request: PharmacyActiveRequest) {
     return "Esperando confirmacion del beneficiario sobre la farmacia";
   }
 
-  return "Esperando que el donante entregue el medicamento";
+  return "Esperando que el donante entregue el insumo médico";
 }
 
 function statusSectionDescription(status: PharmacyActiveRequest["estado"]) {
@@ -104,7 +104,7 @@ function statusSectionDescription(status: PharmacyActiveRequest["estado"]) {
     case "EN_PROCESO":
       return "Solicitudes asignadas a esta farmacia que todavia esperan entrega o validacion.";
     case "RECIBIDA":
-      return "Medicamentos ya recibidos por farmacia y pendientes de marcar para retiro.";
+      return "Insumos médicos ya recibidos por farmacia y pendientes de marcar para retiro.";
     case "LISTA_PARA_RETIRO":
       return "Solicitudes listas para que el beneficiario las retire en farmacia.";
     default:

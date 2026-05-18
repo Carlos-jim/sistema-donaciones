@@ -70,9 +70,19 @@ export async function POST(request: Request) {
     // Create or find medicamentos and link them to the solicitud
     for (const med of medicamentos) {
       // Find or create the medicamento
-      let medicamento = await prisma.medicamento.findFirst({
-        where: { nombre: med.nombre },
-      });
+      let medicamento = null;
+
+      if (med.medicamentoId) {
+        medicamento = await prisma.medicamento.findUnique({
+          where: { id: med.medicamentoId },
+        });
+      }
+
+      if (!medicamento) {
+        medicamento = await prisma.medicamento.findFirst({
+          where: { nombre: med.nombre },
+        });
+      }
 
       if (!medicamento) {
         medicamento = await prisma.medicamento.create({
@@ -113,8 +123,8 @@ export async function POST(request: Request) {
             data: {
               userId: match.donacion.usuarioComunId,
               type: "MATCH_REQUEST",
-              title: "¡Alguien necesita tu donación!",
-              message: `Se ha solicitado ${med.nombre}, un medicamento que tienes disponible.`,
+        title: "¡Alguien necesita tu donación!",
+        message: `Se ha solicitado ${med.nombre}, un insumo médico que tienes disponible.`,
               link: "/dashboard/requests",
             },
           });

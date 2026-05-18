@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/select";
 import { MapView } from "@/components/map-view";
 import { useToast } from "@/hooks/use-toast";
+import { MedicationAutocomplete } from "@/components/medication-autocomplete";
 import {
   Upload,
   X,
@@ -31,7 +32,8 @@ import {
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface MedicationRequestFormData {
-  medication: string;
+  medicamentoId: string;
+  medicationName: string;
   quantity: number;
   unit: string;
   requiresPrescription: boolean;
@@ -108,7 +110,8 @@ export function MedicationRequestForm({
   const [currentStep, setCurrentStep] = useState(1);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [formData, setFormData] = useState<MedicationRequestFormData>({
-    medication: initialMedication ?? "",
+    medicamentoId: "",
+    medicationName: initialMedication ?? "",
     quantity: 1,
     unit: "tablets",
     requiresPrescription: false,
@@ -228,7 +231,8 @@ export function MedicationRequestForm({
           motivo: formData.description,
           medicamentos: [
             {
-              nombre: formData.medication,
+              medicamentoId: formData.medicamentoId,
+              nombre: formData.medicationName,
               cantidad: formData.quantity,
               unidad: formData.unit,
             },
@@ -252,7 +256,7 @@ export function MedicationRequestForm({
       toast({
         title: "¡Solicitud enviada!",
         description:
-          "Tu solicitud de medicamento ha sido registrada exitosamente.",
+          "Tu solicitud de insumo médico ha sido registrada exitosamente.",
       });
 
       // Reset form
@@ -260,7 +264,8 @@ export function MedicationRequestForm({
         URL.revokeObjectURL(formData.recipePhotoUrl);
       }
       setFormData({
-        medication: "",
+        medicamentoId: "",
+        medicationName: "",
         quantity: 1,
         unit: "tablets",
         requiresPrescription: false,
@@ -302,7 +307,7 @@ export function MedicationRequestForm({
     }
   };
 
-  const canProceedToStep2 = formData.medication.trim() !== "";
+  const canProceedToStep2 = formData.medicamentoId.trim() !== "";
   const canProceedToStep3 = formData.description.trim() !== "" || true; // Description is optional
 
   const nextStep = () => {
@@ -334,7 +339,7 @@ export function MedicationRequestForm({
             </div>
             <div>
               <h1 className="text-2xl font-bold text-white">
-                Solicitar Medicamento
+                Solicitar Insumo médico
               </h1>
               <p className="text-teal-100 text-sm mt-1">
                 Completa el formulario para recibir ayuda
@@ -349,7 +354,7 @@ export function MedicationRequestForm({
             <StepIndicator
               step={1}
               currentStep={currentStep}
-              title="Medicamento"
+              title="Insumo médico"
               icon={Pill}
             />
             <div
@@ -384,27 +389,27 @@ export function MedicationRequestForm({
                     className="text-sm font-semibold text-gray-700 flex items-center gap-2"
                   >
                     <Pill className="w-4 h-4 text-teal-600" />
-                    Nombre del Medicamento
+                    Nombre del Insumo médico
                   </Label>
-                  <Input
-                    id="medication"
-                    placeholder="Ej. Paracetamol 500mg"
-                    required
-                    value={formData.medication}
-                    onChange={(e) =>
-                      !initialMedication &&
-                      setFormData({ ...formData, medication: e.target.value })
+                  <MedicationAutocomplete
+                    value={formData.medicamentoId}
+                    onValueChange={(id) =>
+                      setFormData((prev) => ({ ...prev, medicamentoId: id }))
                     }
+                    onSelectMedicamento={(med) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        medicationName: med?.nombre || "",
+                      }))
+                    }
+                    placeholder="Busca un insumo médico..."
                     readOnly={!!initialMedication}
-                    className={`h-12 rounded-xl border-gray-200 transition-all ${
-                      initialMedication
-                        ? "bg-gray-50 text-gray-500 cursor-not-allowed"
-                        : "focus:border-teal-500 focus:ring-teal-500/20"
-                    }`}
+                    initialMedication={initialMedication}
+                    className="w-full"
                   />
                   {initialMedication && (
                     <p className="text-xs text-teal-600 mt-1">
-                      Medicamento de la donación seleccionada (no editable)
+                      Insumo médico de la donación seleccionada (no editable)
                     </p>
                   )}
                 </div>
@@ -668,7 +673,7 @@ export function MedicationRequestForm({
                   </Label>
                   <Textarea
                     id="description"
-                    placeholder="Cuéntanos brevemente tu situación y por qué necesitas este medicamento..."
+                    placeholder="Cuéntanos brevemente tu situación y por qué necesitas este insumo médico..."
                     rows={4}
                     value={formData.description}
                     onChange={(e) =>
@@ -733,9 +738,9 @@ export function MedicationRequestForm({
                   </h3>
                   <div className="grid grid-cols-2 gap-3 text-sm">
                     <div>
-                      <span className="text-gray-500">Medicamento:</span>
+                      <span className="text-gray-500">Insumo médico:</span>
                       <p className="font-medium text-gray-800">
-                        {formData.medication || "-"}
+                        {formData.medicationName || "-"}
                       </p>
                     </div>
                     <div>

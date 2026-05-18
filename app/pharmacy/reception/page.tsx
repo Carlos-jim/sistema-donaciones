@@ -8,6 +8,7 @@ import {
   HandHeart,
   Search,
   User,
+  ShieldCheck,
 } from "lucide-react";
 import {
   getPendingPickups,
@@ -160,6 +161,12 @@ export default function PharmacyReceptionPage() {
                         {pickup.usuarioComun.nombre}
                       </p>
                       <p className="text-xs text-gray-500">
+                        Cedula:{" "}
+                        <span className="font-mono text-purple-700">
+                          {pickup.usuarioComun.cedula || "N/A"}
+                        </span>
+                      </p>
+                      <p className="text-xs text-gray-400">
                         {pickup.medicamentos
                           .map((med) => med.medicamento.nombre)
                           .join(", ")}
@@ -223,16 +230,69 @@ export default function PharmacyReceptionPage() {
             </div>
 
             <div className="space-y-5 p-5">
-              {"usuarioComun" in item && item.usuarioComun && (
-                <div className="rounded-lg border bg-gray-50 p-4">
-                  <p className="text-xs uppercase tracking-wide text-gray-500">
-                    Beneficiario
-                  </p>
-                  <p className="mt-1 font-medium text-gray-900">
+              {item.type === "SOLICITUD" && (
+                <div className="rounded-xl border-2 border-amber-300 bg-gradient-to-r from-amber-50 to-orange-50 p-4">
+                  <div className="mb-3 flex items-center gap-2">
+                    <ShieldCheck className="h-5 w-5 text-amber-700" />
+                    <p className="text-sm font-bold uppercase tracking-wide text-amber-800">
+                      Validacion obligatoria de identidad
+                    </p>
+                  </div>
+
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    {"donanteAsignado" in item && item.donanteAsignado && (
+                      <div className="rounded-lg border border-blue-200 bg-white p-3">
+                        <p className="text-xs font-semibold uppercase tracking-wide text-blue-700">
+                          Donante
+                        </p>
+                        <p className="mt-1 text-sm font-medium text-gray-900">
+                          {item.donanteAsignado.nombre}
+                        </p>
+                        <p className="text-sm text-gray-600">
+                          Cedula:{" "}
+                          <span className="font-mono text-blue-700">
+                            {item.donanteAsignado.cedula || "N/A"}
+                          </span>
+                        </p>
+                      </div>
+                    )}
+
+                    {"usuarioComun" in item && item.usuarioComun && (
+                      <div className="rounded-lg border border-teal-200 bg-white p-3">
+                        <p className="text-xs font-semibold uppercase tracking-wide text-teal-700">
+                          Beneficiario
+                        </p>
+                        <p className="mt-1 text-sm font-medium text-gray-900">
+                          {item.usuarioComun.nombre}
+                        </p>
+                        <p className="text-sm text-gray-600">
+                          Cedula:{" "}
+                          <span className="font-mono text-teal-700">
+                            {item.usuarioComun.cedula || "N/A"}
+                          </span>
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {item.type === "DONACION" && "usuarioComun" in item && item.usuarioComun && (
+                <div className="rounded-xl border-2 border-blue-200 bg-gradient-to-r from-blue-50 to-white p-4">
+                  <div className="mb-2 flex items-center gap-2">
+                    <ShieldCheck className="h-5 w-5 text-blue-700" />
+                    <p className="text-sm font-bold uppercase tracking-wide text-blue-800">
+                      Validacion de identidad — Donante
+                    </p>
+                  </div>
+                  <p className="text-sm font-medium text-gray-900">
                     {item.usuarioComun.nombre}
                   </p>
                   <p className="text-sm text-gray-600">
-                    {item.usuarioComun.email}
+                    Cedula:{" "}
+                    <span className="font-mono text-blue-700">
+                      {item.usuarioComun.cedula || "N/A"}
+                    </span>
                   </p>
                 </div>
               )}
@@ -253,7 +313,7 @@ export default function PharmacyReceptionPage() {
 
               <div className="space-y-3">
                 <p className="text-sm font-semibold text-gray-900">
-                  Medicamentos
+                  Insumos médicos
                 </p>
                 {item.medicamentos.map((med) => (
                   <div

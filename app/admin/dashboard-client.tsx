@@ -87,6 +87,14 @@ type SupervisorForm = {
   telefono: string;
 };
 
+type Categoria = {
+  id: string;
+  nombre: string;
+  descripcion: string | null;
+  icono: string | null;
+  orden: number;
+};
+
 type Medicamento = {
   id: string;
   nombre: string;
@@ -95,6 +103,8 @@ type Medicamento = {
   concentracion: string | null;
   descripcion: string | null;
   activo: boolean;
+  categoriaId: string | null;
+  categoria: Categoria | null;
   createdAt: string;
   _count: { solicitudes: number; donaciones: number };
 };
@@ -105,6 +115,7 @@ type MedicamentoForm = {
   presentacion: string;
   concentracion: string;
   descripcion: string;
+  categoriaId: string;
 };
 
 const emptyMedicamentoForm: MedicamentoForm = {
@@ -113,6 +124,7 @@ const emptyMedicamentoForm: MedicamentoForm = {
   presentacion: "",
   concentracion: "",
   descripcion: "",
+  categoriaId: "",
 };
 
 const PRESENTACIONES = [
@@ -451,8 +463,8 @@ function MedicamentosTable({
   onToggle: (m: Medicamento) => void;
   onDelete: (m: Medicamento) => void;
 }) {
-  if (medicamentos.length === 0)
-    return <EmptyState label="No se encontraron medicamentos" />;
+    if (medicamentos.length === 0)
+    return <EmptyState label="No se encontraron insumos médicos" />;
 
   return (
     <table className="w-full text-sm">
@@ -465,10 +477,10 @@ function MedicamentosTable({
             Principio Activo
           </th>
           <th className="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider hidden lg:table-cell">
-            Categoría / Presentación
+            Categoría
           </th>
-          <th className="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider hidden lg:table-cell">
-            Concentración
+          <th className="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider hidden md:table-cell">
+            Presentación / Dosis
           </th>
           <th className="text-center px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider hidden md:table-cell">
             Usos
@@ -512,17 +524,26 @@ function MedicamentosTable({
               )}
             </td>
             <td className="px-6 py-4 hidden lg:table-cell">
-              {m.presentacion ? (
-                <span className="inline-flex items-center gap-1 bg-violet-50 text-violet-700 text-xs px-2 py-0.5 rounded-full border border-violet-100">
+              {m.categoria ? (
+                <span className="inline-flex items-center gap-1 bg-teal-50 text-teal-700 text-xs px-2 py-0.5 rounded-full border border-teal-100">
                   <Tag className="w-3 h-3" />
-                  {m.presentacion}
+                  {m.categoria.nombre}
                 </span>
               ) : (
                 <span className="text-gray-300 text-xs">—</span>
               )}
             </td>
-            <td className="px-6 py-4 text-gray-500 text-xs hidden lg:table-cell">
-              {m.concentracion ?? <span className="text-gray-300">—</span>}
+            <td className="px-6 py-4 text-gray-500 text-xs hidden md:table-cell">
+              <div className="flex flex-col gap-0.5">
+                {m.presentacion ? (
+                  <span className="text-gray-600">{m.presentacion}</span>
+                ) : (
+                  <span className="text-gray-300">—</span>
+                )}
+                {m.concentracion && (
+                  <span className="text-gray-400">{m.concentracion}</span>
+                )}
+              </div>
             </td>
             <td className="px-4 py-4 hidden md:table-cell">
               <div className="flex items-center justify-center gap-2 text-xs text-gray-500">
@@ -787,7 +808,7 @@ function InformesPanel({
           <div>
             <h4 className="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-1.5">
               <TrendingUp className="w-4 h-4 text-teal-600" />
-              Top 10 Medicamentos más solicitados
+              Top 10 Insumos médicos más solicitados
             </h4>
             <div className="overflow-x-auto rounded-xl border border-gray-100">
               <table className="w-full text-sm">
@@ -797,7 +818,7 @@ function InformesPanel({
                       #
                     </th>
                     <th className="text-left px-4 py-2.5 text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                      Medicamento
+                      Insumo médico
                     </th>
                     <th className="text-right px-4 py-2.5 text-xs font-semibold text-gray-500 uppercase tracking-wide">
                       Solicitudes
@@ -943,7 +964,7 @@ function RespaldoPanel({
         <p className="text-sm text-gray-500 mt-1 max-w-md mx-auto">
           Genera un archivo JSON completo con todos los datos del sistema:
           usuarios, farmacias, supervisores, solicitudes, donaciones y
-          medicamentos.
+          insumos médicos.
         </p>
       </div>
       <div className="bg-amber-50 border border-amber-200 rounded-xl px-5 py-3 text-left max-w-md w-full">
@@ -954,9 +975,9 @@ function RespaldoPanel({
           <li>• Usuarios registrados (sin contraseñas)</li>
           <li>• Farmacias y sus datos de contacto</li>
           <li>• Supervisores / entes de salud</li>
-          <li>• Solicitudes con sus medicamentos</li>
-          <li>• Donaciones con sus medicamentos</li>
-          <li>• Catálogo de medicamentos</li>
+            <li>• Solicitudes con sus insumos médicos</li>
+            <li>• Donaciones con sus insumos médicos</li>
+            <li>• Catálogo de insumos médicos</li>
         </ul>
       </div>
       <Button
@@ -987,6 +1008,7 @@ export default function AdminDashboardClient() {
   const [farmacias, setFarmacias] = useState<Farmacia[]>([]);
   const [supervisores, setSupervisores] = useState<Supervisor[]>([]);
   const [medicamentos, setMedicamentos] = useState<Medicamento[]>([]);
+  const [categorias, setCategorias] = useState<Categoria[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [modal, setModal] = useState<ModalState>({ type: "none" });
@@ -1011,14 +1033,16 @@ export default function AdminDashboardClient() {
   const loadData = useCallback(async () => {
     setLoading(true);
     try {
-      const [farmRes, supRes, medRes] = await Promise.all([
+      const [farmRes, supRes, medRes, catRes] = await Promise.all([
         fetch("/api/admin/farmacias"),
         fetch("/api/admin/supervisores"),
         fetch("/api/admin/medicamentos"),
+        fetch("/api/categorias"),
       ]);
       if (farmRes.ok) setFarmacias(await farmRes.json());
       if (supRes.ok) setSupervisores(await supRes.json());
       if (medRes.ok) setMedicamentos(await medRes.json());
+      if (catRes.ok) setCategorias(await catRes.json());
     } catch {
       toast({
         title: "Error",
@@ -1117,6 +1141,7 @@ export default function AdminDashboardClient() {
       presentacion: item.presentacion ?? "",
       concentracion: item.concentracion ?? "",
       descripcion: item.descripcion ?? "",
+      categoriaId: item.categoriaId ?? "",
     });
     setModal({ type: "medicamento-edit", item });
   };
@@ -1147,6 +1172,9 @@ export default function AdminDashboardClient() {
         ...(medicamentoForm.descripcion && {
           descripcion: medicamentoForm.descripcion,
         }),
+        ...(medicamentoForm.categoriaId && {
+          categoriaId: medicamentoForm.categoriaId,
+        }),
       };
 
       const res = await fetch(url, {
@@ -1165,7 +1193,7 @@ export default function AdminDashboardClient() {
         return;
       }
       toast({
-        title: isEdit ? "Medicamento actualizado" : "Medicamento creado",
+        title: isEdit ? "Insumo médico actualizado" : "Insumo médico creado",
         description: `${medicamentoForm.nombre} fue ${isEdit ? "actualizado" : "creado"} exitosamente.`,
       });
       closeModal();
@@ -1189,8 +1217,8 @@ export default function AdminDashboardClient() {
       }
       toast({
         title: item.activo
-          ? "Medicamento desactivado"
-          : "Medicamento reactivado",
+          ? "Insumo médico desactivado"
+          : "Insumo médico reactivado",
         description: `${item.nombre} fue ${item.activo ? "desactivado" : "reactivado"} exitosamente.`,
       });
       loadData();
@@ -1220,7 +1248,7 @@ export default function AdminDashboardClient() {
     } catch {
       toast({
         title: "Error",
-        description: "Error al eliminar medicamento",
+        description: "Error al eliminar insumo médico",
         variant: "destructive",
       });
     }
@@ -1499,7 +1527,7 @@ export default function AdminDashboardClient() {
           borderClass="border-emerald-100"
         />
         <StatCard
-          label="Medicamentos en catálogo"
+           label="Insumos médicos en catálogo"
           value={loading ? "–" : medicamentos.filter((m) => m.activo).length}
           icon={Pill}
           colorClass="text-violet-600"
@@ -1536,7 +1564,7 @@ export default function AdminDashboardClient() {
               },
               {
                 key: "medicamentos" as const,
-                label: "Medicamentos",
+                label: "Insumos médicos",
                 icon: Pill,
                 badge: medicamentos.length,
               },
@@ -1608,7 +1636,7 @@ export default function AdminDashboardClient() {
                     ? "Buscar farmacia..."
                     : activeTab === "supervisores"
                       ? "Buscar supervisor..."
-                      : "Buscar medicamento, principio activo..."
+                      : "Buscar insumo médico, principio activo..."
                 }
                 value={search}
                 onChange={(e) => {
@@ -1635,7 +1663,7 @@ export default function AdminDashboardClient() {
                 ? "Nueva Farmacia"
                 : activeTab === "supervisores"
                   ? "Nuevo Supervisor"
-                  : "Nuevo Medicamento"}
+                  : "Nuevo Insumo médico"}
             </Button>
           </div>
         )}
@@ -1787,7 +1815,7 @@ export default function AdminDashboardClient() {
                 <>
                   <span className="text-xs text-gray-500">
                     {filteredMedicamentos.length === 0
-                      ? "0 medicamentos"
+                      ? "0 insumos médicos"
                       : `${(medicamentoPage - 1) * PAGE_SIZE + 1}–${Math.min(medicamentoPage * PAGE_SIZE, filteredMedicamentos.length)} de ${filteredMedicamentos.length}`}
                   </span>
                   <div className="flex items-center gap-1">
@@ -2165,12 +2193,12 @@ export default function AdminDashboardClient() {
         <DialogContent className="sm:max-w-lg rounded-2xl gap-0 p-0 overflow-hidden">
           <div className="bg-gradient-to-r from-violet-600 to-purple-600 px-6 py-5">
             <DialogTitle className="text-white font-bold text-lg">
-              {isEditMode ? "Editar Medicamento" : "Nuevo Medicamento"}
+              {isEditMode ? "Editar Insumo médico" : "Nuevo Insumo médico"}
             </DialogTitle>
             <p className="text-violet-100 text-xs mt-0.5">
               {isEditMode
-                ? "Modifica los datos del medicamento"
-                : "Añade un nuevo medicamento al catálogo"}
+                ? "Modifica los datos del insumo médico"
+                : "Añade un nuevo insumo médico al catálogo"}
             </p>
           </div>
           <form onSubmit={handleMedicamentoSubmit} className="p-6 space-y-4">
@@ -2252,6 +2280,29 @@ export default function AdminDashboardClient() {
 
             <div className="space-y-1.5">
               <Label className="text-xs font-semibold text-gray-600 uppercase tracking-wide">
+                Categoría Terapéutica
+              </Label>
+              <select
+                value={medicamentoForm.categoriaId}
+                onChange={(e) =>
+                  setMedicamentoForm({
+                    ...medicamentoForm,
+                    categoriaId: e.target.value,
+                  })
+                }
+                className="w-full h-10 rounded-xl border border-gray-200 focus:border-violet-400 focus:outline-none px-3 text-sm text-gray-700 bg-white"
+              >
+                <option value="">Seleccionar categoría...</option>
+                {categorias.map((cat) => (
+                  <option key={cat.id} value={cat.id}>
+                    {cat.nombre}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="space-y-1.5">
+              <Label className="text-xs font-semibold text-gray-600 uppercase tracking-wide">
                 Descripción
               </Label>
               <Input
@@ -2284,7 +2335,7 @@ export default function AdminDashboardClient() {
                 {submitting ? (
                   <Loader2 className="w-4 h-4 animate-spin mr-2" />
                 ) : null}
-                {isEditMode ? "Guardar cambios" : "Crear medicamento"}
+                {isEditMode ? "Guardar cambios" : "Crear insumo médico"}
               </Button>
             </DialogFooter>
           </form>

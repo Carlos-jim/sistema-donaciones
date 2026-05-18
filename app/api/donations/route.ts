@@ -6,7 +6,8 @@ import { z } from "zod";
 
 // Input validation schema
 const donationSchema = z.object({
-  medication: z.string().min(1, "El nombre del medicamento es requerido"),
+  medicamentoId: z.string().optional(),
+  medication: z.string().min(1, "El nombre del insumo médico es requerido"),
   quantity: z.number().min(1, "La cantidad debe ser al menos 1"),
   unit: z.string().min(1, "La unidad es requerida"),
   expiration: z.string().refine((date) => new Date(date) > new Date(), {
@@ -47,6 +48,7 @@ export async function POST(request: Request) {
     }
 
     const {
+      medicamentoId,
       medication,
       quantity,
       unit,
@@ -123,9 +125,19 @@ Requiere Receta: ${prescription === "yes" ? "Sí" : "No"}
     });
 
     // 2. Find or Create Medication
-    let dbMedicamento = await prisma.medicamento.findFirst({
-      where: { nombre: medication },
-    });
+    let dbMedicamento = null;
+
+    if (medicamentoId) {
+      dbMedicamento = await prisma.medicamento.findUnique({
+        where: { id: medicamentoId },
+      });
+    }
+
+    if (!dbMedicamento) {
+      dbMedicamento = await prisma.medicamento.findFirst({
+        where: { nombre: medication },
+      });
+    }
 
     if (!dbMedicamento) {
       dbMedicamento = await prisma.medicamento.create({
@@ -165,7 +177,7 @@ Requiere Receta: ${prescription === "yes" ? "Sí" : "No"}
         data: {
           userId: req.solicitud.usuarioComunId,
           type: "MATCH_DONATION",
-          title: "¡Medicamento Disponible!",
+          title: "¡Insumo médico Disponible!",
           message: `Alguien ha donado ${medication}, que estabas solicitando. Revisa los detalles.`,
           link: `/dashboard/donations/${newDonacion.id}`,
         },

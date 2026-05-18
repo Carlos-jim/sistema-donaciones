@@ -9,6 +9,7 @@ const medicamentoSchema = z.object({
   presentacion: z.string().optional(),
   concentracion: z.string().optional(),
   descripcion: z.string().optional(),
+  categoriaId: z.string().optional(),
 });
 
 export async function GET() {
@@ -28,6 +29,16 @@ export async function GET() {
         concentracion: true,
         descripcion: true,
         activo: true,
+        categoriaId: true,
+        categoria: {
+          select: {
+            id: true,
+            nombre: true,
+            descripcion: true,
+            icono: true,
+            orden: true,
+          },
+        },
         createdAt: true,
         _count: {
           select: { solicitudes: true, donaciones: true },
@@ -39,7 +50,7 @@ export async function GET() {
   } catch (error) {
     console.error("Error fetching medicamentos:", error);
     return NextResponse.json(
-      { error: "Error al obtener medicamentos" },
+      { error: "Error al obtener insumos médicos" },
       { status: 500 },
     );
   }
@@ -61,7 +72,7 @@ export async function POST(request: NextRequest) {
     });
     if (existing) {
       return NextResponse.json(
-        { error: "Ya existe un medicamento con ese nombre" },
+        { error: "Ya existe un insumo médico con ese nombre" },
         { status: 409 },
       );
     }
@@ -77,7 +88,7 @@ export async function POST(request: NextRequest) {
     }
     console.error("Error creating medicamento:", error);
     return NextResponse.json(
-      { error: "Error al crear el medicamento" },
+      { error: "Error al crear el insumo médico" },
       { status: 500 },
     );
   }

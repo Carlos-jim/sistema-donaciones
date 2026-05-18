@@ -218,7 +218,7 @@ export default function DashboardClient({
 
       return {
         id: sol.id,
-        name: sol.medicamentos[0]?.medicamento?.nombre || "Medicamento",
+        name: sol.medicamentos[0]?.medicamento?.nombre || "Insumo médico",
         distance: distance !== null ? formatDistance(distance) : "N/A",
         distanceValue: distance,
         urgency: urgencyMap[sol.tiempoEspera] || "Media",
@@ -278,7 +278,7 @@ export default function DashboardClient({
 
       return {
         id: don.id,
-        name: don.medicamentos[0]?.medicamento?.nombre || "Medicamento",
+        name: don.medicamentos[0]?.medicamento?.nombre || "Insumo médico",
         unit: don.medicamentos[0]?.medicamento?.presentacion || "unidades",
         quantity: don.medicamentos[0]?.cantidad ?? 1,
         requiresPrescription,
@@ -368,7 +368,7 @@ export default function DashboardClient({
           <Link href="/dashboard/request-medication">
             <Button className="bg-gradient-to-r from-teal-600 to-teal-500 hover:from-teal-700 hover:to-teal-600 w-full sm:w-auto shadow-lg shadow-teal-600/20 transition-all duration-300">
               <Search className="mr-2 h-4 w-4" />
-              Solicitar Medicamento
+              Solicitar Insumo médico
             </Button>
           </Link>
           <Link href="/dashboard/donate-medication">
@@ -377,7 +377,7 @@ export default function DashboardClient({
               className="w-full sm:w-auto border-2 hover:border-teal-600 hover:text-teal-600 transition-all duration-300"
             >
               <PlusCircle className="mr-2 h-4 w-4" />
-              Donar Medicamento
+              Donar Insumo médico
             </Button>
           </Link>
         </div>
@@ -461,7 +461,7 @@ export default function DashboardClient({
                         <div>
                           <CardTitle>Listado de Solicitudes</CardTitle>
                           <CardDescription>
-                            Ayuda a quienes necesitan medicamentos. Haz clic en
+                            Ayuda a quienes necesitan insumos médicos. Haz clic en
                             "Quiero Donar" para comprometerte.
                           </CardDescription>
                         </div>
@@ -492,7 +492,7 @@ export default function DashboardClient({
                         <div className="relative flex-1">
                           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
                           <Input
-                            placeholder="Buscar por medicamento..."
+                            placeholder="Buscar por insumo médico..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                             className="pl-10"
@@ -577,7 +577,7 @@ export default function DashboardClient({
                   <CardHeader className="bg-gradient-to-r from-gray-50 to-white">
                     <CardTitle>Donaciones Públicas Disponibles</CardTitle>
                     <CardDescription>
-                      Medicamentos disponibles para donación.
+                      Insumos médicos disponibles para donación.
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
@@ -635,7 +635,7 @@ export default function DashboardClient({
             ],
           },
           {
-            title: "Medicamentos Más Solicitados",
+            title: "Insumos Médicos Más Solicitados",
             description: "Últimos 30 días",
             content: statistics.topMedicamentos,
           },

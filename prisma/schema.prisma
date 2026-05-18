@@ -257,6 +257,23 @@ model Solicitud {
   @@map("solicitudes")
 }
 
+/// Categoría terapéutica de medicamentos
+model CategoriaMedicamento {
+  id          String   @id @default(cuid())
+  nombre      String   @unique
+  descripcion String?
+  icono       String? // nombre de icono lucide opcional
+  orden       Int      @default(0)
+  activo      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relaciones
+  medicamentos Medicamento[]
+
+  @@map("categorias_medicamentos")
+}
+
 /// Medicamento disponible en el sistema
 model Medicamento {
   id              String   @id @default(cuid())
@@ -268,6 +285,10 @@ model Medicamento {
   activo          Boolean  @default(true)
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
+
+  // FK: Categoría terapéutica
+  categoriaId String?
+  categoria   CategoriaMedicamento? @relation(fields: [categoriaId], references: [id])
 
   // Relaciones: contenido en donaciones y solicitudes
   donaciones  DonacionMedicamento[]

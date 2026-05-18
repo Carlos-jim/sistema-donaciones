@@ -9,6 +9,7 @@ const updateSchema = z.object({
   presentacion: z.string().optional().nullable(),
   concentracion: z.string().optional().nullable(),
   descripcion: z.string().optional().nullable(),
+  categoriaId: z.string().optional().nullable(),
   activo: z.boolean().optional(),
 });
 
@@ -36,7 +37,7 @@ export async function PATCH(
       });
       if (existing) {
         return NextResponse.json(
-          { error: "Ya existe un medicamento con ese nombre" },
+          { error: "Ya existe un insumo médico con ese nombre" },
           { status: 409 },
         );
       }
@@ -57,7 +58,7 @@ export async function PATCH(
     }
     console.error("Error updating medicamento:", error);
     return NextResponse.json(
-      { error: "Error al actualizar el medicamento" },
+      { error: "Error al actualizar el insumo médico" },
       { status: 500 },
     );
   }
@@ -83,7 +84,7 @@ export async function DELETE(
 
     if (!med) {
       return NextResponse.json(
-        { error: "Medicamento no encontrado" },
+        { error: "Insumo médico no encontrado" },
         { status: 404 },
       );
     }
@@ -96,17 +97,17 @@ export async function DELETE(
         data: { activo: false },
       });
       return NextResponse.json({
-        message: "Medicamento desactivado (tiene registros asociados)",
+        message: "Insumo médico desactivado (tiene registros asociados)",
       });
     }
 
     // Hard delete if no references
     await prisma.medicamento.delete({ where: { id } });
-    return NextResponse.json({ message: "Medicamento eliminado" });
+    return NextResponse.json({ message: "Insumo médico eliminado" });
   } catch (error) {
     console.error("Error deleting medicamento:", error);
     return NextResponse.json(
-      { error: "Error al eliminar el medicamento" },
+      { error: "Error al eliminar el insumo médico" },
       { status: 500 },
     );
   }

@@ -71,14 +71,14 @@ export async function PATCH(
         userId: solicitud.usuarioComunId,
         type: "SYSTEM",
         title: "El donante entrego en la farmacia",
-        message: `El donante ha confirmado que entrego el medicamento en ${solicitud.farmaciaEntrega?.nombre}. La farmacia lo validara pronto. Tu codigo de retiro es ${solicitud.codigoRetiroSolicitante || "N/A"}.`,
+        message: `El donante ha confirmado que entrego el insumo médico en ${solicitud.farmaciaEntrega?.nombre}. La farmacia lo validara pronto. Tu codigo de retiro es ${solicitud.codigoRetiroSolicitante || "N/A"}.`,
         link: "/dashboard/requests",
       },
     });
 
     return NextResponse.json({
       success: true,
-      message: "Entrega confirmada. La farmacia validara el medicamento.",
+      message: "Entrega confirmada. La farmacia validara el insumo médico.",
     });
   } catch (error) {
     console.error("Error confirming delivery:", error);

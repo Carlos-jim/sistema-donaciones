@@ -64,6 +64,11 @@ type RequestItem = {
   approvalDate: string | null;
   approvalInstitution: string | null;
   donanteAsignadoId: string | null;
+  donanteAsignado: {
+    nombre: string;
+    cedula: string | null;
+    email: string;
+  } | null;
   usuarioComun: {
     nombre: string;
     cedula: string | null;
@@ -537,7 +542,7 @@ export default function RequestsInbox({
             <div className="relative w-full sm:w-72">
               <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
               <Input
-                placeholder="Buscar por paciente o medicamento..."
+                placeholder="Buscar por paciente o insumo médico..."
                 value={searchQuery}
                 onChange={(event) => {
                   setSearchQuery(event.target.value);
@@ -818,19 +823,21 @@ export default function RequestsInbox({
 
               <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                 <div className="space-y-4">
-                  <div className="rounded-xl border bg-gray-50 p-4">
-                    <h3 className="mb-2 flex items-center font-semibold text-gray-800">
+                  <div className="rounded-xl border-2 border-teal-200 bg-gradient-to-r from-teal-50 to-white p-4">
+                    <h3 className="mb-2 flex items-center font-semibold text-teal-800">
                       <FileText className="mr-2 h-4 w-4 text-teal-600" />
-                      Datos del beneficiario
+                      Validacion de identidad — Beneficiario
                     </h3>
                     <div className="space-y-1 text-sm text-gray-700">
                       <p>
-                        <span className="font-medium">Nombre:</span>{" "}
+                        <span className="font-medium">Nombre completo:</span>{" "}
                         {selectedRequest.usuarioComun.nombre}
                       </p>
                       <p>
                         <span className="font-medium">Cedula:</span>{" "}
-                        {selectedRequest.usuarioComun.cedula || "N/A"}
+                        <span className="font-mono text-teal-700">
+                          {selectedRequest.usuarioComun.cedula || "N/A"}
+                        </span>
                       </p>
                       <p>
                         <span className="font-medium">Email:</span>{" "}
@@ -842,6 +849,31 @@ export default function RequestsInbox({
                       </p>
                     </div>
                   </div>
+
+                  {selectedRequest.donanteAsignado && (
+                    <div className="rounded-xl border-2 border-blue-200 bg-gradient-to-r from-blue-50 to-white p-4">
+                      <h3 className="mb-2 flex items-center font-semibold text-blue-800">
+                        <FileText className="mr-2 h-4 w-4 text-blue-600" />
+                        Validacion de identidad — Donante asignado
+                      </h3>
+                      <div className="space-y-1 text-sm text-gray-700">
+                        <p>
+                          <span className="font-medium">Nombre completo:</span>{" "}
+                          {selectedRequest.donanteAsignado.nombre}
+                        </p>
+                        <p>
+                          <span className="font-medium">Cedula:</span>{" "}
+                          <span className="font-mono text-blue-700">
+                            {selectedRequest.donanteAsignado.cedula || "N/A"}
+                          </span>
+                        </p>
+                        <p>
+                          <span className="font-medium">Email:</span>{" "}
+                          {selectedRequest.donanteAsignado.email}
+                        </p>
+                      </div>
+                    </div>
+                  )}
 
                   <div className="rounded-xl border bg-gray-50 p-4">
                     <h3 className="mb-2 font-semibold text-gray-800">
@@ -872,7 +904,7 @@ export default function RequestsInbox({
 
                   <div className="rounded-xl border bg-gray-50 p-4">
                     <h3 className="mb-3 font-semibold text-gray-800">
-                      Medicamentos solicitados
+                      Insumos médicos solicitados
                     </h3>
                     <ul className="space-y-3">
                       {selectedRequest.medicamentos.map((medication) => {

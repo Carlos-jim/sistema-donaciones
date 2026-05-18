@@ -172,7 +172,7 @@ export function MedicationDonationCard({
             <div className="bg-teal-50 border border-teal-100 rounded-xl p-4 space-y-3">
               <div className="flex items-center gap-2">
                 <Package className="w-4 h-4 text-teal-600" />
-                <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Medicamento</span>
+                  <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Insumo médico</span>
               </div>
               <p className="text-xl font-bold text-gray-900">{name}</p>
               {quantity && (
@@ -207,7 +207,7 @@ export function MedicationDonationCard({
                     Obligatoria
                   </span>
                 </p>
-                <p className="text-xs text-gray-400">El donante indicó que este medicamento requiere receta médica.</p>
+                  <p className="text-xs text-gray-400">El donante indicó que este insumo médico requiere receta médica.</p>
                 <input
                   ref={fileInputRef}
                   type="file"

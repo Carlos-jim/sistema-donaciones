@@ -97,7 +97,7 @@ export default async function PharmacyDashboardPage() {
       href: "/pharmacy/inventory",
       icon: Package,
       title: "Inventario recibido",
-      description: "Revisa los medicamentos fisicos registrados en esta farmacia.",
+      description: "Revisa los insumos médicos fisicos registrados en esta farmacia.",
       badge: inventory.summary.receivedDonationsCount > 0
         ? inventory.summary.receivedDonationsCount
         : null,
@@ -115,9 +115,9 @@ export default async function PharmacyDashboardPage() {
       borderClass: "border-teal-100",
     },
     {
-      label: "Medicamentos recibidos",
+      label: "Insumos médicos recibidos",
       value: inventory.summary.totalUnits,
-      description: `${inventory.summary.uniqueMedicationCount} tipos de medicamento distintos`,
+      description: `${inventory.summary.uniqueMedicationCount} tipos de insumo médico distintos`,
       icon: Pill,
       iconClass: "bg-cyan-50 text-cyan-700",
       borderClass: "border-cyan-100",
@@ -217,7 +217,7 @@ export default async function PharmacyDashboardPage() {
           <div className="flex items-center justify-between border-b border-slate-100 px-6 py-5">
             <div>
               <h3 className="text-lg font-semibold text-slate-900">
-                Medicamentos recibidos recientemente
+                Insumos médicos recibidos recientemente
               </h3>
               <p className="mt-1 text-sm text-slate-500">
                 Resumen del inventario fisico registrado en esta farmacia.
@@ -236,7 +236,7 @@ export default async function PharmacyDashboardPage() {
             {inventory.medications.length === 0 ? (
               <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-6 py-10 text-center">
                 <p className="text-sm font-semibold text-slate-700">
-                  Aun no hay medicamentos recibidos en inventario
+                  Aun no hay insumos médicos recibidos en inventario
                 </p>
                 <p className="mt-2 text-sm text-slate-500">
                   Cuando una donacion quede recibida en esta farmacia aparecera aqui.
