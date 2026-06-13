@@ -21,7 +21,7 @@ npx prisma generate      # Regenerate Prisma client
 
 ## Architecture
 
-**Stack**: Next.js 15 (App Router) + PostgreSQL (Neon) + Prisma ORM + Supabase (file storage) + Tailwind CSS + shadcn/ui
+**Stack**: Next.js 15 (App Router) + PostgreSQL + Prisma ORM + AWS S3 (file storage) + Tailwind CSS + shadcn/ui
 
 **Purpose**: Medication donation platform matching donors (individuals and health entities) with people who need medications. Includes location-based matching, prescription uploads, and a multi-stage approval workflow.
 
@@ -46,7 +46,7 @@ Auth is layered in [lib/auth/](lib/auth/): `auth.service.ts` → `token.service.
 3. Supervisors/admins approve requests via `/supervisor/requests-inbox/`
 4. Matching logic triggers `Notificacion` records when donations match requests
 5. Pharmacies (`Farmacia`) serve as fulfillment points with location data
-6. Prescriptions uploaded to Supabase via `/api/upload/recipe`
+6. Prescriptions uploaded to AWS S3 via `/api/upload/recipe`
 
 ### Key Prisma Enums
 
@@ -70,7 +70,7 @@ components/
 lib/
   auth/             # Auth service layer (token, password, user repository)
   prisma.ts         # Prisma client singleton
-  supabase.ts       # Supabase client
+  s3.ts             # AWS S3 client and recipe upload helpers
   distance.ts       # Distance calculation utility
 prisma/
   schema.prisma     # Database schema
@@ -92,12 +92,12 @@ scripts/            # Utility scripts for test data and seeding
 ## Required Environment Variables
 
 ```env
-DATABASE_URL          # Neon PostgreSQL connection string
+DATABASE_URL          # PostgreSQL connection string
 JWT_SECRET            # JWT signing secret
+AWS_REGION
+S3_BUCKET_NAME
+S3_RECIPES_PREFIX
 NEXT_PUBLIC_GOOGLE_MAPS_API_KEY
-NEXT_PUBLIC_SUPABASE_URL
-NEXT_PUBLIC_SUPABASE_ANON_KEY
-PASSWORD_SUPABASE
 ```
 
 ## Build Notes

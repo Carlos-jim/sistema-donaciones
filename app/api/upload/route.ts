@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { uploadRecipeToS3, validateRecipeFile } from "@/lib/s3";
 
 export async function POST(request: Request) {
   try {
@@ -13,59 +13,22 @@ export async function POST(request: Request) {
       );
     }
 
-    // Validate file type
-    const validTypes = ["image/jpeg", "image/png", "image/webp", "image/jpg"];
-    if (!validTypes.includes(file.type)) {
+    const validation = validateRecipeFile(file);
+    if (!validation.valid) {
       return NextResponse.json(
-        { error: "Tipo de archivo no válido. Use JPG, PNG o WebP" },
+        { error: validation.error },
         { status: 400 },
       );
     }
 
-    // Validate file size (max 5MB)
-    const maxSize = 5 * 1024 * 1024;
-    if (file.size > maxSize) {
-      return NextResponse.json(
-        { error: "El archivo es muy grande. Máximo 5MB" },
-        { status: 400 },
-      );
-    }
-
-    // Generate unique filename
-    const timestamp = Date.now();
-    const extension = file.name.split(".").pop() || "jpg";
-    const filename = `recipe_${timestamp}.${extension}`;
-
-    // Read file buffer
-    const arrayBuffer = await file.arrayBuffer();
-    const buffer = Buffer.from(arrayBuffer);
-
-    // Upload to Supabase bucket 'recipes'
-    const { data: uploadData, error: uploadError } = await supabase.storage
-      .from("recipes")
-      .upload(filename, buffer, {
-        contentType: file.type,
-        cacheControl: "3600",
-        upsert: false,
-      });
-
-    if (uploadError) {
-      console.error("Supabase upload error:", uploadError);
-      return NextResponse.json(
-        { error: "Error al subir el archivo a la nube." },
-        { status: 500 },
-      );
-    }
-
-    // Get public URL
-    const { data: publicUrlData } = supabase.storage
-      .from("recipes")
-      .getPublicUrl(filename);
+    const upload = await uploadRecipeToS3(file);
 
     return NextResponse.json({
       success: true,
-      url: publicUrlData.publicUrl,
-      filename,
+      url: upload.url,
+      fileName: upload.fileName,
+      filename: upload.fileName,
+      key: upload.key,
     });
   } catch (error) {
     console.error("Error uploading file:", error);

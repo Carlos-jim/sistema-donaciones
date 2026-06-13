@@ -66,7 +66,7 @@ export function RecipeUpload({
         throw new Error(data.error || "Error al subir la imagen");
       }
 
-      // Actualizar con la URL real de Supabase
+      // Actualizar con la URL real servida desde AWS S3.
       setPreviewUrl(data.url);
       onUploadComplete(data.url);
     } catch (err) {

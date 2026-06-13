@@ -586,7 +586,7 @@ NEXT_PUBLIC_API_URL=http://${EC2_IP}
 EOF
 ```
 
-> Si tu `.env` tiene claves como `JWT_SECRET`, Supabase o Google Maps, cópialas de tu `.env` anterior antes de reemplazarlo.
+> Si tu `.env` tiene claves como `JWT_SECRET` o Google Maps, cópialas de tu `.env` anterior antes de reemplazarlo.
 
 Aplica migraciones y prueba la app:
 
@@ -989,8 +989,7 @@ Agrega manualmente valores que la app necesite y que no crea Terraform, por ejem
 cat >> /opt/donaciones/.env << 'EOF'
 JWT_SECRET=CAMBIA_ESTE_VALOR
 NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=TU_KEY
-NEXT_PUBLIC_SUPABASE_URL=TU_URL
-NEXT_PUBLIC_SUPABASE_ANON_KEY=TU_ANON_KEY
+S3_RECIPES_PREFIX=recetas
 EOF
 ```
 

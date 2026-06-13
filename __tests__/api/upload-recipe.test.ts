@@ -1,23 +1,27 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { NextRequest } from "next/server";
 
-// Mock Supabase
-const mockUpload = vi.fn();
-const mockGetPublicUrl = vi.fn();
-
-vi.mock("@/lib/supabase", () => ({
-  supabase: {
-    storage: {
-      from: () => ({
-        upload: mockUpload,
-        getPublicUrl: mockGetPublicUrl,
-      }),
-    },
-  },
+const { mockUploadRecipeToS3 } = vi.hoisted(() => ({
+  mockUploadRecipeToS3: vi.fn(),
 }));
+
+vi.mock("@/lib/s3", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/lib/s3")>();
+
+  return {
+    ...actual,
+    uploadRecipeToS3: mockUploadRecipeToS3,
+  };
+});
 
 // Import after mocking
 import { POST } from "@/app/api/upload/recipe/route";
+
+function createUploadRequest(formData: FormData) {
+  return {
+    formData: vi.fn().mockResolvedValue(formData),
+  } as unknown as NextRequest;
+}
 
 describe("POST /api/upload/recipe", () => {
   beforeEach(() => {
@@ -26,10 +30,7 @@ describe("POST /api/upload/recipe", () => {
 
   it("should return 400 if no file is provided", async () => {
     const formData = new FormData();
-    const request = new NextRequest("http://localhost:3000/api/upload/recipe", {
-      method: "POST",
-      body: formData,
-    });
+    const request = createUploadRequest(formData);
 
     const response = await POST(request);
     const data = await response.json();
@@ -44,11 +45,7 @@ describe("POST /api/upload/recipe", () => {
     });
     const formData = new FormData();
     formData.append("file", file);
-
-    const request = new NextRequest("http://localhost:3000/api/upload/recipe", {
-      method: "POST",
-      body: formData,
-    });
+    const request = createUploadRequest(formData);
 
     const response = await POST(request);
     const data = await response.json();
@@ -63,11 +60,7 @@ describe("POST /api/upload/recipe", () => {
     const file = new File([largeContent], "large.jpg", { type: "image/jpeg" });
     const formData = new FormData();
     formData.append("file", file);
-
-    const request = new NextRequest("http://localhost:3000/api/upload/recipe", {
-      method: "POST",
-      body: formData,
-    });
+    const request = createUploadRequest(formData);
 
     const response = await POST(request);
     const data = await response.json();
@@ -83,48 +76,41 @@ describe("POST /api/upload/recipe", () => {
     const formData = new FormData();
     formData.append("file", file);
 
-    const mockPublicUrl =
-      "https://example.supabase.co/storage/v1/object/public/recipes/123.jpg";
+    const mockUrl = "/api/upload/recipe/file/123.jpg";
 
-    mockUpload.mockResolvedValue({ data: { path: "123.jpg" }, error: null });
-    mockGetPublicUrl.mockReturnValue({ data: { publicUrl: mockPublicUrl } });
-
-    const request = new NextRequest("http://localhost:3000/api/upload/recipe", {
-      method: "POST",
-      body: formData,
+    mockUploadRecipeToS3.mockResolvedValue({
+      fileName: "123.jpg",
+      key: "recetas/123.jpg",
+      url: mockUrl,
     });
+
+    const request = createUploadRequest(formData);
 
     const response = await POST(request);
     const data = await response.json();
 
     expect(response.status).toBe(200);
     expect(data.success).toBe(true);
-    expect(data.url).toBe(mockPublicUrl);
-    expect(mockUpload).toHaveBeenCalled();
+    expect(data.url).toBe(mockUrl);
+    expect(data.key).toBe("recetas/123.jpg");
+    expect(mockUploadRecipeToS3).toHaveBeenCalledWith(file);
   });
 
-  it("should return 500 if Supabase upload fails", async () => {
+  it("should return 500 if S3 upload fails", async () => {
     const file = new File(["test image content"], "recipe.png", {
       type: "image/png",
     });
     const formData = new FormData();
     formData.append("file", file);
 
-    mockUpload.mockResolvedValue({
-      data: null,
-      error: { message: "Storage error" },
-    });
-
-    const request = new NextRequest("http://localhost:3000/api/upload/recipe", {
-      method: "POST",
-      body: formData,
-    });
+    mockUploadRecipeToS3.mockRejectedValue(new Error("Storage error"));
+    const request = createUploadRequest(formData);
 
     const response = await POST(request);
     const data = await response.json();
 
     expect(response.status).toBe(500);
-    expect(data.error).toBe("Error al subir el archivo");
+    expect(data.error).toBe("Error procesando la subida");
   });
 
   it("should accept WebP images", async () => {
@@ -134,16 +120,13 @@ describe("POST /api/upload/recipe", () => {
     const formData = new FormData();
     formData.append("file", file);
 
-    const mockPublicUrl =
-      "https://example.supabase.co/storage/v1/object/public/recipes/456.webp";
-
-    mockUpload.mockResolvedValue({ data: { path: "456.webp" }, error: null });
-    mockGetPublicUrl.mockReturnValue({ data: { publicUrl: mockPublicUrl } });
-
-    const request = new NextRequest("http://localhost:3000/api/upload/recipe", {
-      method: "POST",
-      body: formData,
+    mockUploadRecipeToS3.mockResolvedValue({
+      fileName: "456.webp",
+      key: "recetas/456.webp",
+      url: "/api/upload/recipe/file/456.webp",
     });
+
+    const request = createUploadRequest(formData);
 
     const response = await POST(request);
     const data = await response.json();
