@@ -785,7 +785,7 @@ gh secret set DB_PASSWORD
 4. En `production`, activa **Required reviewers** y agrega tu usuario.
 5. Opcional: agrega **Wait timer** de 5 minutos.
 
-Esto protege los `apply` manuales y automáticos hacia prod.
+Esto protege los `apply` manuales hacia prod.
 
 ### 4.6 Probar el pipeline con un Pull Request
 
