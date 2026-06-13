@@ -686,6 +686,7 @@ cat > /tmp/trust-policy-dev.json << EOF
         "StringLike": {
           "token.actions.githubusercontent.com:sub": [
             "repo:${REPO_FULL_NAME}:ref:refs/heads/main",
+            "repo:${REPO_FULL_NAME}:environment:development",
             "repo:${REPO_FULL_NAME}:pull_request"
           ]
         }
