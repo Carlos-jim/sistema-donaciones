@@ -704,6 +704,10 @@ aws iam attach-role-policy \
   --role-name donaciones-gha-dev-role \
   --policy-arn arn:aws:iam::aws:policy/PowerUserAccess
 
+aws iam attach-role-policy \
+  --role-name donaciones-gha-dev-role \
+  --policy-arn arn:aws:iam::aws:policy/IAMFullAccess
+
 aws iam get-role \
   --role-name donaciones-gha-dev-role \
   --query 'Role.Arn' \
@@ -748,13 +752,17 @@ aws iam attach-role-policy \
   --role-name donaciones-gha-prod-role \
   --policy-arn arn:aws:iam::aws:policy/PowerUserAccess
 
+aws iam attach-role-policy \
+  --role-name donaciones-gha-prod-role \
+  --policy-arn arn:aws:iam::aws:policy/IAMFullAccess
+
 aws iam get-role \
   --role-name donaciones-gha-prod-role \
   --query 'Role.Arn' \
   --output text
 ```
 
-> Para producción real, reemplaza `PowerUserAccess` por una política mínima cuando el sistema ya esté estable.
+> Para producción real, reemplaza `PowerUserAccess` + `IAMFullAccess` por una política mínima cuando el sistema ya esté estable.
 
 ### 4.4 Configurar secrets en GitHub
 
