@@ -23,6 +23,7 @@ ALTER TABLE "donaciones"
 
 -- Solicitudes: códigos diferenciados y trazabilidad de farmacia
 ALTER TABLE "solicitudes"
+  ADD COLUMN IF NOT EXISTS "codigoComprobante" TEXT,
   ADD COLUMN IF NOT EXISTS "codigoEntregaDonante" TEXT,
   ADD COLUMN IF NOT EXISTS "codigoRetiroSolicitante" TEXT,
   ADD COLUMN IF NOT EXISTS "fechaRecepcionFarmacia" TIMESTAMP(3),
@@ -44,6 +45,9 @@ CREATE UNIQUE INDEX IF NOT EXISTS "solicitudes_codigoEntregaDonante_key"
 
 CREATE UNIQUE INDEX IF NOT EXISTS "solicitudes_codigoRetiroSolicitante_key"
   ON "solicitudes"("codigoRetiroSolicitante");
+
+CREATE UNIQUE INDEX IF NOT EXISTS "solicitudes_codigoComprobante_key"
+  ON "solicitudes"("codigoComprobante");
 
 CREATE UNIQUE INDEX IF NOT EXISTS "donaciones_solicitudOrigenId_key"
   ON "donaciones"("solicitudOrigenId");
