@@ -26,3 +26,9 @@ variable "allowed_principal_arn" {
   type        = string
   default     = "*"
 }
+
+variable "enable_lifecycle" {
+  description = "Habilitar configuración de ciclo de vida del bucket"
+  type        = bool
+  default     = true
+}

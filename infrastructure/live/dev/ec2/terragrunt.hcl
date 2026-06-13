@@ -4,14 +4,32 @@ include "root" {
 
 dependency "vpc" {
   config_path = "../vpc"
+
+  mock_outputs_allowed_terraform_commands = ["validate", "plan"]
+  mock_outputs = {
+    vpc_id            = "vpc-dev"
+    public_subnet_ids = ["subnet-dev-public-a", "subnet-dev-public-b"]
+  }
 }
 
 dependency "database" {
   config_path = "../database"
+
+  mock_outputs_allowed_terraform_commands = ["validate", "plan"]
+  mock_outputs = {
+    db_endpoint = "donaciones-dev-db.example.com:5432"
+    db_name     = "donaciones"
+    db_username = "donaciones_admin"
+  }
 }
 
 dependency "s3" {
   config_path = "../s3"
+
+  mock_outputs_allowed_terraform_commands = ["validate", "plan"]
+  mock_outputs = {
+    bucket_name = "donaciones-dev-recetas"
+  }
 }
 
 terraform {
@@ -19,12 +37,13 @@ terraform {
 }
 
 inputs = {
-  subnet_id         = dependency.vpc.outputs.public_subnet_ids[0]
-  instance_type     = "t3.micro"
-  create_key_pair   = false
-  assign_eip        = false
-  app_port          = 3000
-  
+  vpc_id          = dependency.vpc.outputs.vpc_id
+  subnet_id       = dependency.vpc.outputs.public_subnet_ids[0]
+  instance_type   = "t3.micro"
+  create_key_pair = false
+  assign_eip      = false
+  app_port        = 3000
+
   db_host     = dependency.database.outputs.db_endpoint
   db_name     = dependency.database.outputs.db_name
   db_user     = dependency.database.outputs.db_username

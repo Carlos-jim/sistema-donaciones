@@ -11,7 +11,8 @@ terraform {
 }
 
 inputs = {
-  enable_versioning       = true
-  allowed_origins       = ["http://localhost:3000", "http://localhost:80"]
+  enable_versioning  = true
+  enable_lifecycle   = false
+  allowed_origins    = ["http://localhost:3000", "http://localhost:80"]
   allowed_principal_arn = "*"
 }

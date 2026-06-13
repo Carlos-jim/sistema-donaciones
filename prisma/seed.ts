@@ -1,12 +1,14 @@
 "use strict";
 // Run with: npx dotenv-cli -e .env -- npx tsx prisma/seed.ts
 
-import { PrismaNeonHttp } from "@prisma/adapter-neon";
+import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "@prisma/client";
 import { hash } from "bcryptjs";
+import { Pool } from "pg";
 import { categoriasSeed, medicamentosSeed } from "./medicamentos-catalogo";
 
-const adapter = new PrismaNeonHttp(process.env.DATABASE_URL!);
+const pool = new Pool({ connectionString: process.env.DATABASE_URL! });
+const adapter = new PrismaPg(pool);
 const prisma = new PrismaClient({ adapter } as any);
 
 // Helper: create a solicitud then its medicamentos separately (no nested writes → no transactions)
@@ -588,4 +590,5 @@ main()
   })
   .finally(async () => {
     await prisma.$disconnect();
+    await pool.end();
   });

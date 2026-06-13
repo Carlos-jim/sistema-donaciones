@@ -4,10 +4,24 @@ include "root" {
 
 dependency "vpc" {
   config_path = "../vpc"
+
+  mock_outputs_allowed_terraform_commands = ["validate", "plan"]
+  mock_outputs = {
+    vpc_id                = "vpc-prod"
+    public_subnet_ids     = ["subnet-prod-public-a", "subnet-prod-public-b", "subnet-prod-public-c"]
+    app_security_group_id = "sg-prod-app"
+  }
 }
 
 dependency "database" {
   config_path = "../database"
+
+  mock_outputs_allowed_terraform_commands = ["validate", "plan"]
+  mock_outputs = {
+    db_endpoint = "donaciones-prod-db.example.com:5432"
+    db_name     = "donaciones"
+    db_username = "donaciones_admin"
+  }
 }
 
 terraform {
@@ -15,14 +29,15 @@ terraform {
 }
 
 inputs = {
-  vpc_id              = dependency.vpc.outputs.vpc_id
-  public_subnet_ids   = dependency.vpc.outputs.public_subnet_ids
+  vpc_id                = dependency.vpc.outputs.vpc_id
+  public_subnet_ids     = dependency.vpc.outputs.public_subnet_ids
   app_security_group_id = dependency.vpc.outputs.app_security_group_id
-  db_endpoint         = dependency.database.outputs.db_endpoint
-  db_name             = dependency.database.outputs.db_name
-  db_username         = dependency.database.outputs.db_username
-  container_image     = "nginx:latest"  # Placeholder: reemplazar con la imagen de ECR
-  desired_count       = 2
-  cpu                 = "512"
-  memory              = "1024"
+  db_endpoint           = dependency.database.outputs.db_endpoint
+  db_name               = dependency.database.outputs.db_name
+  db_username           = dependency.database.outputs.db_username
+  db_password           = "${get_env("TF_VAR_db_password", "changeme123")}"
+  container_image       = "nginx:latest" # Placeholder: reemplazar con la imagen de ECR
+  desired_count         = 2
+  cpu                   = "512"
+  memory                = "1024"
 }

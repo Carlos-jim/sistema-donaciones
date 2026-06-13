@@ -2,14 +2,15 @@ version: "3.8"
 
 services:
   localstack:
-    image: localstack/localstack:latest
+    image: localstack/localstack:4.0
     container_name: localstack
     ports:
       - "4566:4566"            # Puerto principal de LocalStack (todos los servicios)
       - "4510-4559:4510-4559"  # Puertos adicionales para servicios
     environment:
       - DEBUG=1
-      - SERVICES=s3,ec2,iam,sts,lambda,cloudwatch,logs,events,elb
+      - LOCALSTACK_ACTIVATION_DISABLED=1
+      - SERVICES=s3,ec2,iam,sts,cloudwatch,logs
       - AWS_DEFAULT_REGION=us-east-1
       - AWS_ACCESS_KEY_ID=test
       - AWS_SECRET_ACCESS_KEY=test

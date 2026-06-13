@@ -39,9 +39,12 @@ remote_state {
   }
 }
 
-# Inputs globales
-inputs = {
-  project_name = local.project_name
-  environment  = local.environment
-  aws_region   = local.aws_region
-}
+# Inputs globales (merge con env.hcl)
+inputs = merge(
+  try(local.environment_vars.inputs, {}),
+  {
+    project_name = local.project_name
+    environment  = local.environment
+    aws_region   = local.aws_region
+  }
+)

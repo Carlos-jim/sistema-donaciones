@@ -74,7 +74,9 @@ resource "aws_s3_bucket_cors_configuration" "recetas" {
 }
 
 # Política de bucket para acceso restringido
+# Solo se aplica cuando se especifica un principal ARN concreto (no "*")
 resource "aws_s3_bucket_policy" "recetas" {
+  count  = var.allowed_principal_arn != "*" ? 1 : 0
   bucket = aws_s3_bucket.recetas.id
 
   policy = jsonencode({
@@ -103,11 +105,16 @@ resource "aws_s3_bucket_policy" "recetas" {
 
 # Lifecycle para archivos antiguos
 resource "aws_s3_bucket_lifecycle_configuration" "recetas" {
+  count  = var.enable_lifecycle ? 1 : 0
   bucket = aws_s3_bucket.recetas.id
 
   rule {
     id     = "archive-old-recetas"
     status = "Enabled"
+
+    filter {
+      prefix = "recetas/"
+    }
 
     transition {
       days          = 90
