@@ -1,0 +1,81 @@
+version: "3.8"
+
+services:
+  localstack:
+    image: localstack/localstack:latest
+    container_name: localstack
+    ports:
+      - "4566:4566"            # Puerto principal de LocalStack (todos los servicios)
+      - "4510-4559:4510-4559"  # Puertos adicionales para servicios
+    environment:
+      - DEBUG=1
+      - SERVICES=s3,ec2,iam,sts,lambda,cloudwatch,logs,events,elb
+      - AWS_DEFAULT_REGION=us-east-1
+      - AWS_ACCESS_KEY_ID=test
+      - AWS_SECRET_ACCESS_KEY=test
+      - LOCALSTACK_AUTH_TOKEN=${LOCALSTACK_AUTH_TOKEN:-}  # Opcional: para Pro
+      - PERSISTENCE=1
+      - DATA_DIR=/var/lib/localstack/data
+    volumes:
+      - localstack-data:/var/lib/localstack
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - localstack-network
+
+  # PostgreSQL local para simular RDS (LocalStack CE tiene limitaciones con RDS)
+  postgres:
+    image: postgres:15-alpine
+    container_name: local-postgres
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: donaciones_admin
+      POSTGRES_PASSWORD: localpassword123
+      POSTGRES_DB: donaciones
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - localstack-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U donaciones_admin -d donaciones"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Servicio de la aplicación Next.js para desarrollo local
+  # (Opcional: puedes usar este en lugar de EC2 para desarrollo local puro)
+  app:
+    build:
+      context: ../
+      dockerfile: Dockerfile
+    container_name: donaciones-app
+    ports:
+      - "3000:3000"
+    environment:
+      - DATABASE_URL=postgresql://donaciones_admin:localpassword123@postgres:5432/donaciones
+      - NEXT_PUBLIC_API_URL=http://localhost:3000
+      - AWS_REGION=us-east-1
+      - AWS_ENDPOINT_URL=http://localstack:4566
+      - AWS_ACCESS_KEY_ID=test
+      - AWS_SECRET_ACCESS_KEY=test
+      - S3_BUCKET_NAME=donaciones-local-recetas
+    depends_on:
+      postgres:
+        condition: service_healthy
+      localstack:
+        condition: service_started
+    networks:
+      - localstack-network
+    volumes:
+      - ../:/app
+      - /app/node_modules
+    command: ["npm", "run", "dev"]
+    # Nota: Para usar esto, necesitas un Dockerfile en la raíz del proyecto
+
+volumes:
+  localstack-data:
+  postgres-data:
+
+networks:
+  localstack-network:
+    driver: bridge

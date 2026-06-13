@@ -1,0 +1,366 @@
+name: Infrastructure CI/CD
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'infrastructure/**'
+      - '.github/workflows/infrastructure.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'infrastructure/**'
+      - '.github/workflows/infrastructure.yml'
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Ambiente a desplegar'
+        required: true
+        default: 'dev'
+        type: choice
+        options:
+          - dev
+          - prod
+      action:
+        description: 'Acción de Terragrunt'
+        required: true
+        default: 'plan'
+        type: choice
+        options:
+          - plan
+          - apply
+
+env:
+  TERRAGRUNT_VERSION: v0.58.0
+  TERRAFORM_VERSION: "1.7.0"
+  AWS_REGION: us-east-1
+  # Inyección segura de variables sensibles para Terraform
+  # Terraform detecta automáticamente variables con prefijo TF_VAR_
+  TF_VAR_db_password: ${{ secrets.DB_PASSWORD }}
+  TF_VAR_db_username: ${{ secrets.DB_USERNAME }}
+  # Puedes agregar más variables seguras aquí
+  # TF_VAR_api_token: ${{ secrets.API_TOKEN }}
+  # TF_VAR_jwt_secret: ${{ secrets.JWT_SECRET }}
+
+jobs:
+  # ==========================================
+  # DETECTAR ARCHIVOS MODIFICADOS (PARA PRs)
+  # ==========================================
+  detect-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      dev_changed: ${{ steps.filter.outputs.dev }}
+      prod_changed: ${{ steps.filter.outputs.prod }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            dev:
+              - 'infrastructure/live/dev/**'
+              - 'infrastructure/modules/**'
+            prod:
+              - 'infrastructure/live/prod/**'
+              - 'infrastructure/modules/**'
+
+  # ==========================================
+  # PLAN - DEV
+  # ==========================================
+  plan-dev:
+    name: Terragrunt Plan (Dev)
+    runs-on: ubuntu-latest
+    needs: detect-changes
+    if: github.event_name == 'pull_request' && needs.detect-changes.outputs.dev_changed == 'true'
+    permissions:
+      id-token: write
+      contents: read
+      pull-requests: write
+    defaults:
+      run:
+        working-directory: infrastructure/live/dev
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN_DEV }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TERRAFORM_VERSION }}
+          terraform_wrapper: false
+
+      - name: Setup Terragrunt
+        uses: eLco/setup-terragrunt@v1
+        with:
+          terragrunt_version: ${{ env.TERRAGRUNT_VERSION }}
+
+      - name: Terragrunt Format Check
+        run: terragrunt run-all fmt --check
+        continue-on-error: true
+
+      - name: Terragrunt Init
+        run: terragrunt run-all init
+
+      - name: Terragrunt Validate
+        run: terragrunt run-all validate
+
+      - name: Terragrunt Plan
+        id: plan
+        run: |
+          terragrunt run-all plan -no-color -input=false 2>&1 | tee plan_output.txt
+          exit_code=${PIPESTATUS[0]}
+          echo "exit_code=$exit_code" >> $GITHUB_OUTPUT
+          {
+            echo "plan_output<<EOF"
+            cat plan_output.txt
+            echo "EOF"
+          } >> $GITHUB_OUTPUT
+        continue-on-error: true
+
+      - name: Update PR with Plan Result
+        uses: actions/github-script@v7
+        if: github.event_name == 'pull_request'
+        env:
+          PLAN_OUTPUT: ${{ steps.plan.outputs.plan_output }}
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const output = `## 📋 Terragrunt Plan (Dev)
+            <details>
+            <summary>Click para expandir</summary>
+            \n\n
+            \`\`\`\n
+            ${process.env.PLAN_OUTPUT.substring(0, 65000)}
+            \`\`\`
+            </details>
+            *Commit: ${{ github.sha }}*`;
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: output
+            })
+
+      - name: Check Plan Status
+        if: steps.plan.outputs.exit_code != '0'
+        run: |
+          echo "Plan failed with exit code ${{ steps.plan.outputs.exit_code }}"
+          exit 1
+
+  # ==========================================
+  # PLAN - PROD
+  # ==========================================
+  plan-prod:
+    name: Terragrunt Plan (Prod)
+    runs-on: ubuntu-latest
+    needs: detect-changes
+    if: github.event_name == 'pull_request' && needs.detect-changes.outputs.prod_changed == 'true'
+    permissions:
+      id-token: write
+      contents: read
+      pull-requests: write
+    defaults:
+      run:
+        working-directory: infrastructure/live/prod
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN_PROD }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TERRAFORM_VERSION }}
+          terraform_wrapper: false
+
+      - name: Setup Terragrunt
+        uses: eLco/setup-terragrunt@v1
+        with:
+          terragrunt_version: ${{ env.TERRAGRUNT_VERSION }}
+
+      - name: Terragrunt Init
+        run: terragrunt run-all init
+
+      - name: Terragrunt Plan
+        id: plan
+        run: |
+          terragrunt run-all plan -no-color -input=false 2>&1 | tee plan_output.txt
+          exit_code=${PIPESTATUS[0]}
+          echo "exit_code=$exit_code" >> $GITHUB_OUTPUT
+          {
+            echo "plan_output<<EOF"
+            cat plan_output.txt
+            echo "EOF"
+          } >> $GITHUB_OUTPUT
+        continue-on-error: true
+
+      - name: Update PR with Plan Result
+        uses: actions/github-script@v7
+        if: github.event_name == 'pull_request'
+        env:
+          PLAN_OUTPUT: ${{ steps.plan.outputs.plan_output }}
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const output = `## 📋 Terragrunt Plan (Prod)
+            <details>
+            <summary>Click para expandir</summary>
+            \n\n
+            \`\`\`\n
+            ${process.env.PLAN_OUTPUT.substring(0, 65000)}
+            \`\`\`
+            </details>
+            *Commit: ${{ github.sha }}*`;
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: output
+            })
+
+      - name: Check Plan Status
+        if: steps.plan.outputs.exit_code != '0'
+        run: |
+          echo "Plan failed with exit code ${{ steps.plan.outputs.exit_code }}"
+          exit 1
+
+  # ==========================================
+  # APPLY - DEV (AUTO APPLY)
+  # ==========================================
+  apply-dev:
+    name: Terragrunt Apply (Dev)
+    runs-on: ubuntu-latest
+    needs: [detect-changes, plan-dev]
+    if: github.ref == 'refs/heads/main' && needs.detect-changes.outputs.dev_changed == 'true'
+    permissions:
+      id-token: write
+      contents: read
+    defaults:
+      run:
+        working-directory: infrastructure/live/dev
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN_DEV }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TERRAFORM_VERSION }}
+          terraform_wrapper: false
+
+      - name: Setup Terragrunt
+        uses: eLco/setup-terragrunt@v1
+        with:
+          terragrunt_version: ${{ env.TERRAGRUNT_VERSION }}
+
+      - name: Terragrunt Init
+        run: terragrunt run-all init
+
+      - name: Terragrunt Apply
+        run: terragrunt run-all apply -auto-approve -input=false
+
+  # ==========================================
+  # APPLY - PROD (CON APROBACIÓN MANUAL)
+  # ==========================================
+  apply-prod:
+    name: Terragrunt Apply (Prod)
+    runs-on: ubuntu-latest
+    needs: [detect-changes, plan-prod]
+    if: github.ref == 'refs/heads/main' && needs.detect-changes.outputs.prod_changed == 'true'
+    environment: production
+    permissions:
+      id-token: write
+      contents: read
+    defaults:
+      run:
+        working-directory: infrastructure/live/prod
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN_PROD }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TERRAFORM_VERSION }}
+          terraform_wrapper: false
+
+      - name: Setup Terragrunt
+        uses: eLco/setup-terragrunt@v1
+        with:
+          terragrunt_version: ${{ env.TERRAGRUNT_VERSION }}
+
+      - name: Terragrunt Init
+        run: terragrunt run-all init
+
+      - name: Terragrunt Apply
+        run: terragrunt run-all apply -auto-approve -input=false
+
+  # ==========================================
+  # MANUAL DISPATCH
+  # ==========================================
+  manual-run:
+    name: Manual Terragrunt Run
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch'
+    permissions:
+      id-token: write
+      contents: read
+    defaults:
+      run:
+        working-directory: infrastructure/live/${{ github.event.inputs.environment }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ github.event.inputs.environment == 'prod' && secrets.AWS_ROLE_ARN_PROD || secrets.AWS_ROLE_ARN_DEV }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TERRAFORM_VERSION }}
+          terraform_wrapper: false
+
+      - name: Setup Terragrunt
+        uses: eLco/setup-terragrunt@v1
+        with:
+          terragrunt_version: ${{ env.TERRAGRUNT_VERSION }}
+
+      - name: Terragrunt Init
+        run: terragrunt run-all init
+
+      - name: Terragrunt ${{ github.event.inputs.action }}
+        run: terragrunt run-all ${{ github.event.inputs.action }} -auto-approve -input=false

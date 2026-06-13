@@ -26,3 +26,19 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 /lib/generated/prisma
+
+# terraform / terragrunt
+*.tfstate
+*.tfstate.*
+.terraform/
+.terraform.lock.hcl
+terragrunt-debug.tfvars.json
+.terragrunt-cache/
+
+# localstack
+infrastructure/.terragrunt-local/
+*.pem
+*.key
+infrastructure/local/localstack_data/
+
+
