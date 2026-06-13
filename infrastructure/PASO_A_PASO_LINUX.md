@@ -907,6 +907,61 @@ pm2 save
 pm2 startup systemd -u ec2-user --hp /home/ec2-user
 ```
 
+> Si tu AMI es **Amazon Linux 2**, Node.js 20 puede fallar por `glibc 2.26`. En ese caso usa Docker para correr la app:
+
+```bash
+sudo yum install -y git docker
+sudo amazon-linux-extras enable nginx1
+sudo yum install -y nginx
+sudo systemctl enable --now docker nginx
+
+sudo fallocate -l 2G /swapfile || sudo dd if=/dev/zero of=/swapfile bs=1M count=2048
+sudo chmod 600 /swapfile
+sudo mkswap /swapfile
+sudo swapon /swapfile
+
+sudo tee /etc/nginx/conf.d/donaciones.conf > /dev/null << 'EOF'
+server {
+  listen 80 default_server;
+  server_name _;
+
+  location / {
+    proxy_pass http://127.0.0.1:3000;
+    proxy_http_version 1.1;
+    proxy_set_header Host $host;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+  }
+}
+EOF
+
+sudo rm -f /etc/nginx/conf.d/default.conf
+sudo nginx -t && sudo systemctl reload nginx
+
+sudo mkdir -p /opt/donaciones
+sudo chown -R ec2-user:ec2-user /opt/donaciones
+cd /opt/donaciones
+
+git clone https://github.com/TU_ORG/TU_REPO.git .
+
+sudo docker run --rm \
+  -v /opt/donaciones:/app \
+  -w /app \
+  node:20-bookworm \
+  bash -lc 'corepack enable && corepack prepare pnpm@9.15.4 --activate >/dev/null 2>&1 && pnpm install --frozen-lockfile && pnpm prisma generate && pnpm prisma migrate deploy && NODE_OPTIONS=--max_old_space_size=768 pnpm run build'
+
+sudo docker run -d \
+  --name donaciones-dev \
+  --restart unless-stopped \
+  --env-file /opt/donaciones/.env \
+  -e NODE_ENV=production \
+  -v /opt/donaciones:/app \
+  -w /app \
+  -p 127.0.0.1:3000:3000 \
+  node:20-bookworm \
+  bash -lc 'corepack enable && corepack prepare pnpm@9.15.4 --activate >/dev/null 2>&1 && exec pnpm exec next start -H 0.0.0.0 -p 3000'
+```
+
 Si necesitas datos de prueba en dev:
 
 ```bash
@@ -944,6 +999,8 @@ Luego reinicia:
 ```bash
 pm2 restart donaciones --update-env
 ```
+
+Si `pnpm prisma migrate deploy` falla con `P1000`, la contraseña real del RDS no coincide con tu `.env`. Revisa el valor usado en `TF_VAR_db_password` al aplicar la base de datos y actualiza `DATABASE_URL`.
 
 ### 5.5 Validar app en EC2
 
