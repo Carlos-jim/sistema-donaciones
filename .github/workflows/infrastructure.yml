@@ -108,15 +108,15 @@ jobs:
         continue-on-error: true
 
       - name: Terragrunt Init
-        run: terragrunt run-all init
+        run: terragrunt run-all init --terragrunt-non-interactive
 
       - name: Terragrunt Validate
-        run: terragrunt run-all validate
+        run: terragrunt run-all validate --terragrunt-non-interactive
 
       - name: Terragrunt Plan
         id: plan
         run: |
-          terragrunt run-all plan -no-color -input=false 2>&1 | tee plan_output.txt
+          terragrunt run-all plan --terragrunt-non-interactive -no-color -input=false 2>&1 | tee plan_output.txt
           exit_code=${PIPESTATUS[0]}
           echo "exit_code=$exit_code" >> $GITHUB_OUTPUT
           {
@@ -197,12 +197,12 @@ jobs:
           terragrunt --version
 
       - name: Terragrunt Init
-        run: terragrunt run-all init
+        run: terragrunt run-all init --terragrunt-non-interactive
 
       - name: Terragrunt Plan
         id: plan
         run: |
-          terragrunt run-all plan -no-color -input=false 2>&1 | tee plan_output.txt
+          terragrunt run-all plan --terragrunt-non-interactive -no-color -input=false 2>&1 | tee plan_output.txt
           exit_code=${PIPESTATUS[0]}
           echo "exit_code=$exit_code" >> $GITHUB_OUTPUT
           {
@@ -250,7 +250,7 @@ jobs:
     name: Terragrunt Apply (Dev)
     runs-on: ubuntu-latest
     needs: [detect-changes]
-    if: github.ref == 'refs/heads/main' && needs.detect-changes.outputs.dev_changed == 'true'
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && needs.detect-changes.outputs.dev_changed == 'true'
     permissions:
       id-token: write
       contents: read
@@ -282,10 +282,10 @@ jobs:
           terragrunt --version
 
       - name: Terragrunt Init
-        run: terragrunt run-all init
+        run: terragrunt run-all init --terragrunt-non-interactive
 
       - name: Terragrunt Apply
-        run: terragrunt run-all apply -auto-approve -input=false
+        run: terragrunt run-all apply --terragrunt-non-interactive -auto-approve -input=false
 
   # ==========================================
   # MANUAL DISPATCH
@@ -326,12 +326,12 @@ jobs:
           terragrunt --version
 
       - name: Terragrunt Init
-        run: terragrunt run-all init
+        run: terragrunt run-all init --terragrunt-non-interactive
 
       - name: Terragrunt Plan
         if: github.event.inputs.action == 'plan'
-        run: terragrunt run-all plan -input=false
+        run: terragrunt run-all plan --terragrunt-non-interactive -input=false
 
       - name: Terragrunt Apply
         if: github.event.inputs.action == 'apply'
-        run: terragrunt run-all apply -auto-approve -input=false
+        run: terragrunt run-all apply --terragrunt-non-interactive -auto-approve -input=false
