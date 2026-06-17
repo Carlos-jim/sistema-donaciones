@@ -201,7 +201,7 @@ chmod +x infrastructure/scripts/*.sh
 
 > Este script hará:
 > - Verificar que Docker está corriendo
-> - Levantar los contenedores con `docker-compose`
+> - Levantar `localstack` y `local-postgres` con Docker Compose
 > - Esperar a que LocalStack esté listo
 > - Esperar a que PostgreSQL esté listo
 
@@ -276,8 +276,11 @@ aws --endpoint-url=http://localhost:4566 --profile localstack ec2 describe-insta
 aws --endpoint-url=http://localhost:4566 --profile localstack s3 ls s3://donaciones-local-recetas/
 
 # Ver logs de LocalStack (en otra terminal)
-docker-compose -f infrastructure/local/docker-compose.yml logs -f localstack
+docker compose -f infrastructure/local/docker-compose.yml logs -f localstack
 ```
+
+> Si también quieres levantar la app dentro de Docker, ejecútala aparte:
+> `docker compose -f infrastructure/local/docker-compose.yml --profile app up -d app`
 
 ### 2.6 Conectar tu aplicación Next.js a la base de datos local
 
@@ -850,6 +853,11 @@ terragrunt run-all output
 # Ver último estado en S3
 aws s3 ls s3://donaciones-terraform-state-dev --recursive | tail
 ```
+
+> Importante:
+> - Ejecuta `terragrunt run-all output` dentro del ambiente correcto, por ejemplo `infrastructure/live/dev`.
+> - Si lo corres desde la raíz del repo, Terragrunt intentará procesar `local`, `dev` y `prod`, y fallará en ambientes que todavía no tengan outputs aplicados.
+> - Si `aws s3 ls ... | tail` no imprime nada, normalmente significa que el bucket existe pero aún no tiene objetos, o que el `apply` todavía no generó estado remoto nuevo.
 
 ---
 

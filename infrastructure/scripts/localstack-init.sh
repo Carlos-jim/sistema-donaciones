@@ -15,8 +15,17 @@ if ! docker info > /dev/null 2>&1; then
     exit 1
 fi
 
+if docker compose version > /dev/null 2>&1; then
+    COMPOSE_CMD=(docker compose)
+elif command -v docker-compose > /dev/null 2>&1; then
+    COMPOSE_CMD=(docker-compose)
+else
+    echo -e "${RED}Error: No se encontró Docker Compose. Instala 'docker compose' o 'docker-compose'.${NC}"
+    exit 1
+fi
+
 # Iniciar LocalStack y PostgreSQL
-echo -e "${YELLOW}Iniciando contenedores...${NC}"
+echo -e "${YELLOW}Iniciando LocalStack...${NC}"
 cd "$(dirname "$0")/../local"
 
 # Copiar .env si no existe
@@ -25,12 +34,12 @@ if [ ! -f .env ]; then
     echo -e "${YELLOW}Archivo .env creado desde .env.example${NC}"
 fi
 
-docker-compose up -d
+"${COMPOSE_CMD[@]}" up -d localstack
 
 # Esperar a que LocalStack esté listo
 echo -e "${YELLOW}Esperando a que LocalStack esté listo...${NC}"
 for i in {1..30}; do
-    if curl -s http://localhost:4566/_localstack/health | grep -q '"s3": "available"'; then
+    if curl -s http://localhost:4566/_localstack/health | grep -Eq '"s3"\s*:\s*"(available|running)"'; then
         echo -e "${GREEN}LocalStack está listo!${NC}"
         break
     fi
@@ -38,16 +47,26 @@ for i in {1..30}; do
     sleep 2
 done
 
+# Iniciar PostgreSQL sin bloquear LocalStack si el puerto 5432 está ocupado
+echo -e "${YELLOW}Iniciando PostgreSQL...${NC}"
+postgres_available=true
+if ! "${COMPOSE_CMD[@]}" up -d postgres; then
+    postgres_available=false
+    echo -e "${YELLOW}No se pudo iniciar PostgreSQL. Si el puerto 5432 está ocupado, LocalStack seguirá disponible igual.${NC}"
+fi
+
 # Verificar salud de PostgreSQL
-echo -e "${YELLOW}Verificando PostgreSQL...${NC}"
-for i in {1..30}; do
-    if docker-compose exec -T postgres pg_isready -U donaciones_admin > /dev/null 2>&1; then
-        echo -e "${GREEN}PostgreSQL está listo!${NC}"
-        break
-    fi
-    echo -n "."
-    sleep 2
-done
+if [ "$postgres_available" = true ]; then
+    echo -e "${YELLOW}Verificando PostgreSQL...${NC}"
+    for i in {1..30}; do
+        if "${COMPOSE_CMD[@]}" exec -T postgres pg_isready -U donaciones_admin > /dev/null 2>&1; then
+            echo -e "${GREEN}PostgreSQL está listo!${NC}"
+            break
+        fi
+        echo -n "."
+        sleep 2
+    done
+fi
 
 echo ""
 echo -e "${GREEN}=== LocalStack inicializado correctamente ===${NC}"
@@ -55,14 +74,14 @@ echo ""
 echo "Servicios disponibles:"
 echo "  - LocalStack: http://localhost:4566"
 echo "  - PostgreSQL: localhost:5432"
-echo "  - Next.js App: http://localhost:3000 (si usas docker-compose app)"
+echo "  - Next.js App: http://localhost:3000 (opcional, con 'docker compose --profile app up -d app')"
 echo ""
 echo "Para aplicar infraestructura con Terragrunt:"
 echo "  cd infrastructure/live/local"
 echo "  terragrunt run-all apply"
 echo ""
 echo "Para ver logs:"
-echo "  docker-compose logs -f localstack"
+echo "  docker compose logs -f localstack"
 echo ""
 echo "Para detener:"
-echo "  docker-compose down"
+echo "  docker compose down"
