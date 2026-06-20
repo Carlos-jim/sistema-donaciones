@@ -30,6 +30,17 @@ export function getRecipesBucket() {
   return bucket;
 }
 
+export function isS3ConfigurationError(error: unknown) {
+  if (!(error instanceof Error)) return false;
+
+  return (
+    error.name === "CredentialsProviderError" ||
+    error.message.includes("S3_BUCKET_NAME") ||
+    error.message.includes("Could not load credentials") ||
+    error.message.includes("Resolved credential object is not valid")
+  );
+}
+
 export function validateRecipeFile(file: File) {
   if (!RECIPE_ALLOWED_TYPES[file.type]) {
     return {

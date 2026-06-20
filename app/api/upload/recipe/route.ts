@@ -1,5 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { uploadRecipeToS3, validateRecipeFile } from "@/lib/s3";
+import {
+  isS3ConfigurationError,
+  uploadRecipeToS3,
+  validateRecipeFile,
+} from "@/lib/s3";
+
+export const runtime = "nodejs";
 
 export async function POST(request: NextRequest) {
   try {
@@ -31,6 +37,14 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error("Error processing upload:", error);
+
+    if (isS3ConfigurationError(error)) {
+      return NextResponse.json(
+        { error: "El almacenamiento de recetas no está configurado" },
+        { status: 503 },
+      );
+    }
+
     return NextResponse.json(
       { error: "Error procesando la subida" },
       { status: 500 },
