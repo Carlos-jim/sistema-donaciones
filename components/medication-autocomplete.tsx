@@ -33,6 +33,7 @@ interface MedicamentoOption {
 interface MedicationAutocompleteProps {
   value?: string
   onValueChange: (value: string) => void
+  onTextChange?: (value: string) => void
   onSelectMedicamento?: (medicamento: MedicamentoOption | null) => void
   placeholder?: string
   disabled?: boolean
@@ -44,6 +45,7 @@ interface MedicationAutocompleteProps {
 export function MedicationAutocomplete({
   value,
   onValueChange,
+  onTextChange,
   onSelectMedicamento,
   placeholder = "Buscar medicamento...",
   disabled = false,
@@ -71,9 +73,11 @@ export function MedicationAutocomplete({
       if (found) {
         setSelectedMedicamento(found)
         onValueChange(found.id)
+        onTextChange?.(found.nombre)
         onSelectMedicamento?.(found)
       } else {
-        onValueChange(initialMedication)
+        onValueChange("")
+        onTextChange?.(initialMedication)
       }
     }
   }, [initialMedication, medicamentos])
@@ -111,18 +115,34 @@ export function MedicationAutocomplete({
   const handleSelect = (medicamento: MedicamentoOption) => {
     setSelectedMedicamento(medicamento)
     onValueChange(medicamento.id)
+    onTextChange?.(medicamento.nombre)
     onSelectMedicamento?.(medicamento)
     setSearchQuery(medicamento.nombre)
     setOpen(false)
   }
 
+  const handleUseCustomMedication = () => {
+    const customName = searchQuery.trim()
+    if (!customName) return
+
+    setSelectedMedicamento(null)
+    onValueChange("")
+    onTextChange?.(customName)
+    onSelectMedicamento?.(null)
+    setSearchQuery(customName)
+    setOpen(false)
+  }
+
   const handleInputChange = (val: string) => {
     setSearchQuery(val)
+    setSelectedMedicamento(null)
+    onValueChange("")
+    onTextChange?.(val)
+    onSelectMedicamento?.(null)
+
     // If user clears input, clear selection
     if (!val.trim()) {
-      setSelectedMedicamento(null)
-      onValueChange("")
-      onSelectMedicamento?.(null)
+      onTextChange?.("")
     }
   }
 
@@ -196,9 +216,19 @@ export function MedicationAutocomplete({
             )}
 
             {!loading && !error && searchQuery.length >= 2 && medicamentos.length === 0 && (
-              <CommandEmpty className="py-6 text-sm text-gray-500">
-                No se encontraron medicamentos para &quot;{searchQuery}&quot;
-              </CommandEmpty>
+              <div className="px-3 py-3">
+                <CommandEmpty className="pb-3 text-sm text-gray-500">
+                  No se encontraron medicamentos para &quot;{searchQuery}&quot;
+                </CommandEmpty>
+                <button
+                  type="button"
+                  onClick={handleUseCustomMedication}
+                  className="flex w-full items-center gap-2 rounded-lg border border-teal-100 bg-teal-50 px-3 py-2 text-left text-sm font-medium text-teal-700 transition-colors hover:bg-teal-100"
+                >
+                  <Pill className="h-4 w-4" />
+                  Usar &quot;{searchQuery.trim()}&quot; como nuevo insumo
+                </button>
+              </div>
             )}
 
             {!loading && !error && medicamentos.length > 0 && (

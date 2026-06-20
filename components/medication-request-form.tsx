@@ -200,6 +200,12 @@ export function MedicationRequestForm({
     setIsLoading(true);
 
     try {
+      const medicationName = formData.medicationName.trim();
+
+      if (!medicationName) {
+        throw new Error("Indica el nombre del insumo médico");
+      }
+
       let uploadedPhotoUrl: string | null = null;
 
       if (formData.recipePhotoFile) {
@@ -231,8 +237,8 @@ export function MedicationRequestForm({
           motivo: formData.description,
           medicamentos: [
             {
-              medicamentoId: formData.medicamentoId,
-              nombre: formData.medicationName,
+              medicamentoId: formData.medicamentoId || undefined,
+              nombre: medicationName,
               cantidad: formData.quantity,
               unidad: formData.unit,
             },
@@ -307,7 +313,7 @@ export function MedicationRequestForm({
     }
   };
 
-  const canProceedToStep2 = formData.medicamentoId.trim() !== "";
+  const canProceedToStep2 = formData.medicationName.trim() !== "";
   const canProceedToStep3 = formData.description.trim() !== "" || true; // Description is optional
 
   const nextStep = () => {
@@ -396,11 +402,19 @@ export function MedicationRequestForm({
                     onValueChange={(id) =>
                       setFormData((prev) => ({ ...prev, medicamentoId: id }))
                     }
-                    onSelectMedicamento={(med) =>
+                    onTextChange={(name) =>
                       setFormData((prev) => ({
                         ...prev,
-                        medicationName: med?.nombre || "",
+                        medicationName: name,
                       }))
+                    }
+                    onSelectMedicamento={(med) =>
+                      med
+                        ? setFormData((prev) => ({
+                            ...prev,
+                            medicationName: med.nombre,
+                          }))
+                        : undefined
                     }
                     placeholder="Busca un insumo médico..."
                     readOnly={!!initialMedication}

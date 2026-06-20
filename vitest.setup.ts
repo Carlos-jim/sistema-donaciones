@@ -34,6 +34,7 @@ vi.mock("@/lib/prisma", () => ({
       create: vi.fn(),
     },
     medicamento: {
+      findUnique: vi.fn(),
       findFirst: vi.fn(),
       create: vi.fn(),
     },
@@ -41,6 +42,10 @@ vi.mock("@/lib/prisma", () => ({
       create: vi.fn(),
     },
     donacionMedicamento: {
+      create: vi.fn(),
+      findMany: vi.fn(),
+    },
+    notificacion: {
       create: vi.fn(),
     },
   },

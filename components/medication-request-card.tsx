@@ -146,25 +146,11 @@ export function MedicationRequestCard({
     setIsAccepting(true);
 
     try {
-      const userResponse = await fetch("/api/auth/me");
-      if (!userResponse.ok) {
-        if (userResponse.status === 401 || userResponse.status === 404) {
-          throw new Error(
-            "Sesion expirada. Recarga la pagina e inicia sesion nuevamente.",
-          );
-        }
-
-        throw new Error("Debes iniciar sesion para aceptar solicitudes");
-      }
-
-      const userData = await userResponse.json();
-
       const response = await fetch("/api/requests/accept", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           requestId: id,
-          donorUserId: userData.id,
           pharmacyId: selectedPharmacy,
         }),
       });

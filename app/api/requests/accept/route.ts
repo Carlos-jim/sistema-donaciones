@@ -1,21 +1,34 @@
 import { NextRequest, NextResponse } from "next/server";
+import { cookies } from "next/headers";
+import { tokenService } from "@/lib/auth/token.service";
 import { acceptRequestWithDeliveryCodes } from "@/lib/request-delivery.service";
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { requestId, donorUserId, pharmacyId } = body;
+    const { requestId, pharmacyId } = body;
+    const token = (await cookies()).get("auth-token")?.value;
 
-    if (!requestId || !donorUserId || !pharmacyId) {
+    if (!token) {
+      return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+    }
+
+    const payload = await tokenService.verify(token);
+
+    if (!payload?.userId || payload.tipo !== "COMUN") {
+      return NextResponse.json({ error: "Token invalido" }, { status: 401 });
+    }
+
+    if (!requestId || !pharmacyId) {
       return NextResponse.json(
-        { error: "requestId, donorUserId y pharmacyId son requeridos" },
+        { error: "requestId y pharmacyId son requeridos" },
         { status: 400 },
       );
     }
 
     const result = await acceptRequestWithDeliveryCodes({
       requestId,
-      donorUserId,
+      donorUserId: payload.userId,
       pharmacyId,
     });
 
