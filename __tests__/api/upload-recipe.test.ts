@@ -113,6 +113,25 @@ describe("POST /api/upload/recipe", () => {
     expect(data.error).toBe("Error procesando la subida");
   });
 
+  it("should return 503 if S3 credentials are missing", async () => {
+    const file = new File(["test image content"], "recipe.png", {
+      type: "image/png",
+    });
+    const formData = new FormData();
+    formData.append("file", file);
+
+    const error = new Error("Could not load credentials from any providers");
+    error.name = "CredentialsProviderError";
+    mockUploadRecipeToS3.mockRejectedValue(error);
+    const request = createUploadRequest(formData);
+
+    const response = await POST(request);
+    const data = await response.json();
+
+    expect(response.status).toBe(503);
+    expect(data.error).toBe("El almacenamiento de recetas no está configurado");
+  });
+
   it("should accept WebP images", async () => {
     const file = new File(["webp content"], "recipe.webp", {
       type: "image/webp",

@@ -127,6 +127,61 @@ const emptyMedicamentoForm: MedicamentoForm = {
   categoriaId: "",
 };
 
+type ReportUser = {
+  id: string;
+  nombre: string;
+  email: string;
+  cedula: string | null;
+  telefono: string | null;
+  createdAt: string;
+  _count: {
+    solicitudes: number;
+    donaciones: number;
+  };
+};
+
+type ReportMedicationLine = {
+  medicamento: {
+    nombre: string;
+    presentacion?: string | null;
+  };
+  cantidad: number;
+  prioridad?: number;
+};
+
+type ReportDonation = {
+  id: string;
+  codigo: string | null;
+  estado: string;
+  createdAt: string;
+  usuarioComun: {
+    nombre: string;
+    email: string;
+  } | null;
+  medicamentos: ReportMedicationLine[];
+  farmacia: {
+    nombre: string;
+  } | null;
+};
+
+type ReportRequest = {
+  id: string;
+  codigo: string | null;
+  estado: string;
+  tiempoEspera: string;
+  motivo: string | null;
+  createdAt: string;
+  requiresPrescription: boolean;
+  usuarioComun: {
+    nombre: string;
+    email: string;
+  } | null;
+  medicamentos: ReportMedicationLine[];
+  farmaciaEntrega: {
+    nombre: string;
+  } | null;
+};
+
 const PRESENTACIONES = [
   "Tabletas",
   "Cápsulas",
@@ -643,6 +698,149 @@ function HeartIcon({ className }: { className?: string }) {
 // ── Reports Panel ──────────────────────────────────────────────────────────────
 type ReportType = "general" | "usuarios" | "donaciones" | "solicitudes";
 
+type ReportTable = {
+  headers: string[];
+  rows: string[][];
+  exportRows: Record<string, string>[];
+};
+
+function rowsToExport(headers: string[], rows: string[][]) {
+  return rows.map((row) =>
+    Object.fromEntries(headers.map((header, index) => [header, row[index]])),
+  );
+}
+
+function formatReportDate(value: string) {
+  return new Date(value).toLocaleDateString("es-VE", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+function formatReportLabel(value: string | null | undefined) {
+  if (!value) return "Sin dato";
+
+  return value
+    .toLowerCase()
+    .replaceAll("_", " ")
+    .replace(/\b\w/g, (letter) => letter.toUpperCase());
+}
+
+function formatReportUser(
+  user: { nombre: string; email: string } | null | undefined,
+) {
+  if (!user) return "Sin usuario";
+  return `${user.nombre} (${user.email})`;
+}
+
+function formatReportMedications(items: ReportMedicationLine[]) {
+  if (!items.length) return "Sin insumos";
+
+  return items
+    .map((item) => {
+      const presentation = item.medicamento.presentacion
+        ? ` ${item.medicamento.presentacion}`
+        : "";
+      const priority = item.prioridad
+        ? `, prioridad ${item.prioridad}`
+        : "";
+
+      return `${item.cantidad} x ${item.medicamento.nombre}${presentation}${priority}`;
+    })
+    .join("; ");
+}
+
+function buildReportTable(
+  type: ReportType,
+  data: unknown[],
+): ReportTable | null {
+  if (type === "usuarios") {
+    const rows = (data as ReportUser[]).map((user) => [
+      user.nombre,
+      user.email,
+      user.cedula ?? "Sin cedula",
+      user.telefono ?? "Sin telefono",
+      String(user._count.solicitudes),
+      String(user._count.donaciones),
+      formatReportDate(user.createdAt),
+    ]);
+    const headers = [
+      "Nombre",
+      "Email",
+      "Cedula",
+      "Telefono",
+      "Solicitudes",
+      "Donaciones",
+      "Registro",
+    ];
+
+    return {
+      headers,
+      rows,
+      exportRows: rowsToExport(headers, rows),
+    };
+  }
+
+  if (type === "donaciones") {
+    const rows = (data as ReportDonation[]).map((donation) => [
+      donation.codigo ?? donation.id,
+      formatReportLabel(donation.estado),
+      formatReportUser(donation.usuarioComun),
+      formatReportMedications(donation.medicamentos),
+      donation.farmacia?.nombre ?? "Sin farmacia",
+      formatReportDate(donation.createdAt),
+    ]);
+    const headers = [
+      "Codigo",
+      "Estado",
+      "Donante",
+      "Insumos medicos",
+      "Farmacia",
+      "Fecha",
+    ];
+
+    return {
+      headers,
+      rows,
+      exportRows: rowsToExport(headers, rows),
+    };
+  }
+
+  if (type === "solicitudes") {
+    const rows = (data as ReportRequest[]).map((request) => [
+      request.codigo ?? request.id,
+      formatReportLabel(request.estado),
+      formatReportLabel(request.tiempoEspera),
+      formatReportUser(request.usuarioComun),
+      formatReportMedications(request.medicamentos),
+      request.requiresPrescription ? "Si" : "No",
+      request.farmaciaEntrega?.nombre ?? "Sin farmacia",
+      formatReportDate(request.createdAt),
+    ]);
+    const headers = [
+      "Codigo",
+      "Estado",
+      "Urgencia",
+      "Beneficiario",
+      "Insumos medicos",
+      "Receta",
+      "Farmacia",
+      "Fecha",
+    ];
+
+    return {
+      headers,
+      rows,
+      exportRows: rowsToExport(headers, rows),
+    };
+  }
+
+  return null;
+}
+
 function InformesPanel({
   reportType,
   reportData,
@@ -705,16 +903,19 @@ function InformesPanel({
         })
       : null;
 
-  const tableData =
+  const rawTableData =
     reportType !== "general" && Array.isArray(reportData)
-      ? (reportData as Record<string, unknown>[])
+      ? reportData
       : null;
+  const tableReport = rawTableData
+    ? buildReportTable(reportType, rawTableData)
+    : null;
 
   const getExportData = () => {
     if (reportType === "general" && general) {
       return general.topMedicamentos;
     }
-    return tableData ?? [];
+    return tableReport?.exportRows ?? [];
   };
 
   return (
@@ -759,7 +960,7 @@ function InformesPanel({
           )}
           Generar informe
         </Button>
-        {reportData && (
+        {Boolean(reportData) && (
           <Button
             variant="outline"
             onClick={() =>
@@ -793,7 +994,9 @@ function InformesPanel({
                 key={key}
                 className="bg-gray-50 rounded-xl p-3 text-center border border-gray-100"
               >
-                <p className="text-xl font-bold text-gray-800">{value}</p>
+                <p className="text-xl font-bold text-gray-800">
+                  {Number(value)}
+                </p>
                 <p className="text-xs text-gray-500 mt-0.5 capitalize leading-tight">
                   {key
                     .replace("total", "")
@@ -887,46 +1090,40 @@ function InformesPanel({
         </div>
       )}
 
-      {!reportLoading && tableData && (
+      {!reportLoading && tableReport && (
         <div className="overflow-x-auto rounded-xl border border-gray-100">
           <table className="w-full text-xs">
             <thead>
               <tr className="bg-gray-50 border-b border-gray-100">
-                {Object.keys(tableData[0] ?? {})
-                  .slice(0, 7)
-                  .map((k) => (
-                    <th
-                      key={k}
-                      className="text-left px-4 py-2.5 font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap"
-                    >
-                      {k}
-                    </th>
-                  ))}
+                {tableReport.headers.map((header) => (
+                  <th
+                    key={header}
+                    className="text-left px-4 py-2.5 font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap"
+                  >
+                    {header}
+                  </th>
+                ))}
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
-              {tableData.slice(0, 50).map((row, i) => (
+              {tableReport.rows.slice(0, 50).map((row, i) => (
                 <tr key={i} className="hover:bg-gray-50/50">
-                  {Object.values(row)
-                    .slice(0, 7)
-                    .map((val, j) => (
-                      <td
-                        key={j}
-                        className="px-4 py-2 text-gray-600 max-w-[180px] truncate"
-                      >
-                        {typeof val === "object"
-                          ? JSON.stringify(val)
-                          : String(val ?? "—")}
-                      </td>
-                    ))}
+                  {row.map((value, j) => (
+                    <td
+                      key={j}
+                      className="px-4 py-2 text-gray-600 max-w-[220px] whitespace-normal leading-relaxed"
+                    >
+                      {value || "—"}
+                    </td>
+                  ))}
                 </tr>
               ))}
             </tbody>
           </table>
-          {tableData.length > 50 && (
+          {tableReport.rows.length > 50 && (
             <p className="text-xs text-gray-400 px-4 py-2 bg-gray-50/40 border-t border-gray-100">
-              Mostrando 50 de {tableData.length} registros. Exporta a CSV para
-              ver todos.
+              Mostrando 50 de {tableReport.rows.length} registros. Exporta a
+              CSV para ver todos.
             </p>
           )}
         </div>

@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getRecipeFromS3 } from "@/lib/s3";
 
+export const runtime = "nodejs";
+
 type RouteContext = {
   params: Promise<{
     fileName: string;

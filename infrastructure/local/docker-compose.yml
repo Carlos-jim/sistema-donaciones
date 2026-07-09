@@ -1,5 +1,3 @@
-version: "3.8"
-
 services:
   localstack:
     image: localstack/localstack:4.0
@@ -46,8 +44,10 @@ services:
   # Servicio de la aplicación Next.js para desarrollo local
   # (Opcional: puedes usar este en lugar de EC2 para desarrollo local puro)
   app:
+    profiles:
+      - app
     build:
-      context: ../
+      context: ../..
       dockerfile: Dockerfile
     container_name: donaciones-app
     ports:
@@ -68,9 +68,9 @@ services:
     networks:
       - localstack-network
     volumes:
-      - ../:/app
+      - ../../:/app
       - /app/node_modules
-    command: ["npm", "run", "dev"]
+    command: ["sh", "-c", "npm run dev -- --hostname 0.0.0.0 --port 3000"]
     # Nota: Para usar esto, necesitas un Dockerfile en la raíz del proyecto
 
 volumes:

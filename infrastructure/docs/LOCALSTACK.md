@@ -29,6 +29,12 @@ LocalStack es un emulador de AWS que corre en Docker. Permite probar servicios d
 ./infrastructure/scripts/localstack-init.sh
 ```
 
+Este paso levanta `localstack` y `local-postgres`. La app de Next.js es opcional y se puede iniciar aparte con:
+
+```bash
+docker compose -f infrastructure/local/docker-compose.yml --profile app up -d app
+```
+
 ### 2. Aplicar infraestructura
 
 ```bash
@@ -164,7 +170,7 @@ awsls s3 ls
 
 ### LocalStack no inicia
 ```bash
-docker-compose logs localstack
+docker compose -f infrastructure/local/docker-compose.yml logs localstack
 ```
 
 ### Puerto 4566 ocupado
@@ -187,13 +193,13 @@ provider "aws" {
 ### PostgreSQL no accesible
 ```bash
 # Verificar que el contenedor está corriendo
-docker-compose ps
+docker compose -f infrastructure/local/docker-compose.yml ps
 
 # Verificar logs
-docker-compose logs postgres
+docker compose -f infrastructure/local/docker-compose.yml logs postgres
 
 # Probar conexión
-docker-compose exec postgres psql -U donaciones_admin -d donaciones
+docker compose -f infrastructure/local/docker-compose.yml exec postgres psql -U donaciones_admin -d donaciones
 ```
 
 ## 🔄 Flujo de desarrollo recomendado

@@ -1,8 +1,17 @@
 "use server";
 
+import type { Prisma } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 import prisma from "@/lib/prisma";
 import { getSessionForRole } from "@/lib/auth/server-session";
+
+const REQUEST_URGENCY_VALUES = ["BAJO", "MEDIO", "ALTO"] as const;
+
+type RequestUrgency = (typeof REQUEST_URGENCY_VALUES)[number];
+
+function isRequestUrgency(value: string): value is RequestUrgency {
+  return REQUEST_URGENCY_VALUES.includes(value as RequestUrgency);
+}
 
 function isMissingColumnError(error: unknown) {
   if (!error || typeof error !== "object") {
@@ -54,7 +63,7 @@ async function createSystemNotificationWithFallback(
   title: string,
   message: string,
 ) {
-  const payloads: Array<Record<string, unknown>> = [
+  const payloads: Prisma.NotificacionUncheckedCreateInput[] = [
     {
       userId,
       type: "SYSTEM",
@@ -379,6 +388,41 @@ export async function restoreRequestToPending(requestId: string) {
 
   revalidatePath("/supervisor");
   return { success: true };
+}
+
+export async function updateRequestUrgency(
+  requestId: string,
+  nuevaUrgencia: string,
+) {
+  await getAuthenticatedSupervisor();
+
+  if (!requestId) {
+    throw new Error("Solicitud requerida");
+  }
+
+  if (!isRequestUrgency(nuevaUrgencia)) {
+    throw new Error("Nivel de urgencia invalido");
+  }
+
+  const request = await getManageableRequestOrThrow(requestId);
+
+  if (request.estado !== "PENDIENTE") {
+    throw new Error(
+      "Solo puedes modificar la urgencia de solicitudes pendientes",
+    );
+  }
+
+  await prisma.solicitud.update({
+    where: { id: requestId },
+    data: {
+      tiempoEspera: nuevaUrgencia,
+      updatedAt: new Date(),
+    },
+  });
+
+  revalidatePath("/supervisor");
+
+  return { success: true, urgenciaNueva: nuevaUrgencia };
 }
 
 export async function updateMedicamentoPriority(

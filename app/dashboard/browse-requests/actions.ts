@@ -8,12 +8,13 @@ type RequestLocation = {
   long?: number | null
 } | null
 
-export async function getApprovedRequests() {
+export async function getApprovedRequests(excludeUserId?: string) {
   try {
     const requests = await prisma.solicitud.findMany({
       where: {
         estado: "APROBADA",
         donanteAsignadoId: null,
+        ...(excludeUserId ? { usuarioComunId: { not: excludeUserId } } : {}),
       },
       select: {
         id: true,

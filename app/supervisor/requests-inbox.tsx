@@ -39,6 +39,13 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/components/ui/use-toast";
 import {
@@ -46,11 +53,13 @@ import {
   rejectRequest,
   restoreRequestToPending,
   updateMedicamentoPriority,
+  updateRequestUrgency,
 } from "./actions";
 
 type SupervisorRequestStatus = "PENDIENTE" | "APROBADA" | "RECHAZADA";
+type RequestUrgency = "ALTO" | "MEDIO" | "BAJO";
 type StatusFilter = "ALL" | SupervisorRequestStatus;
-type UrgencyFilter = "ALL" | "ALTO" | "MEDIO" | "BAJO";
+type UrgencyFilter = "ALL" | RequestUrgency;
 
 type RequestItem = {
   id: string;
@@ -59,7 +68,7 @@ type RequestItem = {
   estado: SupervisorRequestStatus;
   recipePhotoUrl: string | null;
   motivo: string | null;
-  tiempoEspera: string;
+  tiempoEspera: RequestUrgency;
   rejectionReason: string | null;
   approvalDate: string | null;
   approvalInstitution: string | null;
@@ -136,7 +145,7 @@ const statusConfig: Record<
 };
 
 const urgencyConfig: Record<
-  string,
+  RequestUrgency,
   { label: string; dot: string; badge: string }
 > = {
   ALTO: {
@@ -157,6 +166,11 @@ const urgencyConfig: Record<
 };
 
 const PAGE_SIZES = [5, 10, 20] as const;
+const URGENCY_OPTIONS: Array<{ value: RequestUrgency; label: string }> = [
+  { value: "ALTO", label: "Alta (1-2 dias)" },
+  { value: "MEDIO", label: "Media (3-4 dias)" },
+  { value: "BAJO", label: "Baja (1 semana)" },
+];
 
 function formatShortDate(date: string) {
   return new Date(date).toLocaleDateString("es-ES", {
@@ -215,6 +229,9 @@ export default function RequestsInbox({
     {},
   );
   const [isUpdatingPriority, setIsUpdatingPriority] = useState(false);
+  const [isEditingUrgency, setIsEditingUrgency] = useState(false);
+  const [tempUrgency, setTempUrgency] = useState<RequestUrgency>("BAJO");
+  const [isUpdatingUrgency, setIsUpdatingUrgency] = useState(false);
 
   const refreshTable = useCallback(
     async (showLoader = false) => {
@@ -322,6 +339,7 @@ export default function RequestsInbox({
     setIsRejecting(false);
     setRejectionReason("");
     setEditingPriority(null);
+    setIsEditingUrgency(false);
   };
 
   const handleApprove = async () => {
@@ -427,6 +445,48 @@ export default function RequestsInbox({
     }));
   };
 
+  const startUrgencyEdit = () => {
+    if (!selectedRequest) return;
+
+    setTempUrgency(selectedRequest.tiempoEspera);
+    setIsEditingUrgency(true);
+  };
+
+  const saveUrgency = async () => {
+    if (!selectedRequest) return;
+
+    setIsUpdatingUrgency(true);
+
+    try {
+      const result = await updateRequestUrgency(
+        selectedRequest.id,
+        tempUrgency,
+      );
+
+      if (!result.success) {
+        throw new Error("Urgency update failed");
+      }
+
+      toast({
+        title: "Urgencia actualizada",
+        description: "Se guardo el nuevo nivel de urgencia.",
+      });
+      setIsEditingUrgency(false);
+      await refreshTable();
+    } catch (error) {
+      toast({
+        title: "Error",
+        description:
+          error instanceof Error
+            ? error.message
+            : "No se pudo actualizar la urgencia.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsUpdatingUrgency(false);
+    }
+  };
+
   const savePriority = async (solicitudMedicamentoId: string) => {
     const nextPriority = tempPriorities[solicitudMedicamentoId];
     if (!nextPriority || nextPriority < 1 || nextPriority > 3) return;
@@ -460,7 +520,7 @@ export default function RequestsInbox({
     }
   };
 
-  const urgencyBadge = (tiempoEspera: string) =>
+  const urgencyBadge = (tiempoEspera: RequestUrgency) =>
     urgencyConfig[tiempoEspera] ?? urgencyConfig.BAJO;
 
   const statusButtons: { key: StatusFilter; label: string; count: number }[] = [
@@ -810,12 +870,76 @@ export default function RequestsInbox({
                 >
                   {statusConfig[selectedRequest.estado].label}
                 </span>
-                <span
-                  className={`inline-flex items-center gap-1 rounded-full border px-3 py-1 text-xs font-medium ${urgencyBadge(selectedRequest.tiempoEspera).badge}`}
-                >
-                  <Clock className="h-3 w-3" />
-                  {urgencyBadge(selectedRequest.tiempoEspera).label}
-                </span>
+                {isEditingUrgency ? (
+                  <div className="flex flex-wrap items-center gap-2 rounded-xl border border-teal-100 bg-teal-50/70 px-3 py-2">
+                    <Label
+                      htmlFor="request-urgency"
+                      className="text-xs font-semibold text-teal-800"
+                    >
+                      Urgencia
+                    </Label>
+                    <Select
+                      value={tempUrgency}
+                      onValueChange={(value) =>
+                        setTempUrgency(value as RequestUrgency)
+                      }
+                      disabled={isUpdatingUrgency}
+                    >
+                      <SelectTrigger
+                        id="request-urgency"
+                        className="h-8 w-[170px] bg-white text-xs"
+                      >
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {URGENCY_OPTIONS.map((option) => (
+                          <SelectItem key={option.value} value={option.value}>
+                            {option.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Button
+                      type="button"
+                      size="sm"
+                      className="h-8 bg-teal-600 text-white hover:bg-teal-700"
+                      onClick={saveUrgency}
+                      disabled={isUpdatingUrgency}
+                    >
+                      <Save className="mr-1 h-3.5 w-3.5" />
+                      Guardar
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      className="h-8"
+                      onClick={() => setIsEditingUrgency(false)}
+                      disabled={isUpdatingUrgency}
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="inline-flex flex-wrap items-center gap-2">
+                    <span
+                      className={`inline-flex items-center gap-1 rounded-full border px-3 py-1 text-xs font-medium ${urgencyBadge(selectedRequest.tiempoEspera).badge}`}
+                    >
+                      <Clock className="h-3 w-3" />
+                      {urgencyBadge(selectedRequest.tiempoEspera).label}
+                    </span>
+                    {selectedRequest.estado === "PENDIENTE" && (
+                      <button
+                        type="button"
+                        onClick={startUrgencyEdit}
+                        className="inline-flex items-center gap-1 rounded-full border border-gray-200 px-3 py-1 text-xs font-medium text-gray-600 transition-colors hover:border-teal-200 hover:bg-teal-50 hover:text-teal-700"
+                      >
+                        <Edit className="h-3 w-3" />
+                        Cambiar urgencia
+                      </button>
+                    )}
+                  </div>
+                )}
                 <span className="text-xs text-gray-400">
                   Actualizada: {formatDateTime(selectedRequest.updatedAt)}
                 </span>

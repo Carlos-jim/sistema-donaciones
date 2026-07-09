@@ -12,10 +12,10 @@ import {
   LogOut,
   Check,
   Menu,
-  MapPin,
+  Map,
   Search,
-  Gift,
-  HelpCircle,
+  PlusCircle,
+  LifeBuoy,
 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import {
@@ -31,13 +31,20 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
 
 const navItems = [
-  { href: "/dashboard", label: "Mapa y Solicitudes", icon: MapPin },
+  { href: "/dashboard", label: "Mapa y Listado", icon: Map },
   { href: "/dashboard/requests", label: "Mis Solicitudes", icon: Search },
-  { href: "/dashboard/donations", label: "Mis Donaciones", icon: Gift },
-  { href: "/dashboard/support", label: "Ayuda", icon: HelpCircle },
+  { href: "/dashboard/donations", label: "Mis Donaciones", icon: PlusCircle },
+  { href: "/dashboard/support", label: "Ayuda", icon: LifeBuoy },
 ];
 
 interface Notification {
@@ -58,6 +65,8 @@ export function DashboardHeader() {
   const [unreadCount, setUnreadCount] = useState(0);
   const [isOpen, setIsOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  const closeMobileMenu = () => setIsMobileMenuOpen(false);
 
   const fetchNotifications = async () => {
     try {
@@ -159,54 +168,16 @@ export function DashboardHeader() {
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.2, duration: 0.5 }}
         >
-          <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
-            <SheetTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="md:hidden hover:bg-teal-50 transition-colors duration-300"
-                aria-label="Abrir menú"
-              >
-                <Menu className="h-5 w-5" />
-              </Button>
-            </SheetTrigger>
-            <SheetContent side="left" className="w-72 p-0">
-              <SheetHeader className="border-b px-6 py-4">
-                <SheetTitle className="flex items-center gap-2 text-left">
-                  <Heart className="h-5 w-5 text-teal-600" />
-                  <span className="bg-gradient-to-r from-teal-600 to-teal-400 bg-clip-text text-transparent">
-                    MediShareNE
-                  </span>
-                </SheetTitle>
-              </SheetHeader>
-              <nav className="flex flex-col gap-1 p-4">
-                {navItems.map((item) => {
-                  const isActive = pathname === item.href;
-                  const Icon = item.icon;
-                  return (
-                    <Link
-                      key={item.href}
-                      href={item.href}
-                      onClick={() => setIsMobileMenuOpen(false)}
-                      className={cn(
-                        "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
-                        isActive
-                          ? "bg-teal-50 text-teal-700"
-                          : "text-gray-700 hover:bg-gray-100 hover:text-teal-600",
-                      )}
-                    >
-                      <Icon className="h-4 w-4" />
-                      {item.label}
-                    </Link>
-                  );
-                })}
-              </nav>
-            </SheetContent>
-          </Sheet>
-          <Heart className="h-6 w-6 text-teal-600" />
-          <span className="text-xl font-bold bg-gradient-to-r from-teal-600 to-teal-400 bg-clip-text text-transparent">
-            MediShareNE
-          </span>
+          <Link
+            href="/dashboard"
+            className="flex items-center gap-2"
+            aria-label="Ir al inicio"
+          >
+            <Heart className="h-6 w-6 text-teal-600" />
+            <span className="text-xl font-bold bg-gradient-to-r from-teal-600 to-teal-400 bg-clip-text text-transparent">
+              MediShareNE
+            </span>
+          </Link>
         </motion.div>
         <motion.nav
           className="hidden md:flex gap-6"
@@ -216,27 +187,100 @@ export function DashboardHeader() {
         >
           {navItems.map((item) => {
             const isActive = pathname === item.href;
+            const Icon = item.icon;
             return (
               <Link
                 key={item.href}
                 href={item.href}
-                className={`text-sm font-medium transition-colors duration-300 relative ${
+                className={`flex items-center gap-1.5 text-sm font-medium transition-colors duration-300 relative ${
                   isActive
                     ? "text-teal-600 after:absolute after:bottom-0 after:left-0 after:h-0.5 after:w-full after:bg-teal-600"
                     : "text-gray-600 hover:text-teal-600"
                 }`}
               >
+                <Icon className="h-4 w-4" />
                 {item.label}
               </Link>
             );
           })}
         </motion.nav>
         <motion.div
-          className="flex items-center gap-2"
+          className="flex items-center gap-1 sm:gap-2"
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.4, duration: 0.5 }}
         >
+          <Link href="/dashboard" aria-label="Volver al inicio">
+            <Button
+              variant="ghost"
+              size="icon"
+              className={cn(
+                "hover:bg-teal-50 transition-colors duration-300",
+                pathname === "/dashboard" && "bg-teal-50 text-teal-600",
+              )}
+            >
+              <Map className="h-5 w-5" />
+            </Button>
+          </Link>
+
+          <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
+            <SheetTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="md:hidden hover:bg-teal-50 transition-colors duration-300"
+                aria-label="Abrir menú de navegación"
+              >
+                <Menu className="h-5 w-5" />
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="left" className="w-72 p-0">
+              <SheetHeader className="border-b px-4 py-4">
+                <SheetTitle className="flex items-center gap-2">
+                  <Heart className="h-5 w-5 text-teal-600" />
+                  <span className="bg-gradient-to-r from-teal-600 to-teal-400 bg-clip-text text-transparent">
+                    MediShareNE
+                  </span>
+                </SheetTitle>
+              </SheetHeader>
+              <nav className="flex flex-col gap-1 p-3">
+                {navItems.map((item) => {
+                  const isActive = pathname === item.href;
+                  const Icon = item.icon;
+                  return (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      onClick={closeMobileMenu}
+                      className={cn(
+                        "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
+                        isActive
+                          ? "bg-teal-50 text-teal-700"
+                          : "text-gray-700 hover:bg-gray-50 hover:text-teal-600",
+                      )}
+                    >
+                      <Icon className="h-4 w-4" />
+                      {item.label}
+                    </Link>
+                  );
+                })}
+                <Link
+                  href="/dashboard/profile"
+                  onClick={closeMobileMenu}
+                  className={cn(
+                    "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
+                    pathname === "/dashboard/profile"
+                      ? "bg-teal-50 text-teal-700"
+                      : "text-gray-700 hover:bg-gray-50 hover:text-teal-600",
+                  )}
+                >
+                  <User className="h-4 w-4" />
+                  Mi perfil
+                </Link>
+              </nav>
+            </SheetContent>
+          </Sheet>
+
           <Popover open={isOpen} onOpenChange={setIsOpen}>
             <PopoverTrigger asChild>
               <Button

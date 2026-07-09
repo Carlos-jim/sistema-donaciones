@@ -33,6 +33,23 @@ export async function POST(request: Request) {
     // Assign to the verified user
     const userId = payload.userId;
 
+    const requestedMedicamentos = Array.isArray(medicamentos)
+      ? medicamentos.map((med) => ({
+          ...med,
+          nombre: typeof med.nombre === "string" ? med.nombre.trim() : "",
+        }))
+      : [];
+
+    if (
+      requestedMedicamentos.length === 0 ||
+      requestedMedicamentos.some((med) => !med.nombre)
+    ) {
+      return NextResponse.json(
+        { error: "Debes indicar al menos un insumo médico" },
+        { status: 400 },
+      );
+    }
+
     // Generate a unique code
     const generateCode = () => {
       const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
@@ -69,7 +86,7 @@ export async function POST(request: Request) {
     });
 
     // Create or find medicamentos and link them to the solicitud
-    for (const med of medicamentos) {
+    for (const med of requestedMedicamentos) {
       // Find or create the medicamento
       let medicamento = null;
 
@@ -81,7 +98,13 @@ export async function POST(request: Request) {
 
       if (!medicamento) {
         medicamento = await prisma.medicamento.findFirst({
-          where: { nombre: med.nombre },
+          where: {
+            nombre: {
+              equals: med.nombre,
+              mode: "insensitive",
+            },
+            activo: true,
+          },
         });
       }
 
@@ -124,8 +147,8 @@ export async function POST(request: Request) {
             data: {
               userId: match.donacion.usuarioComunId,
               type: "MATCH_REQUEST",
-        title: "¡Alguien necesita tu donación!",
-        message: `Se ha solicitado ${med.nombre}, un insumo médico que tienes disponible.`,
+              title: "¡Alguien necesita tu donación!",
+              message: `Se ha solicitado ${medicamento.nombre}, un insumo médico que tienes disponible.`,
               link: "/dashboard/requests",
             },
           });
