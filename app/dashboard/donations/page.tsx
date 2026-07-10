@@ -409,10 +409,10 @@ export default function MyDonationsPage() {
           if (!open) setSelectedItem(null);
         }}
       >
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           {selectedItem && (
             <>
-              <DialogHeader>
+              <DialogHeader className="items-center text-center sm:text-center">
                 <DialogTitle>
                   {selectedItem.kind === "offer"
                     ? "Detalle de donacion"
