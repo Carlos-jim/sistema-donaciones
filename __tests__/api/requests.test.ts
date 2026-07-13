@@ -31,7 +31,6 @@ describe("API Requests", () => {
     vi.mocked(tokenService.verify).mockResolvedValue({
       userId: "user-1",
     } as any);
-    vi.mocked(prisma.donacionMedicamento.findMany).mockResolvedValue([]);
   });
 
   it("should create a request successfully with wait time", async () => {
@@ -60,11 +59,13 @@ describe("API Requests", () => {
     expect(prisma.solicitud.create).toHaveBeenCalledWith(
       expect.objectContaining({
         data: expect.objectContaining({
+          estado: "PENDIENTE",
           tiempoEspera: "ALTO",
           usuarioComunId: "user-1",
         }),
       })
     );
+    expect(prisma.notificacion.create).not.toHaveBeenCalled();
 
     expect(response).toEqual(
       expect.objectContaining({

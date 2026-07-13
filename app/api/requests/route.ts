@@ -65,12 +65,12 @@ export async function POST(request: Request) {
     // For MVP/Demo scale, probability is low, but let's be safe-ish or just assume unique for now.
     // If collision, Prisma will throw, so we could wrap in loop, but let's keep it simple.
 
-    // Create the solicitud (auto-approved so it appears publicly)
+    // Toda solicitud debe ser revisada por un ente de salud antes de estar disponible.
     const solicitud = await prisma.solicitud.create({
       data: {
         codigo: codigo,
         motivo: motivo || null,
-        estado: "APROBADA",
+        estado: "PENDIENTE",
         direccion: ubicacion
           ? {
               calle: ubicacion.address || "Ubicación seleccionada en mapa",
@@ -127,39 +127,12 @@ export async function POST(request: Request) {
         },
       });
 
-      // Find matching donations (available)
-      const matchingDonations = await prisma.donacionMedicamento.findMany({
-        where: {
-          medicamentoId: medicamento.id,
-          donacion: {
-            estado: "DISPONIBLE",
-          },
-        },
-        include: {
-          donacion: true,
-        },
-      });
-
-      // Notify donors
-      for (const match of matchingDonations) {
-        if (match.donacion.usuarioComunId) {
-          await prisma.notificacion.create({
-            data: {
-              userId: match.donacion.usuarioComunId,
-              type: "MATCH_REQUEST",
-              title: "¡Alguien necesita tu donación!",
-              message: `Se ha solicitado ${medicamento.nombre}, un insumo médico que tienes disponible.`,
-              link: "/dashboard/requests",
-            },
-          });
-        }
-      }
     }
 
     return NextResponse.json(
       {
         success: true,
-        message: "Solicitud creada exitosamente",
+        message: "Solicitud enviada para aprobación del ente de salud",
         solicitudId: solicitud.id,
       },
       { status: 201 },

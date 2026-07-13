@@ -262,7 +262,7 @@ export function MedicationRequestForm({
       toast({
         title: "¡Solicitud enviada!",
         description:
-          "Tu solicitud de insumo médico ha sido registrada exitosamente.",
+          "Tu solicitud fue enviada al ente de salud para su aprobación.",
       });
 
       // Reset form
