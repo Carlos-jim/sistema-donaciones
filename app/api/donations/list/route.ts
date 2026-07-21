@@ -2,7 +2,7 @@ import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { tokenService } from "@/lib/auth/token.service";
-import { signDeliveryQrPayload } from "@/lib/delivery-codes";
+import { getReadableQrPayload } from "@/lib/delivery-codes";
 import { processAbandonedPickups } from "@/lib/abandoned-pickups.service";
 
 export async function GET() {
@@ -89,24 +89,12 @@ export async function GET() {
       },
     });
 
-    const deliveriesWithQr = await Promise.all(
-      acceptedDeliveries.map(async (delivery) => {
-        const donorQrPayload =
-          delivery.codigoEntregaDonante && delivery.farmaciaEntregaId
-            ? await signDeliveryQrPayload({
-                solicitudId: delivery.id,
-                pharmacyId: delivery.farmaciaEntregaId,
-                code: delivery.codigoEntregaDonante,
-                role: "DONOR_DELIVERY",
-              })
-            : null;
-
-        return {
-          ...delivery,
-          donorQrPayload,
-        };
-      }),
-    );
+    const deliveriesWithQr = acceptedDeliveries.map((delivery) => ({
+      ...delivery,
+      donorQrPayload: delivery.codigoEntregaDonante
+        ? getReadableQrPayload(delivery.codigoEntregaDonante)
+        : null,
+    }));
 
     return NextResponse.json({
       ownOffers,

@@ -28,7 +28,10 @@ vi.mock("@/lib/prisma", () => ({
     },
     solicitud: {
       create: vi.fn(),
+      findUnique: vi.fn(),
       findMany: vi.fn(),
+      update: vi.fn(),
+      deleteMany: vi.fn(),
     },
     donacion: {
       create: vi.fn(),
@@ -40,6 +43,7 @@ vi.mock("@/lib/prisma", () => ({
     },
     solicitudMedicamento: {
       create: vi.fn(),
+      deleteMany: vi.fn(),
     },
     donacionMedicamento: {
       create: vi.fn(),

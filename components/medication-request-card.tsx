@@ -284,10 +284,14 @@ export function MedicationRequestCard({
                   </Button>
                 </div>
                 <img
-                  src={getQrImageUrl(acceptResult.donorQrPayload, 180)}
+                  src={getQrImageUrl(acceptResult.donorCode, 180)}
                   alt="QR del donante"
                   className="mx-auto mt-3 h-[180px] w-[180px] rounded-lg border bg-white p-2"
                 />
+                <p className="mt-2 text-center text-xs text-teal-700">
+                  Al escanear, verás el código {acceptResult.donorCode} para
+                  validarlo en la farmacia.
+                </p>
               </div>
 
               <div className="rounded-lg border border-gray-200 bg-gray-50 p-4">

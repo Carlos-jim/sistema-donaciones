@@ -1,7 +1,7 @@
 import prisma from "@/lib/prisma";
 import {
   generateReadableCode,
-  signDeliveryQrPayload,
+  getReadableQrPayload,
 } from "@/lib/delivery-codes";
 
 type AcceptRequestInput = {
@@ -132,19 +132,8 @@ export async function acceptRequestWithDeliveryCodes(
     },
   });
 
-  const donorQrPayload = await signDeliveryQrPayload({
-    solicitudId: solicitud.id,
-    pharmacyId: farmacia.id,
-    code: donorCode,
-    role: "DONOR_DELIVERY",
-  });
-
-  const requesterQrPayload = await signDeliveryQrPayload({
-    solicitudId: solicitud.id,
-    pharmacyId: farmacia.id,
-    code: requesterCode,
-    role: "REQUESTER_PICKUP",
-  });
+  const donorQrPayload = getReadableQrPayload(donorCode);
+  const requesterQrPayload = getReadableQrPayload(requesterCode);
 
   return {
     donorCode,

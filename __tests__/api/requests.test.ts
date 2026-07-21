@@ -33,7 +33,7 @@ describe("API Requests", () => {
     } as any);
   });
 
-  it("should create a request successfully with wait time", async () => {
+  it("should keep requests without a recipe pending health entity review", async () => {
     const mockSolicitud = { id: "solicitud-1" };
 
     vi.mocked(prisma.solicitud.create).mockResolvedValue(mockSolicitud as any);
@@ -60,6 +60,7 @@ describe("API Requests", () => {
       expect.objectContaining({
         data: expect.objectContaining({
           estado: "PENDIENTE",
+          requiresPrescription: false,
           tiempoEspera: "ALTO",
           usuarioComunId: "user-1",
         }),
@@ -73,6 +74,42 @@ describe("API Requests", () => {
         init: { status: 201 },
       })
     );
+  });
+
+  it("should keep requests with a recipe pending health entity review", async () => {
+    const mockSolicitud = { id: "solicitud-with-recipe" };
+
+    vi.mocked(prisma.solicitud.create).mockResolvedValue(mockSolicitud as any);
+    vi.mocked(prisma.medicamento.findFirst).mockResolvedValue({
+      id: "med-1",
+    } as any);
+
+    const request = new Request("http://localhost/api/requests", {
+      method: "POST",
+      body: JSON.stringify({
+        motivo: "Need prescription medicine",
+        medicamentos: [
+          { nombre: "Adapaleno", cantidad: 1, unidad: "unidades" },
+        ],
+        ubicacion: { lat: 0, lng: 0 },
+        requiereReceta: true,
+        recipePhotoUrl: "/api/upload/recipe/file/recipe.jpg",
+        tiempoEspera: "MEDIO",
+      }),
+    });
+
+    await POST(request);
+
+    expect(prisma.solicitud.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          estado: "PENDIENTE",
+          requiresPrescription: true,
+          recipePhotoUrl: "/api/upload/recipe/file/recipe.jpg",
+        }),
+      }),
+    );
+    expect(prisma.notificacion.create).not.toHaveBeenCalled();
   });
 
   it("should create medication when it does not exist in catalog", async () => {

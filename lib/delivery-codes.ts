@@ -30,6 +30,10 @@ export function generateReadableCode(prefix: "DON" | "RET") {
   return `${prefix}-${timePart}${generateSuffix(5)}`;
 }
 
+export function getReadableQrPayload(code: string) {
+  return code.trim().toUpperCase();
+}
+
 export async function signDeliveryQrPayload(payload: {
   solicitudId: string;
   pharmacyId: string;

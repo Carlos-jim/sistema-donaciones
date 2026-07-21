@@ -3,7 +3,7 @@ import { cookies } from "next/headers";
 import prisma from "@/lib/prisma";
 import { Prisma } from "@prisma/client";
 import { tokenService } from "@/lib/auth/token.service";
-import { signDeliveryQrPayload } from "@/lib/delivery-codes";
+import { getReadableQrPayload } from "@/lib/delivery-codes";
 import { processAbandonedPickups } from "@/lib/abandoned-pickups.service";
 
 export async function POST(request: Request) {
@@ -205,29 +205,14 @@ export async function GET() {
       },
     });
 
-    const enriched = await Promise.all(
-      solicitudes.map(async (solicitud) => {
-        let requesterQrPayload: string | null = null;
-
-        if (
-          solicitud.codigoRetiroSolicitante &&
-          solicitud.farmaciaEntregaId &&
-          solicitud.estado === "LISTA_PARA_RETIRO"
-        ) {
-          requesterQrPayload = await signDeliveryQrPayload({
-            solicitudId: solicitud.id,
-            pharmacyId: solicitud.farmaciaEntregaId,
-            code: solicitud.codigoRetiroSolicitante,
-            role: "REQUESTER_PICKUP",
-          });
-        }
-
-        return {
-          ...solicitud,
-          requesterQrPayload,
-        };
-      }),
-    );
+    const enriched = solicitudes.map((solicitud) => ({
+      ...solicitud,
+      requesterQrPayload:
+        solicitud.codigoRetiroSolicitante &&
+        solicitud.estado === "LISTA_PARA_RETIRO"
+          ? getReadableQrPayload(solicitud.codigoRetiroSolicitante)
+          : null,
+    }));
 
     return NextResponse.json(enriched);
   } catch (error) {

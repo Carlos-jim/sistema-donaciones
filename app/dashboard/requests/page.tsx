@@ -51,6 +51,7 @@ import {
   QrCode,
 } from "lucide-react";
 import { getQrImageUrl } from "@/lib/qr";
+import { RecipeUpload } from "@/components/recipe-upload";
 
 const smoothEase = [0.25, 0.46, 0.45, 0.94] as [number, number, number, number];
 
@@ -183,6 +184,14 @@ function canCancel(s: Solicitud) {
   );
 }
 
+function canEdit(s: Solicitud) {
+  return s.estado === "PENDIENTE" || s.estado === "RECHAZADA";
+}
+
+function canDelete(s: Solicitud) {
+  return s.estado === "RECHAZADA";
+}
+
 function needsPharmacyConfirmation(s: Solicitud) {
   return (
     s.estado === "EN_PROCESO" &&
@@ -211,6 +220,8 @@ export default function MyRequestsPage() {
   );
   const [cancelTarget, setCancelTarget] = useState<Solicitud | null>(null);
   const [isCancelling, setIsCancelling] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<Solicitud | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
   // Pharmacy rejection
   const [rejectPharmacyTarget, setRejectPharmacyTarget] =
     useState<Solicitud | null>(null);
@@ -223,6 +234,11 @@ export default function MyRequestsPage() {
   const [editTarget, setEditTarget] = useState<Solicitud | null>(null);
   const [editMotivo, setEditMotivo] = useState("");
   const [editUrgency, setEditUrgency] = useState<string>("");
+  const [editRequiresPrescription, setEditRequiresPrescription] =
+    useState(false);
+  const [editRecipePhotoUrl, setEditRecipePhotoUrl] = useState<string | null>(
+    null,
+  );
   const [editMeds, setEditMeds] = useState<
     { nombre: string; cantidad: number }[]
   >([]);
@@ -274,6 +290,40 @@ export default function MyRequestsPage() {
       });
     } finally {
       setIsCancelling(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
+    setIsDeleting(true);
+    try {
+      const res = await fetch(`/api/requests/${deleteTarget.id}`, {
+        method: "DELETE",
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        toast({
+          title: "No se pudo eliminar",
+          description: data.error,
+          variant: "destructive",
+        });
+        return;
+      }
+      toast({
+        title: "Solicitud eliminada",
+        description: "La solicitud rechazada fue eliminada definitivamente.",
+      });
+      setDeleteTarget(null);
+      setSelectedSolicitud(null);
+      fetchSolicitudes();
+    } catch {
+      toast({
+        title: "Error",
+        description: "Error de conexión.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -434,6 +484,8 @@ export default function MyRequestsPage() {
     setEditTarget(s);
     setEditMotivo(s.motivo || "");
     setEditUrgency(s.tiempoEspera);
+    setEditRequiresPrescription(s.requiresPrescription);
+    setEditRecipePhotoUrl(s.recipePhotoUrl);
     setEditMeds(
       s.medicamentos.map((m) => ({
         nombre: m.medicamento.nombre,
@@ -445,6 +497,14 @@ export default function MyRequestsPage() {
 
   const handleSaveEdit = async () => {
     if (!editTarget) return;
+    if (editRequiresPrescription && !editRecipePhotoUrl) {
+      toast({
+        title: "Récipe requerido",
+        description: "Adjunta el récipe médico antes de reenviar la solicitud.",
+        variant: "destructive",
+      });
+      return;
+    }
     setIsSavingEdit(true);
     try {
       const res = await fetch(`/api/requests/${editTarget.id}`, {
@@ -453,6 +513,10 @@ export default function MyRequestsPage() {
         body: JSON.stringify({
           motivo: editMotivo,
           tiempoEspera: editUrgency,
+          requiresPrescription: editRequiresPrescription,
+          recipePhotoUrl: editRequiresPrescription
+            ? editRecipePhotoUrl
+            : null,
           medicamentos: editMeds,
         }),
       });
@@ -465,7 +529,16 @@ export default function MyRequestsPage() {
         });
         return;
       }
-      toast({ title: "Solicitud actualizada" });
+      toast({
+        title:
+          editTarget.estado === "RECHAZADA"
+            ? "Solicitud reenviada"
+            : "Solicitud actualizada",
+        description:
+          editTarget.estado === "RECHAZADA"
+            ? "Volvió a estado pendiente para que el ente de salud la revise."
+            : undefined,
+      });
       setEditTarget(null);
       fetchSolicitudes();
     } catch {
@@ -702,8 +775,8 @@ export default function MyRequestsPage() {
                           <Eye className="h-4 w-4 mr-1" />
                           Ver Detalles
                         </Button>
-                        <div className="flex items-center gap-1">
-                          {solicitud.estado === "PENDIENTE" && (
+                        <div className="flex flex-wrap items-center justify-end gap-1">
+                          {canEdit(solicitud) && (
                             <Button
                               variant="ghost"
                               size="sm"
@@ -711,7 +784,20 @@ export default function MyRequestsPage() {
                               onClick={() => openEdit(solicitud)}
                             >
                               <Pencil className="h-4 w-4 mr-1" />
-                              Editar
+                              {solicitud.estado === "RECHAZADA"
+                                ? "Corregir"
+                                : "Editar"}
+                            </Button>
+                          )}
+                          {canDelete(solicitud) && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                              onClick={() => setDeleteTarget(solicitud)}
+                            >
+                              <Trash2 className="h-4 w-4 mr-1" />
+                              Eliminar
                             </Button>
                           )}
                           {canCancel(solicitud) && (
@@ -929,13 +1015,17 @@ export default function MyRequestsPage() {
                           </p>
                           {selectedSolicitud.requesterQrPayload && (
                             <img
-                              src={getQrImageUrl(selectedSolicitud.requesterQrPayload, 180)}
+                              src={getQrImageUrl(
+                                selectedSolicitud.codigoRetiroSolicitante,
+                                180,
+                              )}
                               alt="QR del beneficiario"
                               className="mx-auto mt-3 h-[180px] w-[180px] rounded-lg border bg-white p-2"
                             />
                           )}
                           <p className="mt-2 text-xs text-purple-700">
-                            Presenta este codigo o QR en la farmacia al retirar tu insumo médico.
+                            Al escanear el QR verás este código. La farmacia
+                            puede ingresarlo en Recepción para revisar el retiro.
                           </p>
                         </div>
                       )}
@@ -1081,27 +1171,56 @@ export default function MyRequestsPage() {
                   </div>
                 )}
 
-                <div className="pt-4 border-t border-gray-100 flex items-center justify-between text-sm text-gray-500">
+                <div className="flex flex-col gap-3 border-t border-gray-100 pt-4 text-sm text-gray-500 sm:flex-row sm:items-center sm:justify-between">
                   <span>
                     Solicitado por:{" "}
                     <strong className="text-gray-700">
                       {selectedSolicitud.usuarioComun.nombre}
                     </strong>
                   </span>
-                  {canCancel(selectedSolicitud) && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="border-red-300 text-red-600 hover:bg-red-50"
-                      onClick={() => {
-                        setSelectedSolicitud(null);
-                        setCancelTarget(selectedSolicitud);
-                      }}
-                    >
-                      <XCircle className="w-4 h-4 mr-1" />
-                      Cancelar Solicitud
-                    </Button>
-                  )}
+                  <div className="flex flex-wrap justify-end gap-2">
+                    {canEdit(selectedSolicitud) && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="border-teal-300 text-teal-700 hover:bg-teal-50"
+                        onClick={() => openEdit(selectedSolicitud)}
+                      >
+                        <Pencil className="w-4 h-4 mr-1" />
+                        {selectedSolicitud.estado === "RECHAZADA"
+                          ? "Corregir y reenviar"
+                          : "Editar solicitud"}
+                      </Button>
+                    )}
+                    {canDelete(selectedSolicitud) && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="border-red-300 text-red-600 hover:bg-red-50"
+                        onClick={() => {
+                          setSelectedSolicitud(null);
+                          setDeleteTarget(selectedSolicitud);
+                        }}
+                      >
+                        <Trash2 className="w-4 h-4 mr-1" />
+                        Eliminar
+                      </Button>
+                    )}
+                    {canCancel(selectedSolicitud) && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="border-red-300 text-red-600 hover:bg-red-50"
+                        onClick={() => {
+                          setSelectedSolicitud(null);
+                          setCancelTarget(selectedSolicitud);
+                        }}
+                      >
+                        <XCircle className="w-4 h-4 mr-1" />
+                        Cancelar Solicitud
+                      </Button>
+                    )}
+                  </div>
                 </div>
               </div>
             </>
@@ -1136,6 +1255,38 @@ export default function MyRequestsPage() {
               disabled={isCancelling}
             >
               {isCancelling ? "Cancelando..." : "Sí, cancelar solicitud"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Rejected Request Dialog */}
+      <Dialog
+        open={!!deleteTarget}
+        onOpenChange={(open) => !open && setDeleteTarget(null)}
+      >
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>¿Eliminar solicitud rechazada?</DialogTitle>
+            <DialogDescription>
+              La solicitud y sus insumos se eliminarán definitivamente. Esta
+              acción no se puede deshacer.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2">
+            <Button
+              variant="ghost"
+              onClick={() => setDeleteTarget(null)}
+              disabled={isDeleting}
+            >
+              Volver
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleDelete}
+              disabled={isDeleting}
+            >
+              {isDeleting ? "Eliminando..." : "Sí, eliminar definitivamente"}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -1200,11 +1351,21 @@ export default function MyRequestsPage() {
               Editar Solicitud
             </DialogTitle>
             <DialogDescription>
-              Solo puedes editar solicitudes en estado Pendiente.
+              {editTarget?.estado === "RECHAZADA"
+                ? "Corrige la información y vuelve a enviarla al ente de salud."
+                : "Actualiza la información mientras la solicitud está pendiente."}
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-5 mt-2">
+            {editTarget?.estado === "RECHAZADA" &&
+              editTarget.rejectionReason && (
+                <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+                  <span className="font-semibold">Motivo del rechazo:</span>{" "}
+                  {editTarget.rejectionReason}
+                </div>
+              )}
+
             {/* Urgency */}
             <div className="space-y-1.5">
               <Label>Urgencia</Label>
@@ -1226,9 +1387,41 @@ export default function MyRequestsPage() {
               <Textarea
                 value={editMotivo}
                 onChange={(e) => setEditMotivo(e.target.value)}
-                        placeholder="Describe brevemente por qué necesitas estos insumos médicos..."
+                placeholder="Describe brevemente por qué necesitas estos insumos médicos..."
                 className="min-h-[80px]"
               />
+            </div>
+
+            {/* Prescription */}
+            <div className="space-y-3 rounded-lg border border-gray-200 p-3">
+              <div className="space-y-1.5">
+                <Label>¿Requiere récipe médico?</Label>
+                <Select
+                  value={editRequiresPrescription ? "SI" : "NO"}
+                  onValueChange={(value) =>
+                    setEditRequiresPrescription(value === "SI")
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="SI">Sí, requiere récipe</SelectItem>
+                    <SelectItem value="NO">No requiere récipe</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {editRequiresPrescription && (
+                <RecipeUpload
+                  key={editTarget?.id}
+                  currentImageUrl={editRecipePhotoUrl || undefined}
+                  onUploadComplete={(url) =>
+                    setEditRecipePhotoUrl(url || null)
+                  }
+                  label="Récipe médico"
+                />
+              )}
             </div>
 
             {/* Medications */}
@@ -1313,9 +1506,17 @@ export default function MyRequestsPage() {
             <Button
               className="bg-teal-600 hover:bg-teal-700"
               onClick={handleSaveEdit}
-              disabled={isSavingEdit || editMeds.every((m) => !m.nombre.trim())}
+              disabled={
+                isSavingEdit ||
+                editMeds.every((m) => !m.nombre.trim()) ||
+                (editRequiresPrescription && !editRecipePhotoUrl)
+              }
             >
-              {isSavingEdit ? "Guardando..." : "Guardar cambios"}
+              {isSavingEdit
+                ? "Guardando..."
+                : editTarget?.estado === "RECHAZADA"
+                  ? "Corregir y reenviar"
+                  : "Guardar cambios"}
             </Button>
           </DialogFooter>
         </DialogContent>

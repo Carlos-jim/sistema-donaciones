@@ -468,13 +468,14 @@ export default function MyDonationsPage() {
                     </p>
                     {"donorQrPayload" in selectedItem && selectedItem.donorQrPayload && (
                       <img
-                        src={getQrImageUrl(selectedItem.donorQrPayload, 180)}
+                        src={getQrImageUrl(selectedItem.donorCode || "", 180)}
                         alt="QR del donante"
                         className="mx-auto mt-3 h-[180px] w-[180px] rounded-lg border bg-white p-2"
                       />
                     )}
                     <p className="mt-2 text-xs text-blue-700">
-                      Presenta este codigo o QR en la farmacia al entregar el insumo médico.
+                      Al escanear el QR verás este código. La farmacia puede
+                      ingresarlo en Recepción para revisar la entrega.
                     </p>
                   </div>
                 )}
