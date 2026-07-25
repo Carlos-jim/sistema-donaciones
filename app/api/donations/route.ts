@@ -217,6 +217,7 @@ export async function GET() {
       include: {
         usuarioComun: {
           select: {
+            id: true,
             nombre: true,
             email: true,
           },
@@ -232,7 +233,12 @@ export async function GET() {
       },
     });
 
-    return NextResponse.json(donaciones);
+    const anonymousDonations = donaciones.map((don) => ({
+      ...don,
+      donorLabel: "Donante anonimo",
+    }));
+
+    return NextResponse.json(anonymousDonations);
   } catch (error) {
     console.error("Error fetching donaciones:", error);
     return NextResponse.json(

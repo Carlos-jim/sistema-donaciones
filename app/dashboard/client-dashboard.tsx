@@ -117,9 +117,7 @@ interface Donacion {
   longitude: number | null;
   createdAt: string;
   descripcion: string | null;
-  usuarioComun: {
-    nombre: string;
-  };
+  donorLabel: string;
   medicamentos: Array<{
     fechaExpiracion: string;
     cantidad: number;
@@ -282,7 +280,7 @@ export default function DashboardClient({
         unit: don.medicamentos[0]?.medicamento?.presentacion || "unidades",
         quantity: don.medicamentos[0]?.cantidad ?? 1,
         requiresPrescription,
-        donor: don.usuarioComun?.nombre || "Donante",
+        donor: don.donorLabel,
         location: "Ubicación",
         distance: distance !== null ? formatDistance(distance) : "N/A",
         distanceValue: distance,

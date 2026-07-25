@@ -412,7 +412,7 @@ export default function Home() {
                     <ArrowRight className="ml-2 h-5 w-5" />
                   </Link>
                 </Button>
-                <Button variant="outline" size="lg" className="border-white text-white hover:bg-white hover:text-teal-600 px-8 py-6 text-lg font-semibold" asChild>
+                <Button variant="outline" size="lg" className="border-white bg-transparent text-white hover:bg-white hover:text-teal-600 px-8 py-6 text-lg font-semibold" asChild>
                   <Link href="#how-it-works">
                     Saber Más
                   </Link>
