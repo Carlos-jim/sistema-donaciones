@@ -8,6 +8,7 @@ import {
   Gift,
   MapPin,
   Package,
+  Pencil,
   Pill,
   PlusCircle,
   QrCode,
@@ -26,9 +27,17 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/components/ui/use-toast";
 
@@ -77,6 +86,12 @@ type AcceptedDelivery = {
   donorQrPayload: string | null;
 };
 
+type Pharmacy = {
+  id: string;
+  nombre: string;
+  direccion: string;
+};
+
 type DonationsResponse = {
   ownOffers: OwnOffer[];
   acceptedDeliveries: AcceptedDelivery[];
@@ -91,6 +106,7 @@ type DonationItem =
       code: string | null;
       description: string | null;
       pharmacyLabel: string | null;
+      pharmacyWasRejected: false;
       canConfirmDelivery: false;
       photoUrl: string | null;
       rejectionReason: null;
@@ -105,6 +121,7 @@ type DonationItem =
       code: string | null;
       description: string | null;
       pharmacyLabel: string | null;
+      pharmacyWasRejected: boolean;
       canConfirmDelivery: boolean;
       photoUrl: null;
       rejectionReason: string | null;
@@ -152,6 +169,12 @@ export default function MyDonationsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isConfirmingDelivery, setIsConfirmingDelivery] = useState(false);
   const [selectedItem, setSelectedItem] = useState<DonationItem | null>(null);
+  const [pharmacies, setPharmacies] = useState<Pharmacy[]>([]);
+  const [changingPharmacyItem, setChangingPharmacyItem] =
+    useState<DonationItem | null>(null);
+  const [selectedPharmacyId, setSelectedPharmacyId] = useState("");
+  const [isLoadingPharmacies, setIsLoadingPharmacies] = useState(false);
+  const [isChangingPharmacy, setIsChangingPharmacy] = useState(false);
 
   const fetchDonations = async () => {
     setIsLoading(true);
@@ -191,6 +214,7 @@ export default function MyDonationsPage() {
       pharmacyLabel: offer.farmacia
         ? `${offer.farmacia.nombre} - ${offer.farmacia.direccion}`
         : null,
+      pharmacyWasRejected: false as const,
       canConfirmDelivery: false as const,
       photoUrl: offer.donationPhotoUrl,
       rejectionReason: null,
@@ -207,6 +231,9 @@ export default function MyDonationsPage() {
       pharmacyLabel: delivery.farmaciaEntrega
         ? `${delivery.farmaciaEntrega.nombre} - ${delivery.farmaciaEntrega.direccion}`
         : null,
+      pharmacyWasRejected:
+        delivery.estado === "EN_PROCESO" &&
+        delivery.farmaciaConfirmada === false,
       canConfirmDelivery:
         delivery.estado === "EN_PROCESO" &&
         delivery.farmaciaConfirmada === true &&
@@ -260,6 +287,84 @@ export default function MyDonationsPage() {
       });
     } finally {
       setIsConfirmingDelivery(false);
+    }
+  };
+
+  const openChangePharmacy = async (item: DonationItem) => {
+    if (item.kind !== "delivery" || !item.pharmacyWasRejected) return;
+
+    setChangingPharmacyItem(item);
+    setSelectedPharmacyId("");
+
+    if (pharmacies.length > 0) return;
+
+    setIsLoadingPharmacies(true);
+    try {
+      const response = await fetch("/api/pharmacies");
+      const payload = await response.json();
+
+      if (!response.ok) {
+        throw new Error(payload.error || "No se pudieron cargar las farmacias");
+      }
+
+      setPharmacies(payload);
+    } catch (error) {
+      console.error("Error fetching pharmacies:", error);
+      toast({
+        title: "Error",
+        description: "No se pudieron cargar las farmacias disponibles.",
+        variant: "destructive",
+      });
+      setChangingPharmacyItem(null);
+    } finally {
+      setIsLoadingPharmacies(false);
+    }
+  };
+
+  const changePharmacy = async () => {
+    if (
+      !changingPharmacyItem ||
+      changingPharmacyItem.kind !== "delivery" ||
+      !selectedPharmacyId
+    ) {
+      return;
+    }
+
+    setIsChangingPharmacy(true);
+    try {
+      const response = await fetch(
+        `/api/requests/${changingPharmacyItem.id}/change-pharmacy`,
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ pharmacyId: selectedPharmacyId }),
+        },
+      );
+      const payload = await response.json();
+
+      if (!response.ok) {
+        throw new Error(payload.error || "No se pudo cambiar la dirección");
+      }
+
+      toast({
+        title: "Dirección actualizada",
+        description:
+          "La nueva farmacia fue enviada al beneficiario para su confirmación.",
+      });
+      setChangingPharmacyItem(null);
+      await fetchDonations();
+    } catch (error) {
+      console.error("Error changing pharmacy:", error);
+      toast({
+        title: "Error",
+        description:
+          error instanceof Error
+            ? error.message
+            : "No se pudo cambiar la dirección de entrega.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsChangingPharmacy(false);
     }
   };
 
@@ -352,7 +457,20 @@ export default function MyDonationsPage() {
                   {item.pharmacyLabel && (
                     <div className="flex items-start gap-2 rounded-lg border border-gray-100 bg-gray-50 p-3 text-sm text-gray-700">
                       <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-teal-600" />
-                      <span>{item.pharmacyLabel}</span>
+                      <span className="flex-1">{item.pharmacyLabel}</span>
+                      {item.kind === "delivery" && item.pharmacyWasRejected && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="-mr-2 -mt-1 h-8 w-8 shrink-0 text-teal-700 hover:bg-teal-100 hover:text-teal-900"
+                          onClick={() => openChangePharmacy(item)}
+                          aria-label="Cambiar dirección de entrega"
+                          title="Cambiar dirección de entrega"
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                      )}
                     </div>
                   )}
 
@@ -544,6 +662,78 @@ export default function MyDonationsPage() {
               </div>
             </>
           )}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={!!changingPharmacyItem}
+        onOpenChange={(open) => {
+          if (!open && !isChangingPharmacy) setChangingPharmacyItem(null);
+        }}
+      >
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Pencil className="h-5 w-5 text-teal-600" />
+              Cambiar dirección de entrega
+            </DialogTitle>
+            <DialogDescription>
+              La farmacia anterior fue rechazada. Elige otra farmacia para
+              proponer su dirección al beneficiario.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-2 py-2">
+            <label
+              htmlFor="pharmacy-selector"
+              className="text-sm font-medium text-gray-700"
+            >
+              Nueva farmacia
+            </label>
+            <Select
+              value={selectedPharmacyId}
+              onValueChange={setSelectedPharmacyId}
+              disabled={isLoadingPharmacies || isChangingPharmacy}
+            >
+              <SelectTrigger id="pharmacy-selector">
+                <SelectValue
+                  placeholder={
+                    isLoadingPharmacies
+                      ? "Cargando farmacias..."
+                      : "Selecciona una farmacia"
+                  }
+                />
+              </SelectTrigger>
+              <SelectContent>
+                {pharmacies.map((pharmacy) => (
+                  <SelectItem key={pharmacy.id} value={pharmacy.id}>
+                    {pharmacy.nombre} — {pharmacy.direccion}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <DialogFooter className="gap-2">
+            <Button
+              variant="ghost"
+              onClick={() => setChangingPharmacyItem(null)}
+              disabled={isChangingPharmacy}
+            >
+              Cancelar
+            </Button>
+            <Button
+              className="bg-teal-600 text-white hover:bg-teal-700"
+              onClick={changePharmacy}
+              disabled={
+                !selectedPharmacyId ||
+                isLoadingPharmacies ||
+                isChangingPharmacy
+              }
+            >
+              {isChangingPharmacy ? "Guardando..." : "Guardar dirección"}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </>

@@ -187,7 +187,10 @@ export function MedicationAutocomplete({
         align="start"
         sideOffset={4}
       >
-        <Command className="rounded-xl border border-gray-200 shadow-xl">
+        <Command
+          className="rounded-xl border border-gray-200 shadow-xl"
+          shouldFilter={false}
+        >
           <CommandInput
             placeholder="Escribe para buscar..."
             value={searchQuery}
