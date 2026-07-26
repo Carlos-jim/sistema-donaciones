@@ -118,6 +118,21 @@ export type PharmacyInventoryMedication = {
   origins: string[];
 };
 
+export type PharmacyReceivedMedication = {
+  id: string;
+  receiptId: string;
+  receiptCode: string | null;
+  receiptDescription: string | null;
+  receivedAt: Date;
+  origin: string;
+  nombre: string;
+  presentacion: string | null;
+  concentracion: string | null;
+  cantidad: number;
+  lote: string | null;
+  fechaExpiracion: Date | null;
+};
+
 type InventorySummary = {
   receivedDonationsCount: number;
   uniqueMedicationCount: number;
@@ -207,6 +222,7 @@ function sortActiveRequests(requests: PharmacyActiveRequest[]) {
 
 function buildInventorySummary(receipts: PharmacyInventoryReceipt[]) {
   const medicationMap = new Map<string, PharmacyInventoryMedication>();
+  const history: PharmacyReceivedMedication[] = [];
   let totalUnits = 0;
   let lastReceivedAt: Date | null = null;
 
@@ -219,6 +235,21 @@ function buildInventorySummary(receipts: PharmacyInventoryReceipt[]) {
 
     for (const medicationLine of receipt.medicamentos) {
       totalUnits += medicationLine.cantidad;
+
+      history.push({
+        id: medicationLine.id,
+        receiptId: receipt.id,
+        receiptCode: receipt.codigo,
+        receiptDescription: receipt.descripcion,
+        receivedAt: receipt.updatedAt,
+        origin: originLabel,
+        nombre: medicationLine.medicamento.nombre,
+        presentacion: medicationLine.medicamento.presentacion,
+        concentracion: medicationLine.medicamento.concentracion,
+        cantidad: medicationLine.cantidad,
+        lote: medicationLine.lote,
+        fechaExpiracion: medicationLine.fechaExpiracion,
+      });
 
       const current = medicationMap.get(medicationLine.medicamento.id);
 
@@ -263,7 +294,15 @@ function buildInventorySummary(receipts: PharmacyInventoryReceipt[]) {
     lastReceivedAt,
   };
 
-  return { medications, summary };
+  const receivedMedications = history.sort((left, right) => {
+    if (right.receivedAt.getTime() !== left.receivedAt.getTime()) {
+      return right.receivedAt.getTime() - left.receivedAt.getTime();
+    }
+
+    return left.nombre.localeCompare(right.nombre, "es");
+  });
+
+  return { medications, receivedMedications, summary };
 }
 
 function buildActiveRequestSummary(requests: PharmacyActiveRequest[]) {
@@ -331,12 +370,14 @@ async function getActiveRequestsByPharmacyId(pharmacyId: string) {
 export async function getPharmacyInventoryData() {
   const pharmacy = await getAuthenticatedPharmacy();
   const receipts = await getInventoryReceiptsByPharmacyId(pharmacy.id);
-  const { medications, summary } = buildInventorySummary(receipts);
+  const { medications, receivedMedications, summary } =
+    buildInventorySummary(receipts);
 
   return {
     pharmacy,
     receipts,
     medications,
+    receivedMedications,
     summary,
   };
 }
