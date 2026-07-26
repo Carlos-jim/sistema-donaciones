@@ -107,6 +107,7 @@ type DonationItem =
       description: string | null;
       pharmacyLabel: string | null;
       pharmacyWasRejected: false;
+      awaitingPharmacyReceipt: false;
       canConfirmDelivery: false;
       photoUrl: string | null;
       rejectionReason: null;
@@ -122,6 +123,7 @@ type DonationItem =
       description: string | null;
       pharmacyLabel: string | null;
       pharmacyWasRejected: boolean;
+      awaitingPharmacyReceipt: boolean;
       canConfirmDelivery: boolean;
       photoUrl: null;
       rejectionReason: string | null;
@@ -215,6 +217,7 @@ export default function MyDonationsPage() {
         ? `${offer.farmacia.nombre} - ${offer.farmacia.direccion}`
         : null,
       pharmacyWasRejected: false as const,
+      awaitingPharmacyReceipt: false as const,
       canConfirmDelivery: false as const,
       photoUrl: offer.donationPhotoUrl,
       rejectionReason: null,
@@ -234,9 +237,12 @@ export default function MyDonationsPage() {
       pharmacyWasRejected:
         delivery.estado === "EN_PROCESO" &&
         delivery.farmaciaConfirmada === false,
-      canConfirmDelivery:
+      awaitingPharmacyReceipt:
         delivery.estado === "EN_PROCESO" &&
         delivery.farmaciaConfirmada === true &&
+        !delivery.deliveryConfirmedAt,
+      canConfirmDelivery:
+        delivery.estado === "RECIBIDA" &&
         !delivery.deliveryConfirmedAt,
       photoUrl: null,
       rejectionReason: delivery.motivoRechazoFarmacia,
@@ -266,7 +272,7 @@ export default function MyDonationsPage() {
 
       toast({
         title: "Entrega confirmada",
-        description: "La farmacia fue notificada correctamente.",
+        description: "Tu confirmación fue registrada después de la validación de farmacia.",
       });
       await fetchDonations();
       setSelectedItem((current) =>
@@ -482,7 +488,14 @@ export default function MyDonationsPage() {
 
                   {item.deliveryConfirmedAt && (
                     <div className="rounded-lg border border-blue-200 bg-blue-50 p-3 text-sm text-blue-800">
-                      Entrega confirmada en farmacia.
+                      Confirmaste la entrega después de la validación de farmacia.
+                    </div>
+                  )}
+
+                  {item.awaitingPharmacyReceipt && (
+                    <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm leading-5 text-amber-800">
+                      Esperando que la farmacia confirme la recepción. Después
+                      podrás registrar tu entrega.
                     </div>
                   )}
 
@@ -658,6 +671,13 @@ export default function MyDonationsPage() {
                       ? "Confirmando..."
                       : "Confirmar entrega en farmacia"}
                   </Button>
+                )}
+
+                {selectedItem.awaitingPharmacyReceipt && (
+                  <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-800">
+                    La confirmación del donador se habilitará cuando la farmacia
+                    registre la recepción del insumo médico.
+                  </div>
                 )}
               </div>
             </>
