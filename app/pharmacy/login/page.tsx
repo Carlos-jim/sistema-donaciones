@@ -8,7 +8,7 @@ export default function PharmacyLoginPage() {
     <PortalLoginCard
       badge="Portal Pharmacy"
       title="Acceso farmacia"
-      description="Recepcion, validacion y entrega segura de insumos medicos."
+      description="Recepción, validación y entrega segura de insumos médicos."
       icon={Pill}
       loginEndpoint="/api/pharmacy/auth/login"
       redirectTo="/pharmacy"

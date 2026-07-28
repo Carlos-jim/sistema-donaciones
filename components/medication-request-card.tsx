@@ -126,7 +126,7 @@ export function MedicationRequestCard({
       await navigator.clipboard.writeText(text);
       toast({
         title: "Copiado",
-        description: "Codigo copiado al portapapeles",
+        description: "Código copiado al portapapeles",
       });
     } catch (error) {
       console.error("Failed to copy:", error);
@@ -165,7 +165,7 @@ export function MedicationRequestCard({
 
       toast({
         title: "Solicitud aceptada",
-        description: `Codigo de entrega: ${result.data.donorCode}`,
+        description: `Código de entrega: ${result.data.donorCode}`,
       });
     } catch (error) {
       toast({
@@ -249,11 +249,11 @@ export function MedicationRequestCard({
         <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-xl">
-              {acceptResult ? "Donacion confirmada" : "Confirmar donacion"}
+              {acceptResult ? "Donación confirmada" : "Confirmar donación"}
             </DialogTitle>
             <DialogDescription>
               {acceptResult
-                ? "Guarda tu codigo de entrega para presentarlo en la farmacia"
+                ? "Guarda tu código de entrega para presentarlo en la farmacia"
                 : "Selecciona la farmacia donde entregaras el insumo médico"}
             </DialogDescription>
           </DialogHeader>
@@ -268,7 +268,7 @@ export function MedicationRequestCard({
 
               <div className="rounded-xl border-2 border-teal-200 bg-gradient-to-r from-teal-50 to-teal-100 p-4">
                 <p className="mb-1 text-sm font-medium text-teal-700">
-                  Codigo donante (entrega)
+                  Código donante (entrega)
                 </p>
                 <div className="flex items-center justify-between">
                   <span className="text-2xl font-bold tracking-wider text-teal-800">
@@ -312,8 +312,8 @@ export function MedicationRequestCard({
                 <strong>Proximos pasos:</strong>
                 <ul className="mt-1 list-inside list-disc space-y-1">
                   <li>Lleva el insumo médico a la farmacia indicada</li>
-                  <li>Presenta tu codigo de entrega al momento de llevarlo</li>
-                  <li>El solicitante recibira su propio codigo por separado</li>
+                  <li>Presenta tu código de entrega al momento de llevarlo</li>
+                  <li>El solicitante recibirá su propio código por separado</li>
                 </ul>
               </div>
 
@@ -401,7 +401,7 @@ export function MedicationRequestCard({
                 <div className="rounded-lg border border-yellow-100 bg-yellow-50 p-3 text-sm text-gray-500">
                   <strong>Importante:</strong> Al confirmar, el sistema genera
                   codigos distintos para el donante y para el solicitante. Aqui
-                  solo veras tu codigo de entrega.
+                  solo verás tu código de entrega.
                 </div>
               </div>
 
@@ -426,7 +426,7 @@ export function MedicationRequestCard({
                   ) : (
                     <>
                       <Heart className="mr-2 h-4 w-4" />
-                      Confirmar Donacion
+                      Confirmar Donación
                     </>
                   )}
                 </Button>

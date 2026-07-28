@@ -89,7 +89,7 @@ export default function ProfilePage() {
           const data = await res.json();
           toast({
             title: "No se pudo cargar el perfil",
-            description: data.error || "Intenta iniciar sesion de nuevo.",
+            description: data.error || "Intenta iniciar sesión de nuevo.",
             variant: "destructive",
           });
         }

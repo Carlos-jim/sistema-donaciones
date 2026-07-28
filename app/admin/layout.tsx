@@ -37,7 +37,7 @@ export default function AdminLayout({
           <RoleLogoutButton
             logoutUrl="/api/admin/auth/logout"
             redirectTo="/admin/login"
-            label="Cerrar sesion"
+            label="Cerrar sesión"
             className="rounded-xl text-sm text-teal-100 border border-white/25 bg-transparent hover:bg-white/15 hover:text-white hover:border-white/40 transition-colors"
           />
         </div>

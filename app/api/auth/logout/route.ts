@@ -4,7 +4,7 @@ import { AUTH_COOKIE_NAMES } from "@/lib/auth/roles";
 
 export async function POST() {
   const response = NextResponse.json(
-    { success: true, message: "Sesion cerrada exitosamente" },
+    { success: true, message: "Sesión cerrada exitosamente" },
     { status: 200 },
   );
 

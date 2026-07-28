@@ -89,7 +89,7 @@ function getNextStepLabel(request: PharmacyActiveRequest) {
   }
 
   if (request.deliveryConfirmedAt) {
-    return "El donante ya indico la entrega, toca validar en recepcion";
+    return "El donante ya indico la entrega, toca validar en recepción";
   }
 
   if (request.farmaciaConfirmada !== true) {
@@ -102,7 +102,7 @@ function getNextStepLabel(request: PharmacyActiveRequest) {
 function statusSectionDescription(status: PharmacyActiveRequest["estado"]) {
   switch (status) {
     case "EN_PROCESO":
-      return "Solicitudes asignadas a esta farmacia que todavia esperan entrega o validacion.";
+      return "Solicitudes asignadas a esta farmacia que todavia esperan entrega o validación.";
     case "RECIBIDA":
       return "Insumos médicos ya recibidos por farmacia y pendientes de marcar para retiro.";
     case "LISTA_PARA_RETIRO":
@@ -153,7 +153,7 @@ export default async function PharmacyRequestsPage() {
     {
       label: "En proceso",
       value: summary.inProcessCount,
-      description: "Esperando entrega, confirmacion o validacion",
+      description: "Esperando entrega, confirmación o validación",
       icon: Clock3,
       iconClass: "bg-amber-50 text-amber-700",
       borderClass: "border-amber-100",
@@ -212,7 +212,7 @@ export default async function PharmacyRequestsPage() {
             className="inline-flex items-center justify-center gap-2 rounded-2xl bg-white px-4 py-3 text-sm font-semibold text-teal-700 shadow-sm transition hover:bg-teal-50"
           >
             <ScanLine className="h-4 w-4" />
-            Ir a recepcion
+            Ir a recepción
           </Link>
         </div>
       </section>
@@ -329,7 +329,7 @@ export default async function PharmacyRequestsPage() {
                         href="/pharmacy/reception"
                         className="inline-flex items-center gap-2 rounded-2xl bg-white px-4 py-2 text-sm font-semibold text-teal-700 shadow-sm ring-1 ring-slate-200 transition hover:bg-teal-50"
                       >
-                        Procesar en recepcion
+                        Procesar en recepción
                         <ArrowRight className="h-4 w-4" />
                       </Link>
                     </div>

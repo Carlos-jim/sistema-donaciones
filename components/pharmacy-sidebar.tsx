@@ -20,7 +20,7 @@ import { RoleLogoutButton } from "@/components/role-logout-button";
 
 const items = [
   { title: "Dashboard", url: "/pharmacy", icon: Home },
-  { title: "Recepcion", url: "/pharmacy/reception", icon: Gift },
+  { title: "Recepción", url: "/pharmacy/reception", icon: Gift },
   { title: "Inventario", url: "/pharmacy/inventory", icon: Package },
   { title: "Solicitudes", url: "/pharmacy/requests", icon: ClipboardList },
 ];
@@ -85,7 +85,7 @@ export function PharmacySidebar() {
         <RoleLogoutButton
           logoutUrl="/api/pharmacy/auth/logout"
           redirectTo="/pharmacy/login"
-          label="Cerrar sesion"
+          label="Cerrar sesión"
           className="w-full justify-start text-red-500 hover:text-red-600 hover:bg-red-50 text-sm"
         />
       </SidebarFooter>

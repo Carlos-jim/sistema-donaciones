@@ -34,7 +34,7 @@ const SAMPLE_LOCATIONS: MapLocation[] = [
     lat: 19.4326,
     lng: -99.1332,
     type: "donation",
-    title: "Donacion Centro",
+    title: "Donación Centro",
   },
   {
     id: "2",
@@ -48,7 +48,7 @@ const SAMPLE_LOCATIONS: MapLocation[] = [
     lat: 19.4226,
     lng: -99.1232,
     type: "donation",
-    title: "Donacion Sur",
+    title: "Donación Sur",
   },
   {
     id: "4",
@@ -576,7 +576,7 @@ function MapViewInner({
                 </div>
                 <div className="text-xs text-gray-500">
                   {location.type === "donation"
-                    ? "Donacion"
+                    ? "Donación"
                     : location.type === "request"
                       ? "Solicitud"
                       : "Farmacia"}

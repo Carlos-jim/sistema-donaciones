@@ -60,12 +60,12 @@ export function PortalLoginCard({
       const data = await response.json();
 
       if (!response.ok || !data.success) {
-        setError(data.error || "No se pudo iniciar sesion");
+        setError(data.error || "No se pudo iniciar sesión");
         return;
       }
 
       toast({
-        title: "Sesion iniciada",
+        title: "Sesión iniciada",
         description: "Acceso concedido correctamente.",
       });
 

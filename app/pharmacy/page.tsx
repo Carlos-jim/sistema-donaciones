@@ -63,7 +63,7 @@ function getNextStepLabel(request: PharmacyActiveRequest) {
   }
 
   if (request.deliveryConfirmedAt) {
-    return "El donante ya marco la entrega, falta recepcion";
+    return "El donante ya marco la entrega, falta recepción";
   }
 
   if (request.farmaciaConfirmada !== true) {
@@ -80,8 +80,8 @@ export default async function PharmacyDashboardPage() {
     {
       href: "/pharmacy/reception",
       icon: ScanLine,
-      title: "Procesar recepcion",
-      description: "Valida codigos de donacion y retiro desde el portal.",
+      title: "Procesar recepción",
+      description: "Valida códigos de donación y retiro desde el portal.",
       badge: null,
       iconClass: "bg-teal-100 text-teal-700",
     },
@@ -155,7 +155,7 @@ export default async function PharmacyDashboardPage() {
               <p className="text-sm font-medium text-teal-100">Portal Farmacia</p>
               <h2 className="text-3xl font-bold tracking-tight">{pharmacy.nombre}</h2>
               <p className="mt-2 max-w-2xl text-sm text-teal-50">
-                Resumen de recepcion, solicitudes activas e inventario registrado en esta farmacia.
+                Resumen de recepción, solicitudes activas e inventario registrado en esta farmacia.
               </p>
             </div>
           </div>
@@ -166,7 +166,7 @@ export default async function PharmacyDashboardPage() {
                 <MapPin className="mt-0.5 h-4 w-4 text-teal-100" />
                 <div>
                   <p className="text-xs font-semibold uppercase tracking-wide text-teal-100">
-                    Direccion
+                    Dirección
                   </p>
                   <p className="mt-1 text-sm text-white">{pharmacy.direccion}</p>
                 </div>
@@ -180,7 +180,7 @@ export default async function PharmacyDashboardPage() {
                     Contacto
                   </p>
                   <p className="mt-1 text-sm text-white">
-                    {pharmacy.telefono || "Sin telefono registrado"}
+                    {pharmacy.telefono || "Sin teléfono registrado"}
                   </p>
                   <p className="mt-1 text-xs text-teal-100">
                     {pharmacy.horario || "Horario no configurado"}
@@ -287,7 +287,7 @@ export default async function PharmacyDashboardPage() {
                 Solicitudes activas en esta farmacia
               </h3>
               <p className="mt-1 text-sm text-slate-500">
-                Lo que esta esperando recepcion, validacion o retiro.
+                Lo que esta esperando recepción, validación o retiro.
               </p>
             </div>
             <Link

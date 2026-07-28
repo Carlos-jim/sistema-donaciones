@@ -15,7 +15,7 @@ export default async function SupervisorDashboard() {
     <div className="space-y-8">
       <div>
         <h2 className="text-2xl font-bold tracking-tight text-gray-900">
-          Gestion de Solicitudes
+          Gestión de Solicitudes
         </h2>
         <p className="mt-1 text-gray-500">
           Revisa pendientes, consulta las aprobadas y corrige rapido si te equivocas.

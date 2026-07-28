@@ -29,9 +29,9 @@ function roleLabel(role?: string) {
     case "REQUESTER_PICKUP":
       return "Retiro del beneficiario";
     case "DONATION":
-      return "Donacion";
+      return "Donación";
     default:
-      return "Validacion general";
+      return "Validación general";
   }
 }
 
@@ -74,7 +74,7 @@ export default function PharmacyReceptionPage() {
 
     if (!result.success) {
       setItem(null);
-      setError(result.error || "Codigo no encontrado");
+      setError(result.error || "Código no encontrado");
     } else {
       setItem(result.data);
       setRejectionReason("");
@@ -125,9 +125,9 @@ export default function PharmacyReceptionPage() {
         item.codigoEntregaDonante ||
         item.codigoComprobante ||
         item.codigo ||
-        "Sin codigo"
-      : item.enteredCode || item.codigo || "Sin codigo"
-    : "Sin codigo";
+        "Sin código"
+      : item.enteredCode || item.codigo || "Sin código"
+    : "Sin código";
 
   return (
     <div className="min-h-screen bg-gray-50 px-4 py-10">
@@ -177,7 +177,7 @@ export default function PharmacyReceptionPage() {
                     {pickup.codigoRetiroSolicitante ||
                       pickup.codigoComprobante ||
                       pickup.codigo ||
-                      "Sin codigo"}
+                      "Sin código"}
                   </span>
                 </div>
               ))}
@@ -191,7 +191,7 @@ export default function PharmacyReceptionPage() {
               <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
               <input
                 className="w-full rounded-lg border border-gray-200 py-2 pl-9 pr-3 text-sm outline-none transition focus:border-teal-500"
-                placeholder="Ingresa codigo o QR"
+                placeholder="Ingresa código o QR"
                 value={inputCode}
                 onChange={(event) => setInputCode(event.target.value)}
               />
@@ -214,7 +214,7 @@ export default function PharmacyReceptionPage() {
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
                   <p className="text-sm text-gray-500">
-                    {item.type === "SOLICITUD" ? "Solicitud" : "Donacion"}
+                    {item.type === "SOLICITUD" ? "Solicitud" : "Donación"}
                   </p>
                   <h2 className="text-xl font-semibold text-gray-900">{displayCode}</h2>
                   <p className="mt-1 text-xs text-gray-500">
@@ -235,7 +235,7 @@ export default function PharmacyReceptionPage() {
                   <div className="mb-3 flex items-center gap-2">
                     <ShieldCheck className="h-5 w-5 text-amber-700" />
                     <p className="text-sm font-bold uppercase tracking-wide text-amber-800">
-                      Validacion obligatoria de identidad
+                      Validación obligatoria de identidad
                     </p>
                   </div>
 
@@ -282,7 +282,7 @@ export default function PharmacyReceptionPage() {
                   <div className="mb-2 flex items-center gap-2">
                     <ShieldCheck className="h-5 w-5 text-blue-700" />
                     <p className="text-sm font-bold uppercase tracking-wide text-blue-800">
-                      Validacion de identidad — Donante
+                      Validación de identidad — Donante
                     </p>
                   </div>
                   <p className="text-sm font-medium text-gray-900">

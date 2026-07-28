@@ -8,7 +8,7 @@ export default function SupervisorLoginPage() {
     <PortalLoginCard
       badge="Portal Supervisor"
       title="Acceso supervisor"
-      description="Revision y aprobacion de solicitudes medicas."
+      description="Revisión y aprobación de solicitudes medicas."
       icon={ClipboardCheck}
       loginEndpoint="/api/supervisor/auth/login"
       redirectTo="/supervisor"

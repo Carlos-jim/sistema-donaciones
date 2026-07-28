@@ -34,7 +34,7 @@ export default function SupervisorLayout({
           <RoleLogoutButton
             logoutUrl="/api/supervisor/auth/logout"
             redirectTo="/supervisor/login"
-            label="Cerrar sesion"
+            label="Cerrar sesión"
             className="rounded-xl text-sm text-teal-100 border border-white/25 bg-transparent hover:bg-white/15 hover:text-white hover:border-white/40 transition-colors"
           />
         </div>

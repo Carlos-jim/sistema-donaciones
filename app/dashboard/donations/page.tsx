@@ -389,7 +389,7 @@ export default function MyDonationsPage() {
           <Link href="/dashboard/donate-medication">
             <Button className="bg-teal-600 text-white hover:bg-teal-700">
               <PlusCircle className="mr-2 h-4 w-4" />
-              Nueva donacion
+              Nueva donación
             </Button>
           </Link>
         </div>
@@ -418,7 +418,7 @@ export default function MyDonationsPage() {
               Aun no tienes donaciones registradas
             </h3>
             <p className="mx-auto mt-2 max-w-sm text-gray-500">
-              Cuando hagas una donacion o aceptes una solicitud, aparecera aqui.
+              Cuando hagas una donación o aceptes una solicitud, aparecera aqui.
             </p>
           </div>
         ) : (
@@ -451,8 +451,8 @@ export default function MyDonationsPage() {
                 <CardContent className="flex-1 space-y-3">
                   <div className="rounded-lg border border-gray-100 bg-gray-50 p-3 text-sm text-gray-700">
                     <p>
-                      <span className="font-medium text-gray-900">Codigo:</span>{" "}
-                      {item.code || "Sin codigo"}
+                      <span className="font-medium text-gray-900">Código:</span>{" "}
+                      {item.code || "Sin código"}
                     </p>
                     <p className="mt-1">
                       <span className="font-medium text-gray-900">Cantidad:</span>{" "}
@@ -546,11 +546,11 @@ export default function MyDonationsPage() {
               <DialogHeader className="items-center text-center sm:text-center">
                 <DialogTitle>
                   {selectedItem.kind === "offer"
-                    ? "Detalle de donacion"
+                    ? "Detalle de donación"
                     : "Detalle de entrega"}
                 </DialogTitle>
                 <DialogDescription>
-                  {selectedItem.code || "Sin codigo asignado"}
+                  {selectedItem.code || "Sin código asignado"}
                 </DialogDescription>
               </DialogHeader>
 
@@ -571,7 +571,7 @@ export default function MyDonationsPage() {
                     </p>
                     <p className="mt-1 font-medium text-gray-900">
                       {selectedItem.kind === "offer"
-                        ? "Oferta de donacion"
+                        ? "Oferta de donación"
                         : "Solicitud aceptada"}
                     </p>
                   </div>
@@ -654,7 +654,7 @@ export default function MyDonationsPage() {
                   <div className="overflow-hidden rounded-2xl border bg-gray-50">
                     <img
                       src={selectedItem.photoUrl}
-                      alt="Foto de la donacion"
+                      alt="Foto de la donación"
                       className="h-full w-full object-contain"
                     />
                   </div>

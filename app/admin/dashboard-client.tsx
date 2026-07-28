@@ -762,7 +762,7 @@ function buildReportTable(
       user.nombre,
       user.email,
       user.cedula ?? "Sin cedula",
-      user.telefono ?? "Sin telefono",
+      user.telefono ?? "Sin teléfono",
       String(user._count.solicitudes),
       String(user._count.donaciones),
       formatReportDate(user.createdAt),
@@ -770,8 +770,8 @@ function buildReportTable(
     const headers = [
       "Nombre",
       "Email",
-      "Cedula",
-      "Telefono",
+      "Cédula",
+      "Teléfono",
       "Solicitudes",
       "Donaciones",
       "Registro",
@@ -794,10 +794,10 @@ function buildReportTable(
       formatReportDate(donation.createdAt),
     ]);
     const headers = [
-      "Codigo",
+      "Código",
       "Estado",
       "Donante",
-      "Insumos medicos",
+      "Insumos médicos",
       "Farmacia",
       "Fecha",
     ];
@@ -821,11 +821,11 @@ function buildReportTable(
       formatReportDate(request.createdAt),
     ]);
     const headers = [
-      "Codigo",
+      "Código",
       "Estado",
       "Urgencia",
       "Beneficiario",
-      "Insumos medicos",
+      "Insumos médicos",
       "Receta",
       "Farmacia",
       "Fecha",

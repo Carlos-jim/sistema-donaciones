@@ -146,7 +146,7 @@ export async function lookupByValidationCode(
     const { code, tokenPayload } = await normalizeCodeInput(input);
 
     if (!code) {
-      return { success: false, error: "Ingresa un codigo valido" };
+      return { success: false, error: "Ingresa un código válido" };
     }
 
     const solicitud = await prisma.solicitud.findFirst({
@@ -174,7 +174,7 @@ export async function lookupByValidationCode(
       if (assignedPharmacyId !== pharmacy.id) {
         return {
           success: false,
-          error: "El codigo no corresponde a esta farmacia",
+          error: "El código no corresponde a esta farmacia",
         };
       }
 
@@ -215,7 +215,7 @@ export async function lookupByValidationCode(
       if (donacion.farmaciaId && donacion.farmaciaId !== pharmacy.id) {
         return {
           success: false,
-          error: "La donacion ya esta asignada a otra farmacia",
+          error: "La donación ya está asignada a otra farmacia",
         };
       }
 
@@ -230,10 +230,10 @@ export async function lookupByValidationCode(
       };
     }
 
-    return { success: false, error: "Codigo no encontrado" };
+    return { success: false, error: "Código no encontrado" };
   } catch (error) {
     console.error("Error fetching code:", error);
-    return { success: false, error: "Error al buscar el codigo" };
+    return { success: false, error: "Error al buscar el código" };
   }
 }
 
@@ -394,13 +394,13 @@ export async function updateStatus(
       });
 
       if (!donacion) {
-        return { success: false, error: "Donacion no encontrada" };
+        return { success: false, error: "Donación no encontrada" };
       }
 
       if (donacion.farmaciaId && donacion.farmaciaId !== pharmacy.id) {
         return {
           success: false,
-          error: "Esta donacion no corresponde a tu farmacia",
+          error: "Esta donación no corresponde a tu farmacia",
         };
       }
 

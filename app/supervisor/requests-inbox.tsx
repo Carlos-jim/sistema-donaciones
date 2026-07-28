@@ -167,8 +167,8 @@ const urgencyConfig: Record<
 
 const PAGE_SIZES = [5, 10, 20] as const;
 const URGENCY_OPTIONS: Array<{ value: RequestUrgency; label: string }> = [
-  { value: "ALTO", label: "Alta (1-2 dias)" },
-  { value: "MEDIO", label: "Media (3-4 dias)" },
+  { value: "ALTO", label: "Alta (1-2 días)" },
+  { value: "MEDIO", label: "Media (3-4 días)" },
   { value: "BAJO", label: "Baja (1 semana)" },
 ];
 
@@ -578,19 +578,17 @@ export default function RequestsInbox({
                   setStatusFilter(button.key);
                   setCurrentPage(1);
                 }}
-                className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${
-                  statusFilter === button.key
+                className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${statusFilter === button.key
                     ? "border-teal-500 bg-teal-600 text-white"
                     : "border-gray-200 bg-white text-gray-600 hover:border-gray-300 hover:bg-gray-50"
-                }`}
+                  }`}
               >
                 <span>{button.label}</span>
                 <span
-                  className={`rounded-full px-1.5 py-0.5 text-[10px] ${
-                    statusFilter === button.key
+                  className={`rounded-full px-1.5 py-0.5 text-[10px] ${statusFilter === button.key
                       ? "bg-white/20 text-white"
                       : "bg-gray-100 text-gray-500"
-                  }`}
+                    }`}
                 >
                   {button.count}
                 </span>
@@ -621,17 +619,15 @@ export default function RequestsInbox({
                     setUrgencyFilter(key);
                     setCurrentPage(1);
                   }}
-                  className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
-                    urgencyFilter === key
+                  className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium transition-colors ${urgencyFilter === key
                       ? "border-teal-500 bg-teal-600 text-white"
                       : "border-gray-200 bg-white text-gray-600 hover:border-gray-300 hover:bg-gray-50"
-                  }`}
+                    }`}
                 >
                   {dot && (
                     <span
-                      className={`h-1.5 w-1.5 rounded-full ${
-                        urgencyFilter === key ? "bg-white" : dot
-                      }`}
+                      className={`h-1.5 w-1.5 rounded-full ${urgencyFilter === key ? "bg-white" : dot
+                        }`}
                     />
                   )}
                   {label}
@@ -765,11 +761,10 @@ export default function RequestsInbox({
                       setPageSize(size);
                       setCurrentPage(1);
                     }}
-                    className={`h-7 w-8 rounded-lg text-xs font-medium transition-colors ${
-                      pageSize === size
+                    className={`h-7 w-8 rounded-lg text-xs font-medium transition-colors ${pageSize === size
                         ? "bg-teal-600 text-white"
                         : "bg-gray-100 text-gray-500 hover:bg-gray-200"
-                    }`}
+                      }`}
                   >
                     {size}
                   </button>
@@ -819,11 +814,10 @@ export default function RequestsInbox({
                       key={item}
                       type="button"
                       onClick={() => setCurrentPage(item as number)}
-                      className={`h-8 min-w-[2rem] rounded-lg px-2 text-xs font-medium transition-colors ${
-                        safePage === item
+                      className={`h-8 min-w-[2rem] rounded-lg px-2 text-xs font-medium transition-colors ${safePage === item
                           ? "bg-teal-600 text-white"
                           : "text-gray-600 hover:bg-gray-100"
-                      }`}
+                        }`}
                     >
                       {item}
                     </button>
@@ -950,7 +944,7 @@ export default function RequestsInbox({
                   <div className="rounded-xl border-2 border-teal-200 bg-gradient-to-r from-teal-50 to-white p-4">
                     <h3 className="mb-2 flex items-center font-semibold text-teal-800">
                       <FileText className="mr-2 h-4 w-4 text-teal-600" />
-                      Validacion de identidad — Beneficiario
+                      Validación de identidad — Beneficiario
                     </h3>
                     <div className="space-y-1 text-sm text-gray-700">
                       <p>
@@ -968,7 +962,7 @@ export default function RequestsInbox({
                         {selectedRequest.usuarioComun.email}
                       </p>
                       <p>
-                        <span className="font-medium">Telefono:</span>{" "}
+                        <span className="font-medium">Teléfono:</span>{" "}
                         {selectedRequest.usuarioComun.telefono || "N/A"}
                       </p>
                     </div>
@@ -978,7 +972,7 @@ export default function RequestsInbox({
                     <div className="rounded-xl border-2 border-blue-200 bg-gradient-to-r from-blue-50 to-white p-4">
                       <h3 className="mb-2 flex items-center font-semibold text-blue-800">
                         <FileText className="mr-2 h-4 w-4 text-blue-600" />
-                        Validacion de identidad — Donante asignado
+                        Validación de identidad — Donante asignado
                       </h3>
                       <div className="space-y-1 text-sm text-gray-700">
                         <p>
@@ -1008,7 +1002,7 @@ export default function RequestsInbox({
                     </p>
                     {selectedRequest.approvalDate && (
                       <p className="mt-2 text-sm text-gray-600">
-                        <span className="font-medium">Ultima aprobacion:</span>{" "}
+                        <span className="font-medium">Última aprobación:</span>{" "}
                         {formatDateTime(selectedRequest.approvalDate)}
                       </p>
                     )}
@@ -1085,11 +1079,10 @@ export default function RequestsInbox({
                                             [medication.id]: value,
                                           }))
                                         }
-                                        className={`flex-1 rounded-lg border px-3 py-2 text-sm font-semibold ${
-                                          isSelected
+                                        className={`flex-1 rounded-lg border px-3 py-2 text-sm font-semibold ${isSelected
                                             ? buttonConfig.active
                                             : buttonConfig.badge
-                                        }`}
+                                          }`}
                                       >
                                         {buttonConfig.label}
                                       </button>
@@ -1160,14 +1153,14 @@ export default function RequestsInbox({
                 <div className="space-y-4">
                   <div className="rounded-xl border bg-gray-50 p-4">
                     <h3 className="mb-2 font-semibold text-gray-800">
-                      Receta medica
+                      Receta médica
                     </h3>
                     <div className="flex min-h-[280px] items-center justify-center overflow-hidden rounded-xl border bg-gray-100">
                       {selectedRequest.recipePhotoUrl ? (
                         <div className="relative min-h-[340px] w-full">
                           <Image
                             src={selectedRequest.recipePhotoUrl}
-                            alt="Receta medica"
+                            alt="Receta médica"
                             fill
                             className="object-contain"
                           />
