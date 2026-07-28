@@ -676,29 +676,29 @@ export default function RequestsInbox({
               return (
                 <div
                   key={request.id}
-                  className="group flex items-center gap-4 px-6 py-4 transition-colors hover:bg-gray-50/70"
+                  className="group flex items-center justify-between sm:justify-start gap-2 sm:gap-4 px-4 sm:px-6 py-4 transition-colors hover:bg-gray-50/70"
                 >
-                  <div className="flex shrink-0 flex-col items-center gap-1.5">
-                    <span
-                      className={`h-2.5 w-2.5 rounded-full ${urgency.dot}`}
-                    />
-                  </div>
+                  <div className="flex items-center gap-3 flex-1 min-w-0 sm:flex-none sm:w-56 shrink-0">
+                    <div className="flex shrink-0 flex-col items-center gap-1.5">
+                      <span
+                        className={`h-2.5 w-2.5 rounded-full ${urgency.dot}`}
+                      />
+                    </div>
 
-                  <div className="flex w-56 shrink-0 items-center gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-teal-50 text-sm font-bold text-teal-700">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-teal-50 text-sm font-bold text-teal-700">
                       {request.usuarioComun.nombre.charAt(0).toUpperCase()}
                     </div>
-                    <div className="min-w-0">
+                    <div className="min-w-0 flex-1">
                       <p className="truncate text-sm font-medium text-gray-900">
                         {request.usuarioComun.nombre}
                       </p>
-                      <p className="text-xs text-gray-400">
+                      <p className="truncate text-xs text-gray-400">
                         {request.usuarioComun.cedula || "Sin cedula"}
                       </p>
                     </div>
                   </div>
 
-                  <div className="min-w-0 flex-1">
+                  <div className="hidden sm:block min-w-0 flex-1">
                     <div className="flex flex-wrap gap-1.5">
                       {request.medicamentos.slice(0, 3).map((medication) => (
                         <span
@@ -724,27 +724,27 @@ export default function RequestsInbox({
                   </span>
 
                   <span
-                    className={`hidden shrink-0 items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-medium sm:inline-flex ${urgency.badge}`}
+                    className={`hidden shrink-0 items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-medium lg:inline-flex ${urgency.badge}`}
                   >
                     <Clock className="h-3 w-3" />
                     {urgency.label}
                   </span>
 
-                  <span className="hidden shrink-0 text-xs text-gray-400 lg:block">
+                  <span className="hidden shrink-0 text-xs text-gray-400 xl:block">
                     {formatShortDate(request.updatedAt || request.createdAt)}
                   </span>
 
                   <Button
                     size="sm"
-                    className="shrink-0 bg-teal-600 text-white shadow-sm shadow-teal-500/20"
+                    className="shrink-0 bg-teal-600 text-white shadow-sm shadow-teal-500/20 px-2.5 sm:px-3"
                     onClick={() => {
                       setSelectedRequest(request);
                       setIsRejecting(false);
                       setRejectionReason("");
                     }}
                   >
-                    <Eye className="mr-1.5 h-3.5 w-3.5" />
-                    Revisar
+                    <Eye className="h-4 w-4 sm:mr-1.5 sm:h-3.5 sm:w-3.5" />
+                    <span className="hidden sm:inline">Revisar</span>
                   </Button>
                 </div>
               );
