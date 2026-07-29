@@ -18,7 +18,7 @@ export default async function SupervisorDashboard() {
           Gestión de Solicitudes
         </h2>
         <p className="mt-1 text-gray-500">
-          Revisa pendientes, consulta las aprobadas y corrige rapido si te equivocas.
+          Revisa pendientes, consulta las aprobadas y corrige rápido si te equivocas.
         </p>
       </div>
 

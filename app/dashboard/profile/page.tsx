@@ -96,7 +96,7 @@ export default function ProfilePage() {
       } catch (error) {
         console.error("Error fetching profile:", error);
         toast({
-          title: "Error de conexion",
+          title: "Error de conexión",
           description: "No se pudo cargar tu perfil.",
           variant: "destructive",
         });
@@ -369,7 +369,7 @@ export default function ProfilePage() {
             Mi Ubicación
           </h3>
           <p className="text-xs text-gray-500 mt-0.5">
-            Marca y guarda solo tu ubicacion exacta.
+            Marca y guarda solo tu ubicación exacta.
           </p>
         </div>
         <div className="p-6 space-y-4">

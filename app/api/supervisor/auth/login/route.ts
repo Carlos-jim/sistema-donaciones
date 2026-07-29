@@ -7,8 +7,8 @@ import { setSessionCookie } from "@/lib/auth/cookie";
 import { AUTH_COOKIE_NAMES } from "@/lib/auth/roles";
 
 const loginSchema = z.object({
-  email: z.string().email("Correo electronico invalido"),
-  password: z.string().min(1, "La contrasena es requerida"),
+  email: z.string().email("Correo electrónico inválido"),
+  password: z.string().min(1, "La contraseña es requerida"),
 });
 
 export async function POST(request: NextRequest) {
@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
 
     if (!ente) {
       return NextResponse.json(
-        { success: false, error: "Credenciales invalidas" },
+        { success: false, error: "Credenciales inválidas" },
         { status: 401 },
       );
     }
@@ -43,7 +43,7 @@ export async function POST(request: NextRequest) {
 
     if (!isValidPassword) {
       return NextResponse.json(
-        { success: false, error: "Credenciales invalidas" },
+        { success: false, error: "Credenciales inválidas" },
         { status: 401 },
       );
     }
@@ -52,7 +52,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         {
           success: false,
-          error: "Esta cuenta esta desactivada. Contacta al administrador.",
+          error: "Esta cuenta está desactivada. Contacta al administrador.",
         },
         { status: 403 },
       );

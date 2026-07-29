@@ -8,8 +8,8 @@ import { tokenService } from "@/lib/auth/token.service";
 import { userRepository } from "@/lib/auth/user.repository";
 
 const loginSchema = z.object({
-  email: z.string().email("Correo electronico invalido"),
-  password: z.string().min(1, "La contrasena es requerida"),
+  email: z.string().email("Correo electrónico inválido"),
+  password: z.string().min(1, "La contraseña es requerida"),
 });
 
 const authService = new AuthService(

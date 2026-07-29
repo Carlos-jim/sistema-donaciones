@@ -16,7 +16,7 @@ export async function POST(request: NextRequest) {
     const payload = await tokenService.verify(token);
 
     if (!payload?.userId || payload.tipo !== "COMUN") {
-      return NextResponse.json({ error: "Token invalido" }, { status: 401 });
+      return NextResponse.json({ error: "Token inválido" }, { status: 401 });
     }
 
     if (!requestId || !pharmacyId) {

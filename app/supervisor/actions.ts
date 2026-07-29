@@ -401,7 +401,7 @@ export async function updateRequestUrgency(
   }
 
   if (!isRequestUrgency(nuevaUrgencia)) {
-    throw new Error("Nivel de urgencia invalido");
+    throw new Error("Nivel de urgencia inválido");
   }
 
   const request = await getManageableRequestOrThrow(requestId);

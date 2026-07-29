@@ -25,7 +25,7 @@ export async function GET() {
     const payload = await tokenService.verify(token);
 
     if (!payload?.userId) {
-      return NextResponse.json({ error: "Token invalido" }, { status: 401 });
+      return NextResponse.json({ error: "Token inválido" }, { status: 401 });
     }
 
     const ownOffers = await prisma.donacion.findMany({

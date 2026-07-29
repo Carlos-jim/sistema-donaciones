@@ -91,7 +91,7 @@ export async function PATCH(request: Request) {
       const existing = await prisma.usuarioComun.findUnique({ where: { email } });
       if (existing) {
         return NextResponse.json(
-          { error: "Este correo ya esta en uso" },
+          { error: "Este correo ya está en uso" },
           { status: 409 },
         );
       }
@@ -101,7 +101,7 @@ export async function PATCH(request: Request) {
     if (newPassword) {
       if (!currentPassword) {
         return NextResponse.json(
-          { error: "Debes ingresar tu contrasena actual" },
+          { error: "Debes ingresar tu contraseña actual" },
           { status: 400 },
         );
       }
@@ -109,7 +109,7 @@ export async function PATCH(request: Request) {
       const isValid = await compare(currentPassword, user.password);
       if (!isValid) {
         return NextResponse.json(
-          { error: "La contrasena actual es incorrecta" },
+          { error: "La contraseña actual es incorrecta" },
           { status: 400 },
         );
       }

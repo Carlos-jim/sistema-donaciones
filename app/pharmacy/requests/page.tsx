@@ -84,16 +84,16 @@ function getNextStepLabel(request: PharmacyActiveRequest) {
 
   if (request.estado === "LISTA_PARA_RETIRO") {
     return request.pickupConfirmedAt
-      ? "El beneficiario ya confirmo que ira a retirar"
-      : "Esperando confirmacion de retiro del beneficiario";
+      ? "El beneficiario ya confirmó que irá a retirar"
+      : "Esperando confirmación de retiro del beneficiario";
   }
 
   if (request.deliveryConfirmedAt) {
-    return "El donante ya indico la entrega, toca validar en recepción";
+    return "El donante ya indicó la entrega, toca validar en recepción";
   }
 
   if (request.farmaciaConfirmada !== true) {
-    return "Esperando confirmacion del beneficiario sobre la farmacia";
+    return "Esperando confirmación del beneficiario sobre la farmacia";
   }
 
   return "Esperando que el donante entregue el insumo médico";
@@ -102,7 +102,7 @@ function getNextStepLabel(request: PharmacyActiveRequest) {
 function statusSectionDescription(status: PharmacyActiveRequest["estado"]) {
   switch (status) {
     case "EN_PROCESO":
-      return "Solicitudes asignadas a esta farmacia que todavia esperan entrega o validación.";
+      return "Solicitudes asignadas a esta farmacia que todavía esperan entrega o validación.";
     case "RECIBIDA":
       return "Insumos médicos ya recibidos por farmacia y pendientes de marcar para retiro.";
     case "LISTA_PARA_RETIRO":
@@ -179,7 +179,7 @@ export default async function PharmacyRequestsPage() {
       value: summary.totalActiveCount,
       description:
         summary.pickupConfirmedCount > 0
-          ? `${summary.pickupConfirmedCount} beneficiarios ya avisaron que retiraran`
+          ? `${summary.pickupConfirmedCount} beneficiarios ya avisaron que retirarán`
           : `Portal de ${pharmacy.nombre}`,
       icon: ClipboardList,
       iconClass: "bg-cyan-50 text-cyan-700",
@@ -283,7 +283,7 @@ export default async function PharmacyRequestsPage() {
                 </p>
                 <p className="mt-2 text-sm text-slate-500">
                   Cuando una solicitud pase a {section.title.toLowerCase()}{" "}
-                  aparecera aqui.
+                  aparecerá aquí.
                 </p>
               </div>
             ) : (
@@ -363,7 +363,7 @@ export default async function PharmacyRequestsPage() {
                           Donante asignado
                         </p>
                         <p className="mt-2 text-sm font-medium text-slate-900">
-                          {request.donanteAsignado?.nombre || "Aun no asignado"}
+                          {request.donanteAsignado?.nombre || "Aún no asignado"}
                         </p>
                       </div>
 
@@ -378,7 +378,7 @@ export default async function PharmacyRequestsPage() {
 
                       <div className="rounded-2xl border border-slate-100 bg-white p-4">
                         <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                          Retiro limite
+                          Retiro límite
                         </p>
                         <p className="mt-2 text-sm font-medium text-slate-900">
                           {formatDate(request.fechaLimiteRetiro)}
@@ -391,13 +391,13 @@ export default async function PharmacyRequestsPage() {
                       <span>
                         Beneficiario{" "}
                         {request.pickupConfirmedAt
-                          ? "ya confirmo retiro"
+                          ? "ya confirmó retiro"
                           : "pendiente de retiro"}
                       </span>
                       {request.deliveryConfirmedAt && (
                         <>
                           <span className="h-1 w-1 rounded-full bg-slate-300" />
-                          <span>El donante ya confirmo la entrega</span>
+                          <span>El donante ya confirmó la entrega</span>
                         </>
                       )}
                     </div>

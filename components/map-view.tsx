@@ -258,7 +258,7 @@ function MapViewInner({
           handleLocationUpdateAttempt(
             newLocation[0],
             newLocation[1],
-            "Tu ubicacion actual",
+            "Tu ubicación actual",
           );
         }
 
@@ -523,8 +523,8 @@ function MapViewInner({
             <Popup>
               <div className="font-medium">
                 {isLocationLocked
-                  ? "Tu ubicacion (fija)"
-                  : "Tu ubicacion (arrastra para corregir)"}
+                  ? "Tu ubicación (fija)"
+                  : "Tu ubicación (arrastra para corregir)"}
               </div>
             </Popup>
           </Marker>
@@ -656,7 +656,7 @@ function MapViewInner({
               className="h-3 w-3 rounded-full"
               style={{ backgroundColor: "#7c3aed" }}
             />
-            <span className="text-xs">Tu ubicacion</span>
+            <span className="text-xs">Tu ubicación</span>
           </div>
         )}
 
@@ -664,7 +664,7 @@ function MapViewInner({
           <>
             <div className="flex items-center gap-2 rounded-md bg-white p-2 shadow-sm">
               <div className="h-3 w-3 rounded-full bg-[#16a34a]" />
-              <span className="text-xs">Farmacia mas cercana</span>
+              <span className="text-xs">Farmacia más cercana</span>
             </div>
             <div className="flex items-center gap-2 rounded-md bg-white p-2 shadow-sm">
               <div className="h-3 w-3 rounded-sm bg-[#0054a6]" />
@@ -680,9 +680,9 @@ function MapViewInner({
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Cambiar ubicacion</AlertDialogTitle>
+            <AlertDialogTitle>Cambiar ubicación</AlertDialogTitle>
             <AlertDialogDescription>
-              Estas seguro de que deseas modificar tu ubicacion registrada?
+              ¿Estás seguro de que deseas modificar tu ubicación registrada?
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

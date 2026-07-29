@@ -13,7 +13,7 @@ export async function PUT(request: Request) {
 
     const payload = await tokenService.verify(token);
     if (!payload?.userId) {
-      return NextResponse.json({ error: "Token invalido" }, { status: 401 });
+      return NextResponse.json({ error: "Token inválido" }, { status: 401 });
     }
 
     const body = await request.json();
@@ -58,7 +58,7 @@ export async function PUT(request: Request) {
   } catch (error) {
     console.error("Error updating user location:", error);
     return NextResponse.json(
-      { error: "Error al actualizar la ubicacion" },
+      { error: "Error al actualizar la ubicación" },
       { status: 500 },
     );
   }

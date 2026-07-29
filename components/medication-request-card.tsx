@@ -137,7 +137,7 @@ export function MedicationRequestCard({
     if (!selectedPharmacy) {
       toast({
         title: "Selecciona una farmacia",
-        description: "Debes seleccionar la farmacia donde entregaras el insumo médico",
+        description: "Debes seleccionar la farmacia donde entregarás el insumo médico",
         variant: "destructive",
       });
       return;
@@ -254,7 +254,7 @@ export function MedicationRequestCard({
             <DialogDescription>
               {acceptResult
                 ? "Guarda tu código de entrega para presentarlo en la farmacia"
-                : "Selecciona la farmacia donde entregaras el insumo médico"}
+                : "Selecciona la farmacia donde entregarás el insumo médico"}
             </DialogDescription>
           </DialogHeader>
 
@@ -400,7 +400,7 @@ export function MedicationRequestCard({
 
                 <div className="rounded-lg border border-yellow-100 bg-yellow-50 p-3 text-sm text-gray-500">
                   <strong>Importante:</strong> Al confirmar, el sistema genera
-                  codigos distintos para el donante y para el solicitante. Aqui
+                  códigos distintos para el donante y para el solicitante. Aquí
                   solo verás tu código de entrega.
                 </div>
               </div>

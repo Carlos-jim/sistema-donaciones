@@ -415,10 +415,10 @@ export default function MyDonationsPage() {
               <Gift className="h-8 w-8" />
             </div>
             <h3 className="text-lg font-medium text-gray-900">
-              Aun no tienes donaciones registradas
+              Aún no tienes donaciones registradas
             </h3>
             <p className="mx-auto mt-2 max-w-sm text-gray-500">
-              Cuando hagas una donación o aceptes una solicitud, aparecera aqui.
+              Cuando hagas una donación o aceptes una solicitud, aparecerá aquí.
             </p>
           </div>
         ) : (

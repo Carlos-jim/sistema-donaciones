@@ -135,10 +135,10 @@ export default function PharmacyReceptionPage() {
         <div className="text-center">
           <HandHeart className="mx-auto h-12 w-12 text-teal-600" />
           <h1 className="mt-4 text-3xl font-bold text-gray-900">
-            Recepcion de farmacia
+            Recepción de farmacia
           </h1>
           <p className="mt-2 text-sm text-gray-600">
-            Valida codigos de entrega y retiro desde un solo panel.
+            Valida códigos de entrega y retiro desde un solo panel.
           </p>
         </div>
 
@@ -335,7 +335,7 @@ export default function PharmacyReceptionPage() {
 
               {item.type === "SOLICITUD" && item.deliveryConfirmedAt && (
                 <div className="rounded-lg border border-blue-200 bg-blue-50 p-4 text-sm text-blue-800">
-                  El donante ya confirmo la entrega en farmacia.
+                  El donante ya confirmó la entrega en farmacia.
                 </div>
               )}
 

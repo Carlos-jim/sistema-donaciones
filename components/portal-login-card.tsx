@@ -72,7 +72,7 @@ export function PortalLoginCard({
       router.push(redirectTo);
       router.refresh();
     } catch {
-      setError("Error de conexion. Intenta nuevamente.");
+      setError("Error de conexión. Intenta nuevamente.");
     } finally {
       setIsLoading(false);
     }
@@ -100,7 +100,7 @@ export function PortalLoginCard({
           <form onSubmit={handleSubmit} className="space-y-5 px-8 py-7">
             <div className="space-y-2">
               <Label htmlFor="email" className="text-sm font-semibold text-slate-700">
-                Correo electronico
+                Correo electrónico
               </Label>
               <Input
                 id="email"
@@ -116,7 +116,7 @@ export function PortalLoginCard({
 
             <div className="space-y-2">
               <Label htmlFor="password" className="text-sm font-semibold text-slate-700">
-                Contrasena
+                Contraseña
               </Label>
               <Input
                 id="password"

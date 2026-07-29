@@ -761,7 +761,7 @@ function buildReportTable(
     const rows = (data as ReportUser[]).map((user) => [
       user.nombre,
       user.email,
-      user.cedula ?? "Sin cedula",
+      user.cedula ?? "Sin cédula",
       user.telefono ?? "Sin teléfono",
       String(user._count.solicitudes),
       String(user._count.donaciones),

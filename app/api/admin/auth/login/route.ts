@@ -7,8 +7,8 @@ import { setSessionCookie } from "@/lib/auth/cookie";
 import { AUTH_COOKIE_NAMES } from "@/lib/auth/roles";
 
 const loginSchema = z.object({
-  email: z.string().email("Correo electronico invalido"),
-  password: z.string().min(1, "La contrasena es requerida"),
+  email: z.string().email("Correo electrónico inválido"),
+  password: z.string().min(1, "La contraseña es requerida"),
 });
 
 export async function POST(request: NextRequest) {
@@ -28,7 +28,7 @@ export async function POST(request: NextRequest) {
 
     if (!admin) {
       return NextResponse.json(
-        { error: "Credenciales invalidas" },
+        { error: "Credenciales inválidas" },
         { status: 401 },
       );
     }
@@ -36,7 +36,7 @@ export async function POST(request: NextRequest) {
     const valid = await compare(password, admin.password);
     if (!valid) {
       return NextResponse.json(
-        { error: "Credenciales invalidas" },
+        { error: "Credenciales inválidas" },
         { status: 401 },
       );
     }

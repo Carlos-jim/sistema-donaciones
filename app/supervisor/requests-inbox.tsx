@@ -130,17 +130,17 @@ const statusConfig: Record<
   PENDIENTE: {
     label: "Pendiente",
     badge: "bg-yellow-50 text-yellow-700 border-yellow-200",
-    helper: "Aun no ha sido publicada para donantes.",
+    helper: "Aún no ha sido publicada para donantes.",
   },
   APROBADA: {
     label: "Aprobada",
     badge: "bg-teal-50 text-teal-700 border-teal-200",
-    helper: "Ya esta visible para donantes.",
+    helper: "Ya está visible para donantes.",
   },
   RECHAZADA: {
     label: "Rechazada",
     badge: "bg-red-50 text-red-700 border-red-200",
-    helper: "No esta visible para donantes.",
+    helper: "No está visible para donantes.",
   },
 };
 
@@ -416,7 +416,7 @@ export default function RequestsInbox({
       toast({
         title: "Solicitud revertida",
         description:
-          "La solicitud volvio a pendientes para que puedas revisarla otra vez.",
+          "La solicitud volvió a pendientes para que puedas revisarla otra vez.",
       });
       closeReviewDialog();
       await refreshTable();
@@ -647,7 +647,7 @@ export default function RequestsInbox({
                 No hay solicitudes para gestionar
               </p>
               <p className="mt-1 text-sm text-gray-400">
-                Cuando entren nuevas solicitudes apareceran aqui.
+                Cuando entren nuevas solicitudes aparecerán aquí.
               </p>
             </div>
           </div>
@@ -659,7 +659,7 @@ export default function RequestsInbox({
             <div>
               <p className="font-semibold text-gray-600">Sin resultados</p>
               <p className="mt-1 text-sm text-gray-400">
-                Intenta con otro termino o cambia los filtros.
+                Intenta con otro término o cambia los filtros.
               </p>
             </div>
           </div>
@@ -689,7 +689,7 @@ export default function RequestsInbox({
                         {request.usuarioComun.nombre}
                       </p>
                       <p className="truncate text-xs text-gray-400">
-                        {request.usuarioComun.cedula || "Sin cedula"}
+                        {request.usuarioComun.cedula || "Sin cédula"}
                       </p>
                     </div>
                   </div>
@@ -707,7 +707,7 @@ export default function RequestsInbox({
                       ))}
                       {request.medicamentos.length > 3 && (
                         <span className="px-1 py-0.5 text-xs text-gray-400">
-                          +{request.medicamentos.length - 3} mas
+                          +{request.medicamentos.length - 3} más
                         </span>
                       )}
                     </div>
@@ -1198,7 +1198,7 @@ export default function RequestsInbox({
                   <Label htmlFor="rejection-reason">Motivo de rechazo</Label>
                   <Textarea
                     id="rejection-reason"
-                    placeholder="Explica por que se rechaza la solicitud"
+                    placeholder="Explica por qué se rechaza la solicitud"
                     value={rejectionReason}
                     onChange={(event) => setRejectionReason(event.target.value)}
                     className="min-h-[96px]"
@@ -1271,11 +1271,11 @@ export default function RequestsInbox({
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Quieres aprobar esta solicitud?</AlertDialogTitle>
+            <AlertDialogTitle>¿Quieres aprobar esta solicitud?</AlertDialogTitle>
             <AlertDialogDescription>
               {approveTarget?.estado === "RECHAZADA"
-                ? "La solicitud volvera a quedar aprobada y visible para donantes."
-                : "La solicitud se publicara en el listado para donantes."}
+                ? "La solicitud volverá a quedar aprobada y visible para donantes."
+                : "La solicitud se publicará en el listado para donantes."}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

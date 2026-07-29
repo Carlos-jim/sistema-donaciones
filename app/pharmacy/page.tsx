@@ -58,16 +58,16 @@ function getNextStepLabel(request: PharmacyActiveRequest) {
 
   if (request.estado === "LISTA_PARA_RETIRO") {
     return request.pickupConfirmedAt
-      ? "El beneficiario aviso que retirara pronto"
-      : "Esperando confirmacion de retiro del beneficiario";
+      ? "El beneficiario avisó que retirará pronto"
+      : "Esperando confirmación de retiro del beneficiario";
   }
 
   if (request.deliveryConfirmedAt) {
-    return "El donante ya marco la entrega, falta recepción";
+    return "El donante ya marcó la entrega, falta recepción";
   }
 
   if (request.farmaciaConfirmada !== true) {
-    return "Esperando confirmacion del beneficiario";
+    return "Esperando confirmación del beneficiario";
   }
 
   return "Esperando entrega del donante";
@@ -89,7 +89,7 @@ export default async function PharmacyDashboardPage() {
       href: "/pharmacy/requests",
       icon: ClipboardList,
       title: "Solicitudes activas",
-      description: "Consulta lo que esta en proceso, recibido o listo para retiro.",
+      description: "Consulta lo que está en proceso, recibido o listo para retiro.",
       badge: requests.summary.totalActiveCount > 0 ? requests.summary.totalActiveCount : null,
       iconClass: "bg-amber-100 text-amber-700",
     },
@@ -97,7 +97,7 @@ export default async function PharmacyDashboardPage() {
       href: "/pharmacy/inventory",
       icon: Package,
       title: "Inventario recibido",
-      description: "Revisa los insumos médicos fisicos registrados en esta farmacia.",
+      description: "Revisa los insumos médicos físicos registrados en esta farmacia.",
       badge: inventory.summary.receivedDonationsCount > 0
         ? inventory.summary.receivedDonationsCount
         : null,
@@ -109,7 +109,7 @@ export default async function PharmacyDashboardPage() {
     {
       label: "Donaciones en inventario",
       value: inventory.summary.receivedDonationsCount,
-      description: "Recepciones fisicas registradas en esta farmacia",
+      description: "Recepciones físicas registradas en esta farmacia",
       icon: Package,
       iconClass: "bg-teal-50 text-teal-700",
       borderClass: "border-teal-100",
@@ -135,7 +135,7 @@ export default async function PharmacyDashboardPage() {
       value: requests.summary.readyForPickupCount,
       description:
         requests.summary.pickupConfirmedCount > 0
-          ? `${requests.summary.pickupConfirmedCount} beneficiarios ya avisaron que retiraran`
+          ? `${requests.summary.pickupConfirmedCount} beneficiarios ya avisaron que retirarán`
           : "Pendientes de entrega al beneficiario",
       icon: CheckCircle2,
       iconClass: "bg-emerald-50 text-emerald-700",
@@ -220,7 +220,7 @@ export default async function PharmacyDashboardPage() {
                 Insumos médicos recibidos recientemente
               </h3>
               <p className="mt-1 text-sm text-slate-500">
-                Resumen del inventario fisico registrado en esta farmacia.
+                Resumen del inventario físico registrado en esta farmacia.
               </p>
             </div>
             <Link
@@ -236,10 +236,10 @@ export default async function PharmacyDashboardPage() {
             {inventory.medications.length === 0 ? (
               <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-6 py-10 text-center">
                 <p className="text-sm font-semibold text-slate-700">
-                  Aun no hay insumos médicos recibidos en inventario
+                  Aún no hay insumos médicos recibidos en inventario
                 </p>
                 <p className="mt-2 text-sm text-slate-500">
-                  Cuando una donacion quede recibida en esta farmacia aparecera aqui.
+                  Cuando una donación quede recibida en esta farmacia aparecerá aquí.
                 </p>
               </div>
             ) : (
@@ -255,7 +255,7 @@ export default async function PharmacyDashboardPage() {
                           {medication.nombre}
                         </p>
                         <p className="mt-1 text-sm text-slate-500">
-                          {medication.presentacion || "Presentacion no registrada"}
+                          {medication.presentacion || "Presentación no registrada"}
                           {medication.concentracion ? ` · ${medication.concentracion}` : ""}
                         </p>
                       </div>
@@ -271,7 +271,7 @@ export default async function PharmacyDashboardPage() {
                     <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-slate-500">
                       <span>{medication.donationCount} recepciones</span>
                       <span className="h-1 w-1 rounded-full bg-slate-300" />
-                      <span>Ultimo ingreso: {formatDate(medication.lastReceivedAt)}</span>
+                          <span>Último ingreso: {formatDate(medication.lastReceivedAt)}</span>
                     </div>
                   </div>
                 ))}
@@ -287,7 +287,7 @@ export default async function PharmacyDashboardPage() {
                 Solicitudes activas en esta farmacia
               </h3>
               <p className="mt-1 text-sm text-slate-500">
-                Lo que esta esperando recepción, validación o retiro.
+                Lo que está esperando recepción, validación o retiro.
               </p>
             </div>
             <Link
@@ -306,7 +306,7 @@ export default async function PharmacyDashboardPage() {
                   No hay solicitudes activas en esta farmacia
                 </p>
                 <p className="mt-2 text-sm text-slate-500">
-                  Las solicitudes asignadas a esta farmacia apareceran aqui.
+                  Las solicitudes asignadas a esta farmacia aparecerán aquí.
                 </p>
               </div>
             ) : (
@@ -353,9 +353,9 @@ export default async function PharmacyDashboardPage() {
 
       <section className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
         <div className="border-b border-slate-100 px-6 py-5">
-          <h3 className="text-lg font-semibold text-slate-900">Accesos rapidos</h3>
+          <h3 className="text-lg font-semibold text-slate-900">Accesos rápidos</h3>
           <p className="mt-1 text-sm text-slate-500">
-            Navega directo a las tareas mas comunes del portal de farmacia.
+            Navega directo a las tareas más comunes del portal de farmacia.
           </p>
         </div>
         <div className="grid gap-4 p-6 lg:grid-cols-3">
