@@ -27,7 +27,7 @@ async function main() {
     where: { email: "supervisor@hospitalcentral.com" },
     update: {
       nombre: "Hospital Central de Caracas",
-      direccion: "Av. Panteon, San Bernardino, Caracas",
+      direccion: "Av. Panteón, San Bernardino, Caracas",
       telefono: "0212-5551234",
       password: supervisorPassword,
       aprobado: true,
@@ -35,7 +35,7 @@ async function main() {
     },
     create: {
       nombre: "Hospital Central de Caracas",
-      direccion: "Av. Panteon, San Bernardino, Caracas",
+      direccion: "Av. Panteón, San Bernardino, Caracas",
       telefono: "0212-5551234",
       email: "supervisor@hospitalcentral.com",
       password: supervisorPassword,

@@ -934,7 +934,7 @@ export default function MyRequestsPage() {
                         {selectedSolicitud.codigoRetiroSolicitante &&
                           selectedSolicitud.farmaciaConfirmada === true && (
                             <p className="text-sm font-mono mt-2 bg-white border rounded px-2 py-1">
-                              Codigo de retiro:{" "}
+                              Código de retiro:{" "}
                               <strong>
                                 {selectedSolicitud.codigoRetiroSolicitante}
                               </strong>

@@ -141,8 +141,8 @@ async function main() {
 
   await prisma.farmacia.create({
     data: {
-      nombre: "Farmatodo La Asuncion",
-      direccion: "Av. 31 de Julio, Sector Cocheima, La Asuncion",
+      nombre: "Farmatodo La Asunción",
+      direccion: "Av. 31 de Julio, Sector Cocheima, La Asunción",
       telefono: "0295-2605555",
       horario: "Lunes a Domingo 8:00 AM - 8:00 PM",
       email: "laasuncion@farmatodo.com",
@@ -196,7 +196,7 @@ async function main() {
       nombre: "Farmacia Sigo La Proveeduria",
       direccion: "Av. Juan Bautista Arismendi, Porlamar",
       telefono: "0295-2609999",
-      horario: "Lunes a Sabado 8:00 AM - 7:00 PM",
+      horario: "Lunes a Sábado 8:00 AM - 7:00 PM",
       email: "proveeduria@sigo.com",
       password: await hash("farmacia123", 12),
       latitude: 10.9523,

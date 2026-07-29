@@ -816,7 +816,7 @@ function buildReportTable(
       formatReportLabel(request.tiempoEspera),
       formatReportUser(request.usuarioComun),
       formatReportMedications(request.medicamentos),
-      request.requiresPrescription ? "Si" : "No",
+      request.requiresPrescription ? "Sí" : "No",
       request.farmaciaEntrega?.nombre ?? "Sin farmacia",
       formatReportDate(request.createdAt),
     ]);

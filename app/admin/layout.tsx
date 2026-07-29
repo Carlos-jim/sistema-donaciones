@@ -29,7 +29,7 @@ export default function AdminLayout({
             </div>
             <div>
               <h1 className="font-bold text-lg leading-none">
-                Panel Administracion
+          Panel Administración
               </h1>
               <p className="text-teal-200 text-xs">MediShareNE</p>
             </div>

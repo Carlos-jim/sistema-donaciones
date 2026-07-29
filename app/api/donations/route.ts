@@ -235,7 +235,7 @@ export async function GET() {
 
     const anonymousDonations = donaciones.map((don) => ({
       ...don,
-      donorLabel: "Donante anonimo",
+      donorLabel: "Donante anónimo",
     }));
 
     return NextResponse.json(anonymousDonations);

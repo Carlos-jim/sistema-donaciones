@@ -61,7 +61,7 @@ export async function getApprovedRequests(excludeUserId?: string) {
         longitude,
         tiempoEspera: request.tiempoEspera,
         createdAt: request.createdAt,
-        beneficiaryLabel: "Beneficiario anonimo",
+      beneficiaryLabel: "Beneficiario anónimo",
         medicamentos: request.medicamentos,
       }
     })

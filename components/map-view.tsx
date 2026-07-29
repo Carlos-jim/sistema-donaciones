@@ -457,7 +457,7 @@ function MapViewInner({
         handleLocationUpdateAttempt(
           event.latlng.lat,
           event.latlng.lng,
-          "Ubicacion seleccionada en mapa",
+          "Ubicación seleccionada en mapa",
         );
       },
     });
@@ -515,7 +515,7 @@ function MapViewInner({
                 handleLocationUpdateAttempt(
                   position.lat,
                   position.lng,
-                  "Ubicacion personalizada",
+                  "Ubicación personalizada",
                 );
               },
             }}
@@ -570,7 +570,7 @@ function MapViewInner({
                   {location.title}
                   {isNearestPharmacy && (
                     <span className="mt-1 block text-xs font-bold text-green-600">
-                      Mas cercana
+                      Más cercana
                     </span>
                   )}
                 </div>
@@ -595,7 +595,7 @@ function MapViewInner({
           <Marker position={selection} icon={selectionIcon}>
             <Popup>
               <div className="font-medium text-amber-700">
-                Ubicacion seleccionada
+                Ubicación seleccionada
               </div>
             </Popup>
           </Marker>

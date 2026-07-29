@@ -849,7 +849,7 @@ export default function RequestsInbox({
       >
         <DialogContent className="max-h-[90vh] max-w-3xl overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Revision de solicitud</DialogTitle>
+            <DialogTitle>Revisión de solicitud</DialogTitle>
             <DialogDescription>
               Revisa datos del beneficiario, receta y prioridades antes de
               decidir.
@@ -1008,7 +1008,7 @@ export default function RequestsInbox({
                     )}
                     {selectedRequest.approvalInstitution && (
                       <p className="mt-1 text-sm text-gray-600">
-                        <span className="font-medium">Institucion:</span>{" "}
+                        <span className="font-medium">Institución:</span>{" "}
                         {selectedRequest.approvalInstitution}
                       </p>
                     )}
@@ -1285,7 +1285,7 @@ export default function RequestsInbox({
               disabled={isLoading}
               className="bg-teal-600 text-white hover:bg-teal-700"
             >
-              {isLoading ? "Aprobando..." : "Si, aprobar"}
+              {isLoading ? "Aprobando..." : "Sí, aprobar"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

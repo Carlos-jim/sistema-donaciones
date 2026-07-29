@@ -77,7 +77,7 @@ export function MedicationRequestCard({
   motivo,
   onAccepted,
 }: MedicationRequestCardProps) {
-  const beneficiaryLabel = "Beneficiario anonimo";
+  const beneficiaryLabel = "Beneficiario anónimo";
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isAccepting, setIsAccepting] = useState(false);
   const [acceptResult, setAcceptResult] = useState<AcceptResult | null>(null);
@@ -309,7 +309,7 @@ export function MedicationRequestCard({
               </div>
 
               <div className="rounded-lg border border-yellow-100 bg-yellow-50 p-3 text-sm text-gray-600">
-                <strong>Proximos pasos:</strong>
+                <strong>Próximos pasos:</strong>
                 <ul className="mt-1 list-inside list-disc space-y-1">
                   <li>Lleva el insumo médico a la farmacia indicada</li>
                   <li>Presenta tu código de entrega al momento de llevarlo</li>
