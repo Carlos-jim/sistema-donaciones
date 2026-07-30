@@ -49,7 +49,10 @@ export function MedicationDonationCard({
   const [recipeUrl, setRecipeUrl] = useState<string | null>(null)
   const [recipePreview, setRecipePreview] = useState<string | null>(null)
   const [uploadingRecipe, setUploadingRecipe] = useState(false)
+  const [requestedQuantity, setRequestedQuantity] = useState(1)
   const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const availableQuantity = quantity ?? 1
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -95,7 +98,12 @@ export function MedicationDonationCard({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          medicamentos: [{ nombre: name, cantidad: quantity ?? 1, unidad: unit ?? "unidades" }],
+          medicamentos: [{
+            nombre: name,
+            cantidad: requestedQuantity,
+            unidad: unit ?? "unidades",
+            donacionMedicamentoId: id,
+          }],
           tiempoEspera: "MEDIO",
           motivo: `Solicitud de donación pública de ${donor}`,
           requiereReceta: !!recipeUrl,
@@ -158,7 +166,13 @@ export function MedicationDonationCard({
         </CardFooter>
       </Card>
 
-      <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) removeRecipe() }}>
+      <Dialog open={open} onOpenChange={(v) => {
+        setOpen(v)
+        if (!v) {
+          removeRecipe()
+          setRequestedQuantity(1)
+        }
+      }}>
         <DialogContent className="sm:max-w-md rounded-2xl gap-0 p-0 overflow-hidden">
           <div className="bg-gradient-to-r from-teal-600 to-cyan-600 px-6 py-5">
             <DialogTitle className="text-white font-bold text-lg">Confirmar Solicitud</DialogTitle>
@@ -180,6 +194,31 @@ export function MedicationDonationCard({
                   Cantidad disponible: <span className="font-medium">{quantity} {unit}</span>
                 </p>
               )}
+            </div>
+
+            <div className="space-y-2">
+              <label htmlFor={`requested-quantity-${id}`} className="text-sm font-medium text-gray-700">
+                Cantidad que deseas solicitar
+              </label>
+              <input
+                id={`requested-quantity-${id}`}
+                type="number"
+                min="1"
+                max={availableQuantity}
+                value={requestedQuantity}
+                onChange={(event) => {
+                  const nextValue = Number.parseInt(event.target.value, 10)
+                  setRequestedQuantity(
+                    Number.isNaN(nextValue)
+                      ? 1
+                      : Math.min(Math.max(nextValue, 1), availableQuantity),
+                  )
+                }}
+                className="h-10 w-full rounded-lg border border-gray-200 px-3 text-sm focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500/20"
+              />
+              <p className="text-xs text-gray-500">
+                Puedes solicitar entre 1 y {availableQuantity} {unit ?? "unidades"}.
+              </p>
             </div>
 
             {/* Donor & details */}
@@ -262,7 +301,7 @@ export function MedicationDonationCard({
             </Button>
             <Button
               onClick={handleConfirm}
-              disabled={loading || uploadingRecipe || (requiresPrescription && !recipeUrl)}
+              disabled={loading || uploadingRecipe || requestedQuantity < 1 || (requiresPrescription && !recipeUrl)}
               className="bg-gradient-to-r from-teal-600 to-cyan-600 hover:from-teal-700 hover:to-cyan-700 text-white rounded-xl min-w-[140px]"
             >
               {loading

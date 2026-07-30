@@ -4,6 +4,10 @@ import type { Prisma } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 import prisma from "@/lib/prisma";
 import { getSessionForRole } from "@/lib/auth/server-session";
+import {
+  releaseDonationStockForRequest,
+  reserveInactiveRequestStock,
+} from "@/lib/donation-stock.service";
 
 const REQUEST_URGENCY_VALUES = ["BAJO", "MEDIO", "ALTO"] as const;
 
@@ -225,6 +229,10 @@ export async function approveRequest(requestId: string) {
     throw new Error("Solo puedes aprobar solicitudes pendientes o rechazadas");
   }
 
+  // Las solicitudes reabiertas desde un rechazo deben volver a reservar el
+  // inventario antes de aprobarse.
+  await reserveInactiveRequestStock(requestId);
+
   try {
     await updateSolicitudWithFallback(requestId, [
       {
@@ -327,6 +335,8 @@ export async function rejectRequest(requestId: string, reason: string) {
       data: { estado: "RECHAZADA" },
     });
   }
+
+  await releaseDonationStockForRequest(requestId);
 
   // Best-effort: no debe tumbar el rechazo si falla por esquema legacy.
   try {

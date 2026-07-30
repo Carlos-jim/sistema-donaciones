@@ -5,6 +5,10 @@ import { Prisma } from "@prisma/client";
 import { tokenService } from "@/lib/auth/token.service";
 import { getReadableQrPayload } from "@/lib/delivery-codes";
 import { processAbandonedPickups } from "@/lib/abandoned-pickups.service";
+import {
+  reserveDonationStock,
+  STOCK_UNAVAILABLE_ERROR,
+} from "@/lib/donation-stock.service";
 
 export async function POST(request: Request) {
   try {
@@ -50,6 +54,34 @@ export async function POST(request: Request) {
       );
     }
 
+    if (
+      requestedMedicamentos.some(
+        (med) =>
+          typeof med.cantidad !== "number" ||
+          !Number.isInteger(med.cantidad) ||
+          med.cantidad < 1,
+      )
+    ) {
+      return NextResponse.json(
+        { error: "La cantidad de cada insumo debe ser un número entero mayor a cero" },
+        { status: 400 },
+      );
+    }
+
+    const donationMedicationLines = requestedMedicamentos.filter(
+      (med) => med.donacionMedicamentoId,
+    );
+
+    if (
+      donationMedicationLines.length > 0 &&
+      (requestedMedicamentos.length !== 1 || donationMedicationLines.length !== 1)
+    ) {
+      return NextResponse.json(
+        { error: "Una solicitud vinculada a una donación debe contener un solo insumo" },
+        { status: 400 },
+      );
+    }
+
     // Generate a unique code
     const generateCode = () => {
       const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
@@ -65,27 +97,13 @@ export async function POST(request: Request) {
     // For MVP/Demo scale, probability is low, but let's be safe-ish or just assume unique for now.
     // If collision, Prisma will throw, so we could wrap in loop, but let's keep it simple.
 
-    // Toda solicitud debe ser revisada por un ente de salud antes de estar disponible.
-    const solicitud = await prisma.solicitud.create({
-      data: {
-        codigo: codigo,
-        motivo: motivo || null,
-        estado: "PENDIENTE",
-        direccion: ubicacion
-          ? {
-              calle: ubicacion.address || "Ubicación seleccionada en mapa",
-              lat: ubicacion.lat,
-              long: ubicacion.lng,
-            }
-          : Prisma.JsonNull,
-        requiresPrescription: requiereReceta || false,
-        recipePhotoUrl: recipePhotoUrl || null,
-        tiempoEspera: tiempoEspera || "BAJO", // Default to BAJO
-        usuarioComunId: userId,
-      },
-    });
+    // Create or find medicamentos before creating the request.
+    const resolvedMedicamentos: Array<{
+      medicamentoId: string;
+      cantidad: number;
+      donacionMedicamentoId?: string;
+    }> = [];
 
-    // Create or find medicamentos and link them to the solicitud
     for (const med of requestedMedicamentos) {
       // Find or create the medicamento
       let medicamento = null;
@@ -117,16 +135,84 @@ export async function POST(request: Request) {
         });
       }
 
-      // Create the relation
-      await prisma.solicitudMedicamento.create({
-        data: {
-          solicitudId: solicitud.id,
-          medicamentoId: medicamento.id,
-          cantidad: med.cantidad || 1,
-          prioridad: 1,
-        },
+      resolvedMedicamentos.push({
+        medicamentoId: medicamento.id,
+        cantidad: med.cantidad,
+        donacionMedicamentoId: med.donacionMedicamentoId,
       });
+    }
 
+    const solicitudData = {
+      codigo,
+      motivo: motivo || null,
+      estado: "PENDIENTE" as const,
+      direccion: ubicacion
+        ? {
+            calle: ubicacion.address || "Ubicación seleccionada en mapa",
+            lat: ubicacion.lat,
+            long: ubicacion.lng,
+          }
+        : Prisma.JsonNull,
+      requiresPrescription: requiereReceta || false,
+      recipePhotoUrl: recipePhotoUrl || null,
+      tiempoEspera: tiempoEspera || "BAJO",
+      usuarioComunId: userId,
+    };
+
+    let solicitud;
+
+    if (donationMedicationLines.length === 1) {
+      const sourceMedication = resolvedMedicamentos[0];
+
+      try {
+        solicitud = await prisma.$transaction(async (tx) => {
+          const donationMedication = await reserveDonationStock(
+            tx,
+            sourceMedication.donacionMedicamentoId!,
+            sourceMedication.cantidad,
+          );
+
+          if (donationMedication.medicamentoId !== sourceMedication.medicamentoId) {
+            throw new Error(STOCK_UNAVAILABLE_ERROR);
+          }
+
+          const createdSolicitud = await tx.solicitud.create({
+            data: solicitudData,
+          });
+
+          await tx.solicitudMedicamento.create({
+            data: {
+              solicitudId: createdSolicitud.id,
+              medicamentoId: sourceMedication.medicamentoId,
+              cantidad: sourceMedication.cantidad,
+              prioridad: 1,
+              donacionMedicamentoId: sourceMedication.donacionMedicamentoId,
+              reservaActiva: true,
+            },
+          });
+
+          return createdSolicitud;
+        });
+      } catch (error) {
+        if (error instanceof Error && error.message === STOCK_UNAVAILABLE_ERROR) {
+          return NextResponse.json({ error: error.message }, { status: 409 });
+        }
+        throw error;
+      }
+    } else {
+      // Toda solicitud debe ser revisada por un ente de salud antes de estar disponible.
+      solicitud = await prisma.solicitud.create({ data: solicitudData });
+
+      for (const med of resolvedMedicamentos) {
+        await prisma.solicitudMedicamento.create({
+          data: {
+            solicitudId: solicitud.id,
+            medicamentoId: med.medicamentoId,
+            cantidad: med.cantidad,
+            prioridad: 1,
+          },
+        });
+      }
     }
 
     return NextResponse.json(

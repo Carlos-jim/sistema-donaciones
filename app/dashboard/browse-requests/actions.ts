@@ -14,6 +14,11 @@ export async function getApprovedRequests(excludeUserId?: string) {
       where: {
         estado: "APROBADA",
         donanteAsignadoId: null,
+        medicamentos: {
+          none: {
+            donacionMedicamentoId: { not: null },
+          },
+        },
         ...(excludeUserId ? { usuarioComunId: { not: excludeUserId } } : {}),
       },
       select: {

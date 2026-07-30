@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import prisma from "@/lib/prisma";
 import { tokenService } from "@/lib/auth/token.service";
+import { releaseDonationStockForRequest } from "@/lib/donation-stock.service";
 
 const ESTADOS_CANCELABLES = ["PENDIENTE", "APROBADA"];
 
@@ -70,6 +71,8 @@ export async function PATCH(
       where: { id },
       data: { estado: "CANCELADA" },
     });
+
+    await releaseDonationStockForRequest(id);
 
     return NextResponse.json({
       success: true,

@@ -110,6 +110,7 @@ export async function processAbandonedPickups(now = new Date()) {
             donacionId: createdDonation.id,
             medicamentoId: med.medicamentoId,
             cantidad: med.cantidad,
+            cantidadDisponible: med.cantidad,
             fechaExpiracion: null,
           },
         });

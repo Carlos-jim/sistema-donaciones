@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { POST } from "@/app/api/requests/route";
 import prisma from "@/lib/prisma";
 import { tokenService } from "@/lib/auth/token.service";
+import { reserveDonationStock } from "@/lib/donation-stock.service";
 
 vi.mock("next/headers", () => ({
   cookies: vi.fn(async () => ({
@@ -13,6 +14,11 @@ vi.mock("@/lib/auth/token.service", () => ({
   tokenService: {
     verify: vi.fn(),
   },
+}));
+
+vi.mock("@/lib/donation-stock.service", () => ({
+  reserveDonationStock: vi.fn(),
+  STOCK_UNAVAILABLE_ERROR: "No hay suficiente stock disponible para esta solicitud",
 }));
 
 vi.mock("next/server", async () => {
@@ -165,6 +171,65 @@ describe("API Requests", () => {
         body: expect.objectContaining({ success: true }),
         init: { status: 201 },
       })
+    );
+  });
+
+  it("should reserve only the requested quantity from a public donation", async () => {
+    vi.mocked(prisma.medicamento.findFirst).mockResolvedValue({
+      id: "med-1",
+    } as any);
+    vi.mocked(reserveDonationStock).mockResolvedValue({
+      medicamentoId: "med-1",
+    } as any);
+
+    const tx = {
+      solicitud: {
+        create: vi.fn().mockResolvedValue({ id: "solicitud-stock-1" }),
+      },
+      solicitudMedicamento: { create: vi.fn() },
+    };
+    vi.mocked(prisma.$transaction).mockImplementation(async (callback) =>
+      callback(tx as any),
+    );
+
+    const request = new Request("http://localhost/api/requests", {
+      method: "POST",
+      body: JSON.stringify({
+        medicamentos: [
+          {
+            nombre: "Ibuprofeno",
+            cantidad: 3,
+            unidad: "tabletas",
+            donacionMedicamentoId: "donacion-med-1",
+          },
+        ],
+        requiereReceta: false,
+        tiempoEspera: "MEDIO",
+      }),
+    });
+
+    const response = await POST(request);
+
+    expect(reserveDonationStock).toHaveBeenCalledWith(
+      tx,
+      "donacion-med-1",
+      3,
+    );
+    expect(tx.solicitudMedicamento.create).toHaveBeenCalledWith({
+      data: {
+        solicitudId: "solicitud-stock-1",
+        medicamentoId: "med-1",
+        cantidad: 3,
+        prioridad: 1,
+        donacionMedicamentoId: "donacion-med-1",
+        reservaActiva: true,
+      },
+    });
+    expect(response).toEqual(
+      expect.objectContaining({
+        body: expect.objectContaining({ success: true }),
+        init: { status: 201 },
+      }),
     );
   });
 });

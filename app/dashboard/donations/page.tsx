@@ -44,6 +44,7 @@ import { useToast } from "@/components/ui/use-toast";
 type OfferMedication = {
   id: string;
   cantidad: number;
+  cantidadDisponible: number;
   fechaExpiracion: string | null;
   medicamento: {
     nombre: string;
@@ -455,8 +456,12 @@ export default function MyDonationsPage() {
                       {item.code || "Sin código"}
                     </p>
                     <p className="mt-1">
-                      <span className="font-medium text-gray-900">Cantidad:</span>{" "}
-                      {item.medications[0]?.cantidad || 0}
+                      <span className="font-medium text-gray-900">
+                        {item.kind === "offer" ? "Stock disponible:" : "Cantidad:"}
+                      </span>{" "}
+                      {item.kind === "offer"
+                        ? item.medications[0]?.cantidadDisponible ?? 0
+                        : item.medications[0]?.cantidad || 0}
                     </p>
                   </div>
 
@@ -637,7 +642,9 @@ export default function MyDonationsPage() {
                           {medication.medicamento.nombre}
                         </p>
                         <p className="text-sm text-gray-600">
-                          Cantidad: {medication.cantidad}
+                          {selectedItem.kind === "offer"
+                            ? `Stock disponible: ${medication.cantidadDisponible}`
+                            : `Cantidad: ${medication.cantidad}`}
                           {medication.medicamento.presentacion
                             ? ` ${medication.medicamento.presentacion}`
                             : ""}

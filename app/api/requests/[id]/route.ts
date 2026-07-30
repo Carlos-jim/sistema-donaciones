@@ -46,7 +46,16 @@ export async function PATCH(
 
     const solicitud = await prisma.solicitud.findUnique({
       where: { id },
-      select: { estado: true, usuarioComunId: true },
+      select: {
+        estado: true,
+        usuarioComunId: true,
+        medicamentos: {
+          select: {
+            donacionMedicamentoId: true,
+            reservaActiva: true,
+          },
+        },
+      },
     });
 
     if (!solicitud) {
@@ -75,6 +84,20 @@ export async function PATCH(
       medicamentos,
     } = parsed.data;
     const isResubmission = solicitud.estado === "RECHAZADA";
+    const hasActiveDonationReservation = solicitud.medicamentos.some(
+      (medicamento) =>
+        medicamento.donacionMedicamentoId && medicamento.reservaActiva,
+    );
+
+    if (medicamentos && hasActiveDonationReservation) {
+      return NextResponse.json(
+        {
+          error:
+            "No puedes modificar los insumos de una solicitud que ya reservó stock de una donación pública.",
+        },
+        { status: 409 },
+      );
+    }
 
     // Update basic fields
     await prisma.solicitud.update({

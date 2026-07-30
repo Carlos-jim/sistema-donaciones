@@ -330,8 +330,9 @@ model Farmacia {
 
 /// Tabla pivote: relación entre donaciones y medicamentos (contiene)
 model DonacionMedicamento {
-  id              String    @id @default(cuid())
-  cantidad        Int       @default(1)
+  id                 String    @id @default(cuid())
+  cantidad           Int       @default(1)
+  cantidadDisponible Int
   fechaExpiracion DateTime?
   lote            String?
   createdAt       DateTime  @default(now())
@@ -342,6 +343,8 @@ model DonacionMedicamento {
 
   medicamentoId String
   medicamento   Medicamento @relation(fields: [medicamentoId], references: [id], onDelete: Cascade)
+
+  solicitudes SolicitudMedicamento[]
 
   @@unique([donacionId, medicamentoId])
   @@map("donacion_medicamentos")
@@ -362,6 +365,11 @@ model SolicitudMedicamento {
   medicamentoId String
   medicamento   Medicamento @relation(fields: [medicamentoId], references: [id], onDelete: Cascade)
 
+  // Línea de donación pública de la que se reservó el stock, si aplica.
+  donacionMedicamentoId String?
+  donacionMedicamento   DonacionMedicamento? @relation(fields: [donacionMedicamentoId], references: [id])
+  reservaActiva         Boolean              @default(false)
+
   // FK: Ente de salud que modificó la prioridad (audit)
   prioridadModificadaPorId String?
   prioridadModificadaPor   EnteSalud? @relation("PriorityModification", fields: [prioridadModificadaPorId], references: [id])
@@ -371,5 +379,6 @@ model SolicitudMedicamento {
   fechaModificacionPrioridad DateTime?
 
   @@unique([solicitudId, medicamentoId])
+  @@index([donacionMedicamentoId])
   @@map("solicitud_medicamentos")
 }

@@ -154,6 +154,7 @@ Requiere Receta: ${prescription === "yes" ? "Sí" : "No"}
         donacionId: newDonacion.id,
         medicamentoId: dbMedicamento.id,
         cantidad: quantity,
+        cantidadDisponible: quantity,
         fechaExpiracion: new Date(expiration),
       },
     });
@@ -213,6 +214,11 @@ export async function GET() {
     const donaciones = await prisma.donacion.findMany({
       where: {
         estado: "DISPONIBLE",
+        medicamentos: {
+          some: {
+            cantidadDisponible: { gt: 0 },
+          },
+        },
       },
       include: {
         usuarioComun: {

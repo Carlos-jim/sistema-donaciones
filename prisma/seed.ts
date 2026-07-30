@@ -26,7 +26,7 @@ async function createDonacion(data: any, meds: { medicamentoId: string; cantidad
   const don = await prisma.donacion.create({ data });
   for (const m of meds) {
     await prisma.donacionMedicamento.create({
-      data: { donacionId: don.id, ...m },
+      data: { donacionId: don.id, cantidadDisponible: m.cantidad, ...m },
     });
   }
   return don;

@@ -119,8 +119,10 @@ interface Donacion {
   descripcion: string | null;
   donorLabel: string;
   medicamentos: Array<{
+    id: string;
     fechaExpiracion: string;
     cantidad: number;
+    cantidadDisponible: number;
     medicamento: {
       nombre: string;
       presentacion: string | null;
@@ -275,10 +277,10 @@ export default function DashboardClient({
         don.descripcion?.includes("Requiere Receta: Sí") ?? false;
 
       return {
-        id: don.id,
+        id: don.medicamentos[0]?.id ?? don.id,
         name: don.medicamentos[0]?.medicamento?.nombre || "Insumo médico",
         unit: don.medicamentos[0]?.medicamento?.presentacion || "unidades",
-        quantity: don.medicamentos[0]?.cantidad ?? 1,
+        quantity: don.medicamentos[0]?.cantidadDisponible ?? 0,
         requiresPrescription,
         donor: don.donorLabel,
         location: "Ubicación",
