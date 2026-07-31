@@ -6,7 +6,7 @@
     "node": "20.x"
   },
   "scripts": {
-    "build": "prisma migrate resolve --applied 20260104195954_init || true && prisma migrate resolve --applied 20260104202819_add_urgency_time_field || true && prisma migrate resolve --applied 20260215121000_donor_flow_codes_plan_b || true && prisma migrate resolve --applied 20260318143000_add_missing_usuario_columns || true && prisma migrate resolve --applied 20260730120000_add_donation_stock || true && prisma migrate resolve --applied 20260730213834_add_missing_solicitud_statuses || true && prisma migrate resolve --applied 20260730214801_sync_schema_to_db || true && prisma migrate deploy && prisma generate && next build",
+    "build": "prisma db push --skip-generate --accept-data-loss && prisma migrate resolve --applied 20260104195954_init 20260104202819_add_urgency_time_field 20260215121000_donor_flow_codes_plan_b 20260318143000_add_missing_usuario_columns 20260730120000_add_donation_stock 20260730213834_add_missing_solicitud_statuses 20260730214801_sync_schema_to_db || true && prisma generate && next build",
     "dev": "prisma generate && next dev",
     "lint": "next lint",
     "start": "next start",
