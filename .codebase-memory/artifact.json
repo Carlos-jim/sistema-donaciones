@@ -1,11 +1,11 @@
 {
     "schema_version": 2,
-    "commit": "7c1db7c5d00ee707cae87026c97b683204d1a413",
-    "indexed_at": "2026-07-30T22:47:17Z",
+    "commit": "54584eed1a29f5763eec63a7c698aec55169976e",
+    "indexed_at": "2026-07-31T01:24:42Z",
     "project": "home-carlos-Documentos-sistema-donaciones",
     "nodes": 2127,
     "edges": 4200,
     "original_size": 6946816,
-    "compressed_size": 1064582,
+    "compressed_size": 1064507,
     "compression_level": 3
 }
