@@ -38,6 +38,8 @@ describe("API Requests Accept", () => {
       tipo: "COMUN",
     });
     vi.mocked(acceptRequestWithDeliveryCodes).mockResolvedValue({
+      requestId: "request-1",
+      acceptedQuantity: 1,
       donorCode: "DON-ABC123",
       requesterCode: "RET-XYZ789",
       donorQrPayload: "donor-qr",
@@ -65,11 +67,35 @@ describe("API Requests Accept", () => {
       requestId: "request-1",
       donorUserId: "donor-1",
       pharmacyId: "pharmacy-1",
+      requestMedicationId: undefined,
+      quantity: undefined,
     });
     expect(response).toEqual(
       expect.objectContaining({
         body: expect.objectContaining({ success: true }),
       }),
     );
+  });
+
+  it("forwards the selected partial quantity and medication line", async () => {
+    const request = new Request("http://localhost/api/requests/accept", {
+      method: "POST",
+      body: JSON.stringify({
+        requestId: "request-1",
+        requestMedicationId: "line-1",
+        quantity: 2,
+        pharmacyId: "pharmacy-1",
+      }),
+    });
+
+    await POST(request);
+
+    expect(acceptRequestWithDeliveryCodes).toHaveBeenCalledWith({
+      requestId: "request-1",
+      requestMedicationId: "line-1",
+      quantity: 2,
+      donorUserId: "donor-1",
+      pharmacyId: "pharmacy-1",
+    });
   });
 });

@@ -6,7 +6,7 @@ import { acceptRequestWithDeliveryCodes } from "@/lib/request-delivery.service";
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { requestId, pharmacyId } = body;
+    const { requestId, pharmacyId, requestMedicationId, quantity } = body;
     const token = (await cookies()).get("auth-token")?.value;
 
     if (!token) {
@@ -26,13 +26,27 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    if (
+      quantity !== undefined &&
+      (typeof quantity !== "number" || !Number.isInteger(quantity) || quantity < 1)
+    ) {
+      return NextResponse.json(
+        { error: "quantity debe ser un número entero mayor a cero" },
+        { status: 400 },
+      );
+    }
+
     const result = await acceptRequestWithDeliveryCodes({
       requestId,
       donorUserId: payload.userId,
       pharmacyId,
+      requestMedicationId,
+      quantity,
     });
 
     const donorView = {
+      requestId: result.requestId,
+      acceptedQuantity: result.acceptedQuantity,
       donorCode: result.donorCode,
       donorQrPayload: result.donorQrPayload,
       farmacia: result.farmacia,
@@ -57,7 +71,9 @@ export async function POST(request: NextRequest) {
     if (
       message.includes("Solo se pueden aceptar") ||
       message.includes("ya ha sido asignada") ||
-      message.includes("No puedes aceptar")
+      message.includes("No puedes aceptar") ||
+      message.includes("cantidad") ||
+      message.includes("insumo médico")
     ) {
       return NextResponse.json({ error: message }, { status: 400 });
     }

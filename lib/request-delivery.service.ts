@@ -8,9 +8,13 @@ type AcceptRequestInput = {
   requestId: string;
   donorUserId: string;
   pharmacyId: string;
+  requestMedicationId?: string;
+  quantity?: number;
 };
 
 type AcceptRequestResult = {
+  requestId: string;
+  acceptedQuantity: number;
   donorCode: string;
   requesterCode: string;
   donorQrPayload: string;
@@ -48,7 +52,8 @@ async function generateUniqueSolicitudCode(prefix: "DON" | "RET") {
 export async function acceptRequestWithDeliveryCodes(
   input: AcceptRequestInput,
 ): Promise<AcceptRequestResult> {
-  const { requestId, donorUserId, pharmacyId } = input;
+  const { requestId, donorUserId, pharmacyId, requestMedicationId, quantity } =
+    input;
 
   const solicitud = await prisma.solicitud.findUnique({
     where: { id: requestId },
@@ -83,6 +88,31 @@ export async function acceptRequestWithDeliveryCodes(
     throw new Error("Solo se pueden aceptar solicitudes aprobadas");
   }
 
+  const requestedMedication = requestMedicationId
+    ? solicitud.medicamentos.find((medication) => medication.id === requestMedicationId)
+    : solicitud.medicamentos[0];
+
+  if (!requestedMedication) {
+    throw new Error("El insumo médico solicitado no pertenece a esta solicitud");
+  }
+
+  const acceptedQuantity = quantity ?? requestedMedication.cantidad;
+
+  if (!Number.isInteger(acceptedQuantity) || acceptedQuantity < 1) {
+    throw new Error("La cantidad a donar debe ser un número entero mayor a cero");
+  }
+
+  if (acceptedQuantity > requestedMedication.cantidad) {
+    throw new Error("La cantidad indicada ya no está disponible en esta solicitud");
+  }
+
+  if (
+    requestedMedication.donacionMedicamentoId &&
+    acceptedQuantity !== requestedMedication.cantidad
+  ) {
+    throw new Error("Esta entrega ya tiene una cantidad reservada");
+  }
+
   if (
     solicitud.donanteAsignadoId &&
     solicitud.donanteAsignadoId !== donorUserId
@@ -91,7 +121,7 @@ export async function acceptRequestWithDeliveryCodes(
   }
 
   const reservedDonationOwnerId =
-    solicitud.medicamentos[0]?.donacionMedicamento?.donacion.usuarioComunId;
+    requestedMedication.donacionMedicamento?.donacion.usuarioComunId;
 
   if (
     reservedDonationOwnerId &&
@@ -115,31 +145,86 @@ export async function acceptRequestWithDeliveryCodes(
 
   const donorCode = await generateUniqueSolicitudCode("DON");
   const requesterCode = await generateUniqueSolicitudCode("RET");
+  const deliveryData = {
+    estado: "EN_PROCESO" as const,
+    donanteAsignadoId: donorUserId,
+    assignedDate: new Date(),
+    farmaciaEntregaId: pharmacyId,
+    codigoComprobante: donorCode,
+    codigoEntregaDonante: donorCode,
+    codigoRetiroSolicitante: requesterCode,
+    tipoRechazo: null,
+    motivoRechazoFarmacia: null,
+  };
 
-  await prisma.solicitud.update({
-    where: { id: requestId },
-    data: {
-      estado: "EN_PROCESO",
-      donanteAsignadoId: donorUserId,
-      assignedDate: new Date(),
-      farmaciaEntregaId: pharmacyId,
-      codigoComprobante: donorCode, // compatibilidad temporal
-      codigoEntregaDonante: donorCode,
-      codigoRetiroSolicitante: requesterCode,
-      tipoRechazo: null,
-      motivoRechazoFarmacia: null,
-    },
-  });
+  let deliveryRequestId = requestId;
+
+  if (acceptedQuantity === requestedMedication.cantidad) {
+    await prisma.solicitud.update({
+      where: { id: requestId },
+      data: deliveryData,
+    });
+  } else {
+    deliveryRequestId = await prisma.$transaction(async (tx) => {
+      const decrementResult = await tx.solicitudMedicamento.updateMany({
+        where: {
+          id: requestedMedication.id,
+          cantidad: { gt: acceptedQuantity },
+          solicitud: {
+            is: {
+              estado: "APROBADA",
+              donanteAsignadoId: null,
+            },
+          },
+        },
+        data: {
+          cantidad: { decrement: acceptedQuantity },
+        },
+      });
+
+      if (decrementResult.count !== 1) {
+        throw new Error("La cantidad indicada ya no está disponible en esta solicitud");
+      }
+
+      const deliveryRequest = await tx.solicitud.create({
+        data: {
+          motivo: solicitud.motivo,
+          estado: deliveryData.estado,
+          tiempoEspera: solicitud.tiempoEspera,
+          direccion: solicitud.direccion,
+          requiresPrescription: solicitud.requiresPrescription,
+          recipePhotoUrl: solicitud.recipePhotoUrl,
+          usuarioComunId: solicitud.usuarioComunId,
+          aprobadoPorId: solicitud.aprobadoPorId,
+          aprobadoPorEnteId: solicitud.aprobadoPorEnteId,
+          approvalDate: solicitud.approvalDate,
+          approvalInstitution: solicitud.approvalInstitution,
+          ...deliveryData,
+        },
+      });
+
+      await tx.solicitudMedicamento.create({
+        data: {
+          solicitudId: deliveryRequest.id,
+          medicamentoId: requestedMedication.medicamentoId,
+          cantidad: acceptedQuantity,
+          prioridad: requestedMedication.prioridad,
+        },
+      });
+
+      return deliveryRequest.id;
+    });
+  }
 
   const medicamentoNombre =
-    solicitud.medicamentos[0]?.medicamento?.nombre || "insumo médico";
+    requestedMedication.medicamento?.nombre || "insumo médico";
 
   await prisma.notificacion.create({
     data: {
       userId: solicitud.usuarioComunId,
       type: "MATCH_DONATION",
       title: "¡Donante encontrado!",
-      message: `Un donante aceptó tu solicitud de ${medicamentoNombre}. Retira en ${farmacia.nombre} con código ${requesterCode}.`,
+      message: `Un donante aceptó ${acceptedQuantity} unidad(es) de ${medicamentoNombre}. Retira en ${farmacia.nombre} con código ${requesterCode}.`,
       link: "/dashboard/requests",
     },
   });
@@ -149,7 +234,7 @@ export async function acceptRequestWithDeliveryCodes(
       userId: donorUserId,
       type: "SYSTEM",
       title: "¡Te comprometiste a donar!",
-      message: `Has aceptado donar ${medicamentoNombre}. Lleva el insumo médico a ${farmacia.nombre} y presenta el código ${donorCode}.`,
+      message: `Has aceptado donar ${acceptedQuantity} unidad(es) de ${medicamentoNombre}. Lleva el insumo médico a ${farmacia.nombre} y presenta el código ${donorCode}.`,
       link: "/dashboard/donations",
     },
   });
@@ -158,6 +243,8 @@ export async function acceptRequestWithDeliveryCodes(
   const requesterQrPayload = getReadableQrPayload(requesterCode);
 
   return {
+    requestId: deliveryRequestId,
+    acceptedQuantity,
     donorCode,
     requesterCode,
     donorQrPayload,

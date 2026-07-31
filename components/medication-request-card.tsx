@@ -9,6 +9,7 @@ import {
   Copy,
   Heart,
   MapPin,
+  Package,
   User,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -37,6 +38,7 @@ import {
 } from "@/components/ui/select";
 import { useToast } from "@/components/ui/use-toast";
 import { getQrImageUrl } from "@/lib/qr";
+import { Input } from "@/components/ui/input";
 
 interface Pharmacy {
   id: string;
@@ -49,6 +51,7 @@ interface Pharmacy {
 }
 
 interface AcceptResult {
+  acceptedQuantity: number;
   donorCode: string;
   donorQrPayload: string;
   farmacia: {
@@ -60,7 +63,10 @@ interface AcceptResult {
 
 interface MedicationRequestCardProps {
   id: string;
+  medicationLineId: string;
   name: string;
+  quantity: number;
+  unit?: string | null;
   distance: string;
   urgency: string;
   date: string;
@@ -70,7 +76,10 @@ interface MedicationRequestCardProps {
 
 export function MedicationRequestCard({
   id,
+  medicationLineId,
   name,
+  quantity,
+  unit,
   distance,
   urgency,
   date,
@@ -83,6 +92,7 @@ export function MedicationRequestCard({
   const [acceptResult, setAcceptResult] = useState<AcceptResult | null>(null);
   const [pharmacies, setPharmacies] = useState<Pharmacy[]>([]);
   const [selectedPharmacy, setSelectedPharmacy] = useState("");
+  const [donationQuantity, setDonationQuantity] = useState(quantity);
   const [isLoadingPharmacies, setIsLoadingPharmacies] = useState(false);
   const { toast } = useToast();
   const router = useRouter();
@@ -143,6 +153,19 @@ export function MedicationRequestCard({
       return;
     }
 
+    if (
+      !Number.isInteger(donationQuantity) ||
+      donationQuantity < 1 ||
+      donationQuantity > quantity
+    ) {
+      toast({
+        title: "Indica una cantidad válida",
+        description: `Puedes comprometer entre 1 y ${quantity} unidad(es).`,
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsAccepting(true);
 
     try {
@@ -151,6 +174,8 @@ export function MedicationRequestCard({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           requestId: id,
+          requestMedicationId: medicationLineId,
+          quantity: donationQuantity,
           pharmacyId: selectedPharmacy,
         }),
       });
@@ -165,7 +190,7 @@ export function MedicationRequestCard({
 
       toast({
         title: "Solicitud aceptada",
-        description: `Código de entrega: ${result.data.donorCode}`,
+        description: `Comprometiste ${result.data.acceptedQuantity} unidad(es). Código: ${result.data.donorCode}`,
       });
     } catch (error) {
       toast({
@@ -185,6 +210,7 @@ export function MedicationRequestCard({
     if (acceptResult) {
       setAcceptResult(null);
       setSelectedPharmacy("");
+      setDonationQuantity(quantity);
       onAccepted?.();
       router.refresh();
     }
@@ -192,6 +218,7 @@ export function MedicationRequestCard({
 
   const handleDialogOpenChange = (open: boolean) => {
     if (open) {
+      setDonationQuantity(quantity);
       setIsDialogOpen(true);
       return;
     }
@@ -231,12 +258,20 @@ export function MedicationRequestCard({
               <Clock className="mr-2 h-4 w-4" />
               <span>{date}</span>
             </div>
+
+            <div className="flex items-center rounded-lg border border-teal-100 bg-teal-50 px-3 py-2 text-teal-900">
+              <Package className="mr-2 h-4 w-4 text-teal-600" />
+              <span>
+                Necesita <strong>{quantity}</strong>{" "}
+                {unit || "unidad(es)"}
+              </span>
+            </div>
           </div>
         </CardContent>
 
         <CardFooter className="pt-0">
           <Button
-            onClick={() => setIsDialogOpen(true)}
+            onClick={() => handleDialogOpenChange(true)}
             className="w-full bg-gradient-to-r from-teal-600 to-teal-500 text-white shadow-md shadow-teal-600/20 hover:from-teal-700 hover:to-teal-600"
           >
             <Heart className="mr-2 h-4 w-4" />
@@ -254,7 +289,7 @@ export function MedicationRequestCard({
             <DialogDescription>
               {acceptResult
                 ? "Guarda tu código de entrega para presentarlo en la farmacia"
-                : "Selecciona la farmacia donde entregarás el insumo médico"}
+                : "Indica cuánto puedes donar y selecciona la farmacia de entrega"}
             </DialogDescription>
           </DialogHeader>
 
@@ -351,6 +386,33 @@ export function MedicationRequestCard({
                   </div>
                 </div>
 
+                <div className="rounded-xl border border-teal-100 bg-gradient-to-r from-teal-50 to-white p-4">
+                  <label
+                    htmlFor={`donation-quantity-${id}-${medicationLineId}`}
+                    className="mb-2 flex items-center gap-2 text-sm font-semibold text-gray-800"
+                  >
+                    <Package className="h-4 w-4 text-teal-600" />
+                    Cantidad que donarás
+                  </label>
+                  <Input
+                    id={`donation-quantity-${id}-${medicationLineId}`}
+                    type="number"
+                    min={1}
+                    max={quantity}
+                    value={donationQuantity}
+                    onChange={(event) =>
+                      setDonationQuantity(Number(event.target.value))
+                    }
+                    className="text-lg font-semibold"
+                  />
+                  <p className="mt-2 text-xs text-teal-800">
+                    Esta solicitud necesita {quantity} {unit || "unidad(es)"}.{" "}
+                    {donationQuantity > 0 && donationQuantity <= quantity
+                      ? `Quedarán ${quantity - donationQuantity} disponible(s) para otros donantes.`
+                      : "Elige una cantidad entre 1 y el total solicitado."}
+                  </p>
+                </div>
+
                 <div className="space-y-2">
                   <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
                     <Building2 className="h-4 w-4 text-teal-600" />
@@ -400,8 +462,8 @@ export function MedicationRequestCard({
 
                 <div className="rounded-lg border border-yellow-100 bg-yellow-50 p-3 text-sm text-gray-500">
                   <strong>Importante:</strong> Al confirmar, el sistema genera
-                  códigos distintos para el donante y para el solicitante. Aquí
-                  solo verás tu código de entrega.
+                  una ficha y códigos distintos para estas {donationQuantity || 0}{" "}
+                  unidad(es). El saldo quedará disponible para otros donantes.
                 </div>
               </div>
 
@@ -415,7 +477,13 @@ export function MedicationRequestCard({
                 </Button>
                 <Button
                   onClick={handleAcceptRequest}
-                  disabled={isAccepting || !selectedPharmacy}
+                  disabled={
+                    isAccepting ||
+                    !selectedPharmacy ||
+                    !Number.isInteger(donationQuantity) ||
+                    donationQuantity < 1 ||
+                    donationQuantity > quantity
+                  }
                   className="bg-gradient-to-r from-teal-600 to-teal-500 hover:from-teal-700 hover:to-teal-600"
                 >
                   {isAccepting ? (
@@ -426,7 +494,7 @@ export function MedicationRequestCard({
                   ) : (
                     <>
                       <Heart className="mr-2 h-4 w-4" />
-                      Confirmar Donación
+                      Confirmar {donationQuantity || 0} unidad(es)
                     </>
                   )}
                 </Button>

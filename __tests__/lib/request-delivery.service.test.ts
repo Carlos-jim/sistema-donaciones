@@ -28,6 +28,10 @@ describe("acceptRequestWithDeliveryCodes", () => {
       donanteAsignadoId: "donor-1",
       medicamentos: [
         {
+          id: "line-1",
+          medicamentoId: "med-1",
+          cantidad: 3,
+          prioridad: 1,
           medicamento: {
             nombre: "Crema",
           },
@@ -72,6 +76,10 @@ describe("acceptRequestWithDeliveryCodes", () => {
       donanteAsignadoId: null,
       medicamentos: [
         {
+          id: "line-1",
+          medicamentoId: "med-1",
+          cantidad: 3,
+          prioridad: 1,
           medicamento: {
             nombre: "Crema",
           },
@@ -107,6 +115,10 @@ describe("acceptRequestWithDeliveryCodes", () => {
       donanteAsignadoId: "donor-1",
       medicamentos: [
         {
+          id: "line-1",
+          medicamentoId: "med-1",
+          cantidad: 3,
+          prioridad: 1,
           donacionMedicamento: {
             donacion: {
               usuarioComunId: "donor-1",
@@ -125,5 +137,84 @@ describe("acceptRequestWithDeliveryCodes", () => {
     ).rejects.toThrow("Esta solicitud ya ha sido asignada a otro donante");
 
     expect(prisma.solicitud.update).not.toHaveBeenCalled();
+  });
+
+  it("splits a requested quantity so another donor can cover the remaining units", async () => {
+    vi.mocked(prisma.solicitud.findUnique).mockResolvedValue({
+      id: "request-1",
+      estado: "APROBADA",
+      motivo: "Necesito crema",
+      tiempoEspera: "MEDIO",
+      direccion: null,
+      requiresPrescription: false,
+      recipePhotoUrl: null,
+      usuarioComunId: "requester-1",
+      donanteAsignadoId: null,
+      aprobadoPorId: null,
+      aprobadoPorEnteId: "supervisor-1",
+      approvalDate: new Date("2026-07-31"),
+      approvalInstitution: "Centro de Salud",
+      medicamentos: [
+        {
+          id: "line-1",
+          medicamentoId: "med-1",
+          cantidad: 12,
+          prioridad: 1,
+          medicamento: { nombre: "Crema" },
+          donacionMedicamento: null,
+        },
+      ],
+    } as any);
+
+    const tx = {
+      solicitudMedicamento: {
+        updateMany: vi.fn().mockResolvedValue({ count: 1 }),
+        create: vi.fn(),
+      },
+      solicitud: {
+        create: vi.fn().mockResolvedValue({ id: "delivery-request-1" }),
+      },
+    };
+    vi.mocked(prisma.$transaction).mockImplementation(async (callback) =>
+      callback(tx as any),
+    );
+
+    const result = await acceptRequestWithDeliveryCodes({
+      requestId: "request-1",
+      requestMedicationId: "line-1",
+      quantity: 2,
+      donorUserId: "donor-1",
+      pharmacyId: "pharmacy-1",
+    });
+
+    expect(tx.solicitudMedicamento.updateMany).toHaveBeenCalledWith({
+      where: {
+        id: "line-1",
+        cantidad: { gt: 2 },
+        solicitud: {
+          is: {
+            estado: "APROBADA",
+            donanteAsignadoId: null,
+          },
+        },
+      },
+      data: {
+        cantidad: { decrement: 2 },
+      },
+    });
+    expect(tx.solicitudMedicamento.create).toHaveBeenCalledWith({
+      data: {
+        solicitudId: "delivery-request-1",
+        medicamentoId: "med-1",
+        cantidad: 2,
+        prioridad: 1,
+      },
+    });
+    expect(result).toEqual(
+      expect.objectContaining({
+        requestId: "delivery-request-1",
+        acceptedQuantity: 2,
+      }),
+    );
   });
 });

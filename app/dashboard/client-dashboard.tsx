@@ -103,8 +103,10 @@ interface Solicitud {
   createdAt: string;
   beneficiaryLabel: string;
   medicamentos: Array<{
+    id: string;
     medicamento: {
       nombre: string;
+      presentacion: string | null;
     };
     cantidad: number;
   }>;
@@ -199,7 +201,7 @@ export default function DashboardClient({
 
   // Calculate distances and sort requests
   const sortedRequests = useMemo(() => {
-    const requestsWithDistance = solicitudes.map((sol) => {
+    const requestsWithDistance = solicitudes.flatMap((sol) => {
       let distance: number | null = null;
       if (userLocation && sol.latitude && sol.longitude) {
         distance = calculateDistance(
@@ -216,9 +218,12 @@ export default function DashboardClient({
         BAJO: "Baja",
       };
 
-      return {
+      return sol.medicamentos.map((medication) => ({
         id: sol.id,
-        name: sol.medicamentos[0]?.medicamento?.nombre || "Insumo médico",
+        medicationLineId: medication.id,
+        name: medication.medicamento.nombre || "Insumo médico",
+        quantity: medication.cantidad,
+        unit: medication.medicamento.presentacion,
         distance: distance !== null ? formatDistance(distance) : "N/A",
         distanceValue: distance,
         urgency: urgencyMap[sol.tiempoEspera] || "Media",
@@ -228,7 +233,7 @@ export default function DashboardClient({
         }),
         lat: sol.latitude,
         lng: sol.longitude,
-      };
+      }));
     });
 
     // Sort by distance or date
@@ -546,7 +551,7 @@ export default function DashboardClient({
                       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                         {filteredRequests.map((request, index) => (
                           <motion.div
-                            key={request.id}
+                            key={`${request.id}-${request.medicationLineId}`}
                             custom={index}
                             variants={slideInVariants}
                             initial="hidden"
