@@ -180,6 +180,9 @@ describe("API Requests", () => {
     } as any);
     vi.mocked(reserveDonationStock).mockResolvedValue({
       medicamentoId: "med-1",
+      donacion: {
+        usuarioComunId: "donor-1",
+      },
     } as any);
 
     const tx = {
@@ -224,6 +227,19 @@ describe("API Requests", () => {
         donacionMedicamentoId: "donacion-med-1",
         reservaActiva: true,
       },
+    });
+    expect(tx.solicitud.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        estado: "PENDIENTE",
+        donanteAsignadoId: "donor-1",
+        assignedDate: expect.any(Date),
+      }),
+    });
+    expect(prisma.notificacion.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        userId: "donor-1",
+        link: "/dashboard/donations",
+      }),
     });
     expect(response).toEqual(
       expect.objectContaining({

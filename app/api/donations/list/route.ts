@@ -55,7 +55,25 @@ export async function GET() {
 
     const acceptedDeliveries = await prisma.solicitud.findMany({
       where: {
-        donanteAsignadoId: payload.userId,
+        OR: [
+          {
+            donanteAsignadoId: payload.userId,
+          },
+          {
+            donanteAsignadoId: null,
+            medicamentos: {
+              some: {
+                donacionMedicamento: {
+                  is: {
+                    donacion: {
+                      usuarioComunId: payload.userId,
+                    },
+                  },
+                },
+              },
+            },
+          },
+        ],
       },
       select: {
         id: true,

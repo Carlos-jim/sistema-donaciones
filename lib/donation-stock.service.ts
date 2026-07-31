@@ -35,7 +35,12 @@ export async function reserveDonationStock(
     select: {
       donacionId: true,
       medicamentoId: true,
-      donacion: { select: { estado: true } },
+      donacion: {
+        select: {
+          estado: true,
+          usuarioComunId: true,
+        },
+      },
     },
   });
 

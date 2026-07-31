@@ -61,6 +61,15 @@ export async function acceptRequestWithDeliveryCodes(
           medicamento: {
             select: { nombre: true },
           },
+          donacionMedicamento: {
+            select: {
+              donacion: {
+                select: {
+                  usuarioComunId: true,
+                },
+              },
+            },
+          },
         },
       },
     },
@@ -74,7 +83,20 @@ export async function acceptRequestWithDeliveryCodes(
     throw new Error("Solo se pueden aceptar solicitudes aprobadas");
   }
 
-  if (solicitud.donanteAsignadoId) {
+  if (
+    solicitud.donanteAsignadoId &&
+    solicitud.donanteAsignadoId !== donorUserId
+  ) {
+    throw new Error("Esta solicitud ya ha sido asignada a otro donante");
+  }
+
+  const reservedDonationOwnerId =
+    solicitud.medicamentos[0]?.donacionMedicamento?.donacion.usuarioComunId;
+
+  if (
+    reservedDonationOwnerId &&
+    reservedDonationOwnerId !== donorUserId
+  ) {
     throw new Error("Esta solicitud ya ha sido asignada a otro donante");
   }
 

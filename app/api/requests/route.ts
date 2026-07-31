@@ -10,6 +10,9 @@ import {
   STOCK_UNAVAILABLE_ERROR,
 } from "@/lib/donation-stock.service";
 
+const OWN_DONATION_REQUEST_ERROR =
+  "No puedes solicitar medicamentos de tu propia donación";
+
 export async function POST(request: Request) {
   try {
     const body = await request.json();
@@ -160,6 +163,7 @@ export async function POST(request: Request) {
     };
 
     let solicitud;
+    let assignedDonorId: string | null = null;
 
     if (donationMedicationLines.length === 1) {
       const sourceMedication = resolvedMedicamentos[0];
@@ -176,8 +180,18 @@ export async function POST(request: Request) {
             throw new Error(STOCK_UNAVAILABLE_ERROR);
           }
 
+          assignedDonorId = donationMedication.donacion.usuarioComunId;
+
+          if (assignedDonorId === userId) {
+            throw new Error(OWN_DONATION_REQUEST_ERROR);
+          }
+
           const createdSolicitud = await tx.solicitud.create({
-            data: solicitudData,
+            data: {
+              ...solicitudData,
+              donanteAsignadoId: assignedDonorId,
+              assignedDate: assignedDonorId ? new Date() : null,
+            },
           });
 
           await tx.solicitudMedicamento.create({
@@ -197,7 +211,32 @@ export async function POST(request: Request) {
         if (error instanceof Error && error.message === STOCK_UNAVAILABLE_ERROR) {
           return NextResponse.json({ error: error.message }, { status: 409 });
         }
+        if (
+          error instanceof Error &&
+          error.message === OWN_DONATION_REQUEST_ERROR
+        ) {
+          return NextResponse.json({ error: error.message }, { status: 400 });
+        }
         throw error;
+      }
+
+      if (assignedDonorId) {
+        try {
+          await prisma.notificacion.create({
+            data: {
+              userId: assignedDonorId,
+              type: "MATCH_DONATION",
+              title: "Reservaron parte de tu donación",
+              message: `Se reservaron ${sourceMedication.cantidad} unidad(es) de tu oferta. La entrega aparecerá en Mis Donaciones mientras el ente de salud revisa la solicitud.`,
+              link: "/dashboard/donations",
+            },
+          });
+        } catch (notificationError) {
+          console.error(
+            "No se pudo notificar al donante de la reserva:",
+            notificationError,
+          );
+        }
       }
     } else {
       // Toda solicitud debe ser revisada por un ente de salud antes de estar disponible.

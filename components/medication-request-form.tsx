@@ -434,7 +434,7 @@ export function MedicationRequestForm({
                       htmlFor="quantity"
                       className="text-sm font-semibold text-gray-700"
                     >
-                      Cantidad
+                      {formData.unit === "ml" ? "Cantidad (ml)" : "Cantidad"}
                     </Label>
                     <Input
                       id="quantity"
